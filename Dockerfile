@@ -6,10 +6,15 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
+COPY prisma/schema.prisma ./prisma/
+
+RUN ls -R /
+
 RUN npm i
 
 # Copy the rest of the app's source code
 COPY . .
+
 
 # build prisma types, build, clear cache
 RUN npx prisma generate && npm run build && npm cache clean --force
