@@ -7,15 +7,27 @@ import {
 } from "~/server/api/trpc";
 
 export const postRouter = createTRPCRouter({
-  hello: publicProcedure
+  createTask: protectedProcedure
     .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.task.create({
+        data: {
+          title: input.text,
+          status: "Open",
+          userId: ctx.session.user.id,
+        },
+      });
+
+      return "Task created!";
     }),
 
-  getSecretMessage: protectedProcedure.query(() => {
-    return "you can now see this secret message!";
+  getTasks: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    return await ctx.db.task.findMany({
+      where: {
+        userId,
+      },
+    });
   }),
 });
