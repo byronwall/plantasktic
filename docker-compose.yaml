@@ -3,6 +3,8 @@ version: "3.8"
 services:
   web-app:
     build: .
+    ports:
+      - "3000"
     depends_on:
       - db
     env_file:
@@ -17,7 +19,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - tasks-db-data:/var/lib/postgresql/data
 
 volumes:
   db-data:
