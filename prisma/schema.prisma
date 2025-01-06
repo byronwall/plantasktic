@@ -1,17 +1,39 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
 
 generator client {
     provider = "prisma-client-js"
 }
 
-datasource db {
-    provider = "postgresql"
-    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-    // Further reading:
-    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
-    url      = env("DATABASE_URL")
+model Task {
+    task_id      Int       @id @default(autoincrement())
+    title        String
+    description  String?
+    category     String?
+    due_date     DateTime?
+    start_date   DateTime?
+    duration     Float?
+    priority     String?
+    status       String
+    created_at   DateTime  @default(now())
+    updated_at   DateTime  @updatedAt
+    parentTaskId Int?
+
+    parentTask Task?  @relation("ParentChildren", fields: [parentTaskId], references: [task_id])
+    subTasks   Task[] @relation("ParentChildren")
+
+    tags Task_Tags[]
+
+    userId String?
+
+    User User? @relation(fields: [userId], references: [id])
+
+    dependencies   Task_Dependencies[] @relation(name: "dependencies")
+    dependentTasks Task_Dependencies[] @relation("TaskDependencies")
+
+    @@index([parentTaskId])
 }
 
 // Necessary for Next auth
@@ -51,6 +73,8 @@ model User {
     gh_username   String?
     accounts      Account[]
     sessions      Session[]
+
+    Task Task[]
 }
 
 model VerificationToken {
@@ -59,4 +83,27 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Task_Dependencies {
+    task_dependency_id Int @id @default(autoincrement())
+
+    task_id Int
+    task    Task @relation("TaskDependencies", fields: [task_id], references: [task_id])
+
+    dependent_on_task_id Int
+    dependentTask        Task @relation(name: "dependencies", fields: [dependent_on_task_id], references: [task_id])
+
+    @@unique([task_id, dependent_on_task_id])
+    @@index([dependent_on_task_id])
+}
+
+model Task_Tags {
+    task_tag_id Int    @id @default(autoincrement())
+    task_id     Int
+    tag         String
+    task        Task   @relation(fields: [task_id], references: [task_id])
+
+    @@unique([task_id, tag])
+    @@index([task_id])
 }
