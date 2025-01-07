@@ -6,7 +6,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 
-export const postRouter = createTRPCRouter({
+export const taskRouter = createTRPCRouter({
   createTask: protectedProcedure
     .input(z.object({ text: z.string() }))
     .mutation(async ({ input, ctx }) => {

@@ -6,11 +6,11 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 
 export function TaskList() {
-  const { data: rawTasks } = api.post.getTasks.useQuery();
+  const { data: rawTasks } = api.task.getTasks.useQuery();
 
   const tasks = rawTasks ?? [];
 
-  const createTaskMutater = api.post.createTask.useMutation();
+  const createTaskMutater = api.task.createTask.useMutation();
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
@@ -27,7 +27,7 @@ export function TaskList() {
     }
   };
 
-  const updateTaskMutation = api.post.updateTaskStatus.useMutation();
+  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
 
   const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
     const newStatus = currentStatus === "completed" ? "pending" : "completed";
