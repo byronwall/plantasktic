@@ -35,17 +35,15 @@ export function TaskList() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <h2 className="text-3xl font-semibold">Tasks</h2>
-
-      <div className="flex items-center gap-2">
+    <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+      <div className="flex w-full items-center gap-2">
         <input
           type="text"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="Task title"
-          className="rounded-md px-2 py-1"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button
           onClick={() => void createTask()}
@@ -53,7 +51,7 @@ export function TaskList() {
         >
           {createTaskMutater.isPending ? (
             <>
-              <Loader2 className="animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Please wait
             </>
           ) : (
@@ -62,20 +60,25 @@ export function TaskList() {
         </Button>
       </div>
 
-      <div className="flex flex-col items-center gap-2">
-        {tasks.map((task) => (
-          <div key={task.task_id} className="flex items-center gap-2">
+      <div className="w-full rounded-lg border bg-card shadow">
+        <div className="flex flex-col items-center">
+          {tasks.map((task) => (
             <div
-              onClick={() => void toggleTaskStatus(task.task_id, task.status)}
-              className={`cursor-pointer rounded-md px-3 py-1 hover:bg-accent hover:text-accent-foreground ${
-                task.status === "completed" ? "line-through opacity-50" : ""
-              }`}
+              key={task.task_id}
+              className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0"
             >
-              {task.title}
+              <div
+                onClick={() => void toggleTaskStatus(task.task_id, task.status)}
+                className={`cursor-pointer rounded-md px-3 py-1 hover:bg-accent hover:text-accent-foreground ${
+                  task.status === "completed" ? "line-through opacity-50" : ""
+                }`}
+              >
+                {task.title}
+              </div>
+              <span className="text-sm text-gray-500">{task.status}</span>
             </div>
-            <span>{task.status}</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
