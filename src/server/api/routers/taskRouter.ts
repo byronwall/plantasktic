@@ -21,15 +21,18 @@ export const taskRouter = createTRPCRouter({
       return "Task created!";
     }),
 
-  getTasks: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
+  getTasks: protectedProcedure
+    .input(z.object({ showCompleted: z.boolean() }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
 
-    return await ctx.db.task.findMany({
-      where: {
-        userId,
-      },
-    });
-  }),
+      return await ctx.db.task.findMany({
+        where: {
+          userId,
+          ...(input.showCompleted ? {} : { status: { not: "completed" } }),
+        },
+      });
+    }),
 
   updateTaskStatus: protectedProcedure
     .input(

@@ -3,10 +3,12 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
+import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 
 export function TaskList() {
-  const { data: rawTasks } = api.task.getTasks.useQuery();
+  const [showCompleted, setShowCompleted] = useState(false);
+  const { data: rawTasks } = api.task.getTasks.useQuery({ showCompleted });
 
   const tasks = rawTasks ?? [];
 
@@ -36,6 +38,11 @@ export function TaskList() {
 
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+      <div className="flex w-full items-center justify-end gap-2">
+        <span className="text-sm">Show Completed Tasks</span>
+        <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+      </div>
+
       <div className="flex w-full items-center gap-2">
         <input
           type="text"
