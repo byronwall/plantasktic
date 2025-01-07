@@ -34,11 +34,14 @@ function formatTextWithLinks(text: string) {
 
 export function TaskList() {
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const { data: rawTasks } = api.task.getTasks.useQuery({ showCompleted });
 
   const tasks = rawTasks ?? [];
 
   const createTaskMutater = api.task.createTask.useMutation();
+  const updateTaskTextMutation = api.task.updateTaskText.useMutation();
 
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
@@ -60,6 +63,23 @@ export function TaskList() {
   const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
     const newStatus = currentStatus === "completed" ? "pending" : "completed";
     await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
+  };
+
+  const handleEditKeyPress = async (e: React.KeyboardEvent, taskId: number) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (editText.trim()) {
+        await updateTaskTextMutation.mutateAsync({ taskId, text: editText });
+        setEditingTaskId(null);
+      }
+    } else if (e.key === "Escape") {
+      setEditingTaskId(null);
+    }
+  };
+
+  const startEditing = (taskId: number, currentText: string) => {
+    setEditingTaskId(taskId);
+    setEditText(currentText);
   };
 
   return (
@@ -102,21 +122,40 @@ export function TaskList() {
             >
               <div className="flex items-center gap-2">
                 <div
-                  onClick={() =>
-                    void toggleTaskStatus(task.task_id, task.status)
-                  }
-                  className={`cursor-pointer rounded-md px-3 py-1 hover:bg-accent hover:text-accent-foreground ${
+                  className={
                     task.status === "completed" ? "line-through opacity-50" : ""
-                  }`}
+                  }
+                  onClick={() => startEditing(task.task_id, task.title)}
                 >
-                  {formatTextWithLinks(task.title)}
+                  {editingTaskId === task.task_id ? (
+                    <input
+                      type="text"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      onKeyDown={(e) =>
+                        void handleEditKeyPress(e, task.task_id)
+                      }
+                      onBlur={() => setEditingTaskId(null)}
+                      className="rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      autoFocus
+                    />
+                  ) : (
+                    formatTextWithLinks(task.title)
+                  )}
                 </div>
                 <TaskCategory
                   taskId={task.task_id}
                   currentCategory={task.category}
                 />
               </div>
-              <span className="text-sm text-gray-500">{task.status}</span>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={task.status === "completed"}
+                  onCheckedChange={() =>
+                    void toggleTaskStatus(task.task_id, task.status)
+                  }
+                />
+              </div>
             </div>
           ))}
         </div>

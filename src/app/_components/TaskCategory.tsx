@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { api } from "~/trpc/react";
-import { PlusIcon } from "lucide-react";
+import { Loader2, PlusIcon } from "lucide-react";
 // Function to generate a consistent color from a string
 function stringToColor(str: string) {
   let hash = 0;
@@ -59,24 +59,17 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
       </PopoverTrigger>
       <PopoverContent className="w-64">
         <div className="flex flex-col gap-1">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant="ghost"
-              className="justify-start"
-              onClick={() => void handleCategorySelect(category)}
-              style={{
-                backgroundColor: stringToColor(category),
-                color: "white",
-              }}
-            >
-              {category}
-            </Button>
-          ))}
-          {categories.length === 0 && (
-            <div className="p-2 text-sm text-gray-500">No categories yet</div>
-          )}
-          <div className="mt-2 border-t pt-2">
+          <div className="mb-2 font-medium">
+            {updateCategoryMutation.isPending ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Assigning...
+              </div>
+            ) : (
+              "Assign category"
+            )}
+          </div>
+          <div className="mb-2">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -84,6 +77,8 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
                 className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
+                disabled={updateCategoryMutation.isPending}
+                autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && newCategory.trim()) {
                     void handleCategorySelect(newCategory.trim());
@@ -98,11 +93,30 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
                     setNewCategory("");
                   }
                 }}
+                disabled={updateCategoryMutation.isPending}
               >
                 <PlusIcon className="h-4 w-4" />
               </Button>
             </div>
           </div>
+          {categories.map((category) => (
+            <Button
+              key={category}
+              variant="ghost"
+              className="justify-start"
+              onClick={() => void handleCategorySelect(category)}
+              disabled={updateCategoryMutation.isPending}
+              style={{
+                backgroundColor: stringToColor(category),
+                color: "white",
+              }}
+            >
+              {category}
+            </Button>
+          ))}
+          {categories.length === 0 && (
+            <div className="p-2 text-sm text-gray-500">No categories yet</div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

@@ -31,6 +31,9 @@ export const taskRouter = createTRPCRouter({
           userId,
           ...(input.showCompleted ? {} : { status: { not: "completed" } }),
         },
+        orderBy: {
+          task_id: "asc",
+        },
       });
     }),
 
@@ -76,4 +79,18 @@ export const taskRouter = createTRPCRouter({
 
     return tasks.map((t) => t.category!);
   }),
+
+  updateTaskText: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.number(),
+        text: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.task.update({
+        where: { task_id: input.taskId },
+        data: { title: input.text },
+      });
+    }),
 });
