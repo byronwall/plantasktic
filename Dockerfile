@@ -8,8 +8,6 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma/schema.prisma ./prisma/
 
-RUN ls -R /
-
 RUN npm i
 
 # Copy the rest of the app's source code
