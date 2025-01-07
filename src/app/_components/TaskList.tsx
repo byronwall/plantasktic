@@ -7,6 +7,31 @@ import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { TaskCategory } from "./TaskCategory";
 
+// Helper function to detect and format URLs in text
+function formatTextWithLinks(text: string) {
+  // URL regex pattern
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+
+  const parts = text.split(urlPattern);
+  return parts.map((part, index) => {
+    if (part.match(urlPattern)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
+
 export function TaskList() {
   const [showCompleted, setShowCompleted] = useState(false);
   const { data: rawTasks } = api.task.getTasks.useQuery({ showCompleted });
@@ -84,7 +109,7 @@ export function TaskList() {
                     task.status === "completed" ? "line-through opacity-50" : ""
                   }`}
                 >
-                  {task.title}
+                  {formatTextWithLinks(task.title)}
                 </div>
                 <TaskCategory
                   taskId={task.task_id}

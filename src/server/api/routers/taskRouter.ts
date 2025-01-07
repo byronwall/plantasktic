@@ -61,4 +61,19 @@ export const taskRouter = createTRPCRouter({
         data: { category: input.category },
       });
     }),
+
+  getCategories: protectedProcedure.query(async ({ ctx }) => {
+    const tasks = await ctx.db.task.findMany({
+      where: {
+        userId: ctx.session.user.id,
+        category: { not: null },
+      },
+      select: {
+        category: true,
+      },
+      distinct: ["category"],
+    });
+
+    return tasks.map((t) => t.category!);
+  }),
 });
