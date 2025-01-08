@@ -93,4 +93,20 @@ export const taskRouter = createTRPCRouter({
         data: { title: input.text },
       });
     }),
+
+  bulkCreateTasks: protectedProcedure
+    .input(z.object({ tasks: z.array(z.string()) }))
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      await ctx.db.task.createMany({
+        data: input.tasks.map((text) => ({
+          title: text,
+          status: "Open",
+          userId,
+        })),
+      });
+
+      return "Tasks created!";
+    }),
 });
