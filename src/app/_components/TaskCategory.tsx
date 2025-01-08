@@ -28,11 +28,13 @@ function getContrastingTextColor(backgroundColor: string | undefined) {
 
   if (hslMatch) {
     // For HSL, use lightness directly
-    const lightness = parseInt(hslMatch[1], 10);
+    const lightness = parseInt(hslMatch[1] ?? "0", 10);
     return lightness < 65 ? "white" : "black";
   } else if (rgbMatch) {
     // For RGB, calculate relative luminance
-    const [r, g, b] = rgbMatch.slice(1).map((x) => parseInt(x, 10));
+    const [r = 0, g = 0, b = 0] = rgbMatch
+      .slice(1)
+      .map((x) => parseInt(x ?? "0", 10));
     // Perceived brightness formula
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     return brightness < 128 ? "white" : "black";
