@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Copy, Check } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -41,30 +41,7 @@ export function TaskList() {
 
   const tasks = rawTasks ?? [];
 
-  const createTaskMutater = api.task.createTask.useMutation();
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
-
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-
-  const createTask = async () => {
-    if (newTaskTitle.trim()) {
-      await createTaskMutater.mutateAsync({ text: newTaskTitle });
-      setNewTaskTitle("");
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      void createTask();
-    }
-  };
-
-  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
-
-  const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
-    await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
-  };
 
   const handleEditKeyPress = async (e: React.KeyboardEvent, taskId: number) => {
     if (e.key === "Enter") {
@@ -89,35 +66,18 @@ export function TaskList() {
     setTimeout(() => setCopiedTaskId(null), 1000);
   };
 
+  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
+
+  const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
+  };
+
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
       <div className="flex w-full items-center justify-end gap-2">
         <span className="text-sm">Show Completed Tasks</span>
         <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
-      </div>
-
-      <div className="flex w-full items-center gap-2">
-        <input
-          type="text"
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Task title"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <Button
-          onClick={() => void createTask()}
-          disabled={createTaskMutater.isPending}
-        >
-          {createTaskMutater.isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Please wait
-            </>
-          ) : (
-            "Create task"
-          )}
-        </Button>
       </div>
 
       <div className="w-full rounded-lg border bg-card shadow">
