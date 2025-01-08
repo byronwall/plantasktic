@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -42,6 +42,7 @@ export function TaskList() {
   const tasks = rawTasks ?? [];
 
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
+  const deleteTaskMutation = api.task.deleteTask.useMutation();
 
   const handleEditKeyPress = async (e: React.KeyboardEvent, taskId: number) => {
     if (e.key === "Enter") {
@@ -71,6 +72,18 @@ export function TaskList() {
   const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
     const newStatus = currentStatus === "completed" ? "pending" : "completed";
     await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
+  };
+
+  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
+    const isMac = navigator.platform.toUpperCase().includes("MAC");
+    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
+
+    if (
+      skipConfirm ||
+      window.confirm("Are you sure you want to delete this task?")
+    ) {
+      await deleteTaskMutation.mutateAsync({ taskId });
+    }
   };
 
   return (
@@ -131,6 +144,17 @@ export function TaskList() {
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleDelete(task.task_id, e);
+                  }}
+                  className="h-8 w-8 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
                 <Switch
                   checked={task.status === "completed"}

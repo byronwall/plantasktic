@@ -109,4 +109,12 @@ export const taskRouter = createTRPCRouter({
 
       return "Tasks created!";
     }),
+
+  deleteTask: protectedProcedure
+    .input(z.object({ taskId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.task.delete({
+        where: { task_id: input.taskId },
+      });
+    }),
 });
