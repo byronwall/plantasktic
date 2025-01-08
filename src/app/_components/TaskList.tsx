@@ -194,7 +194,12 @@ export function TaskList() {
                 <Square className="h-4 w-4" />
               )}
             </Button>
-            <span className="ml-2 text-sm font-medium">Select All</span>
+            <div className="flex flex-1 items-center gap-2">
+              <span className="ml-2 text-sm font-medium">Title</span>
+              <div className="flex-grow" />
+              <span className="mr-24 text-sm font-medium">Category</span>
+            </div>
+            <div className="w-[120px]" /> {/* Space for action buttons */}
           </div>
           {tasks.map((task) => (
             <div
