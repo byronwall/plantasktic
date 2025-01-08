@@ -117,4 +117,36 @@ export const taskRouter = createTRPCRouter({
         where: { task_id: input.taskId },
       });
     }),
+
+  bulkDeleteTasks: protectedProcedure
+    .input(z.object({ taskIds: z.array(z.number()) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.task.deleteMany({
+        where: {
+          task_id: { in: input.taskIds },
+          userId: ctx.session.user.id, // Ensure user owns all tasks
+        },
+      });
+      return "Tasks deleted!";
+    }),
+
+  bulkUpdateTaskCategory: protectedProcedure
+    .input(
+      z.object({
+        taskIds: z.array(z.number()),
+        category: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.task.updateMany({
+        where: {
+          task_id: { in: input.taskIds },
+          userId: ctx.session.user.id, // Ensure user owns all tasks
+        },
+        data: {
+          category: input.category,
+        },
+      });
+      return "Categories updated!";
+    }),
 });
