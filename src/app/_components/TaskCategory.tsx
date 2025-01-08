@@ -5,7 +5,6 @@ import { ComboBox } from "./ComboBox";
 import { api } from "~/trpc/react";
 import { Loader2 } from "lucide-react";
 
-// Function to generate a consistent color from a string
 function stringToColor(str: string) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

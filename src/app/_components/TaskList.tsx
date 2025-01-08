@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -36,6 +36,7 @@ export function TaskList() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const { data: rawTasks } = api.task.getTasks.useQuery({ showCompleted });
 
   const tasks = rawTasks ?? [];
@@ -82,6 +83,12 @@ export function TaskList() {
     setEditText(currentText);
   };
 
+  const copyToClipboard = (taskId: number, text: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopiedTaskId(taskId);
+    setTimeout(() => setCopiedTaskId(null), 1000);
+  };
+
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
       <div className="flex w-full items-center justify-end gap-2">
@@ -120,11 +127,11 @@ export function TaskList() {
               key={task.task_id}
               className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center gap-2">
                 <div
-                  className={
+                  className={`flex-1 ${
                     task.status === "completed" ? "line-through opacity-50" : ""
-                  }
+                  }`}
                   onClick={() => startEditing(task.task_id, task.title)}
                 >
                   {editingTaskId === task.task_id ? (
@@ -136,7 +143,7 @@ export function TaskList() {
                         void handleEditKeyPress(e, task.task_id)
                       }
                       onBlur={() => setEditingTaskId(null)}
-                      className="rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       autoFocus
                     />
                   ) : (
@@ -149,6 +156,22 @@ export function TaskList() {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard(task.task_id, task.title);
+                  }}
+                  className="h-8 w-8 transition-opacity"
+                  disabled={copiedTaskId === task.task_id}
+                >
+                  {copiedTaskId === task.task_id ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
                 <Switch
                   checked={task.status === "completed"}
                   onCheckedChange={() =>
