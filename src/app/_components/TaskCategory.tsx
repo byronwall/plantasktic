@@ -19,6 +19,29 @@ function stringToColor(str: string) {
   return `hsl(${hue}, 70%, 50%)`;
 }
 
+// Function to determine if white or black text should be used
+function getContrastingTextColor(backgroundColor: string | undefined) {
+  if (!backgroundColor) return "white";
+
+  // Extract values from HSL or RGB color
+  const hslMatch = /hsl\(\d+,\s*\d+%,\s*(\d+)%\)/.exec(backgroundColor);
+  const rgbMatch = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(backgroundColor);
+
+  if (hslMatch) {
+    // For HSL, use lightness directly
+    const lightness = parseInt(hslMatch[1], 10);
+    return lightness < 65 ? "white" : "black";
+  } else if (rgbMatch) {
+    // For RGB, calculate relative luminance
+    const [r, g, b] = rgbMatch.slice(1).map((x) => parseInt(x, 10));
+    // Perceived brightness formula
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness < 128 ? "white" : "black";
+  }
+
+  return "white"; // Default fallback
+}
+
 interface TaskCategoryProps {
   taskId: number;
   currentCategory?: string | null;
@@ -32,6 +55,14 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
     await updateCategoryMutation.mutateAsync({ taskId, category });
   };
 
+  const backgroundColor = currentCategory
+    ? stringToColor(currentCategory)
+    : undefined;
+
+  const textColor = backgroundColor
+    ? getContrastingTextColor(backgroundColor)
+    : undefined;
+
   return (
     <div className="flex items-center gap-2">
       <ComboBox
@@ -43,7 +74,15 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
         searchPlaceholder="Search categories..."
         emptyText="No categories found"
       >
-        <Badge variant="outline">{currentCategory}</Badge>
+        <Badge
+          variant="outline"
+          style={{
+            backgroundColor,
+            color: textColor,
+          }}
+        >
+          {currentCategory ?? "category..."}
+        </Badge>
       </ComboBox>
       {updateCategoryMutation.isPending && (
         <Loader2 className="h-4 w-4 animate-spin" />
