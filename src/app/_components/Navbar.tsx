@@ -11,18 +11,48 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useRouter, usePathname } from "next/navigation";
+
+type Project = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+  userId: string;
+};
 
 export function Navbar() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [bulkText, setBulkText] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
+
+  const { data: projects = [] } = api.task.getProjects.useQuery() as {
+    data: Project[] | undefined;
+  };
+
+  // Get current project from URL if we're on a project page
+  const currentProjectName = pathname.startsWith("/project/")
+    ? pathname.split("/")[2]
+    : null;
+
+  // Find the project ID from the name
+  const currentProjectId = currentProjectName
+    ? projects.find((p) => p.name === currentProjectName)?.id
+    : null;
 
   const createTaskMutater = api.task.createTask.useMutation();
   const bulkCreateTasksMutater = api.task.bulkCreateTasks.useMutation();
+  const createProjectMutater = api.task.createProject.useMutation();
 
   const createTask = async () => {
     if (newTaskTitle.trim()) {
-      await createTaskMutater.mutateAsync({ text: newTaskTitle });
+      await createTaskMutater.mutateAsync({
+        text: newTaskTitle,
+        projectId: currentProjectId ?? undefined,
+      });
       setNewTaskTitle("");
     }
   };
@@ -36,25 +66,24 @@ export function Navbar() {
   const handleBulkImport = async () => {
     if (!bulkText.trim()) return;
 
-    // Split text into lines and process each line
     const lines = bulkText
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
-    // Process markdown-style checkboxes and bullet points
     const tasks = lines
       .map((line) => {
-        // Remove markdown checkbox if present
         line = line.replace(/^-?\s*\[ \]/, "").trim();
-        // Remove bullet points if present
         line = line.replace(/^[-*•]/, "").trim();
         return line;
       })
       .filter((line) => line.length > 0);
 
     if (tasks.length > 0) {
-      await bulkCreateTasksMutater.mutateAsync({ tasks });
+      await bulkCreateTasksMutater.mutateAsync({
+        tasks,
+        projectId: currentProjectId ?? undefined,
+      });
       setBulkText("");
     }
   };
@@ -82,6 +111,51 @@ export function Navbar() {
         </Link>
 
         <div className="flex flex-1 items-center gap-2 px-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                {currentProjectName ?? "All Projects"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px]" align="start">
+              <div className="space-y-2">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => router.push("/")}
+                >
+                  All Projects
+                </Button>
+                {projects.map((project: Project) => (
+                  <Button
+                    key={project.id}
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => router.push(`/project/${project.name}`)}
+                  >
+                    {project.name}
+                  </Button>
+                ))}
+                <hr className="my-2" />
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="New Project Name"
+                    className="w-full rounded-md border px-3 py-2"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                        void createProjectMutater.mutateAsync({
+                          name: e.currentTarget.value.trim(),
+                        });
+                        e.currentTarget.value = "";
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <input
             id="new-task-input"
             type="text"

@@ -7,14 +7,39 @@ import {
 } from "~/server/api/trpc";
 
 export const taskRouter = createTRPCRouter({
+  // Project-related endpoints
+  createProject: protectedProcedure
+    .input(z.object({ name: z.string(), description: z.string().optional() }))
+    .mutation(async ({ input, ctx }) => {
+      return await ctx.db.project.create({
+        data: {
+          name: input.name,
+          description: input.description,
+          userId: ctx.session.user.id,
+        },
+      });
+    }),
+
+  getProjects: protectedProcedure.query(async ({ ctx }) => {
+    return await ctx.db.project.findMany({
+      where: {
+        userId: ctx.session.user.id,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+  }),
+
   createTask: protectedProcedure
-    .input(z.object({ text: z.string() }))
+    .input(z.object({ text: z.string(), projectId: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       await ctx.db.task.create({
         data: {
           title: input.text,
           status: "Open",
           userId: ctx.session.user.id,
+          projectId: input.projectId,
         },
       });
 
@@ -22,13 +47,19 @@ export const taskRouter = createTRPCRouter({
     }),
 
   getTasks: protectedProcedure
-    .input(z.object({ showCompleted: z.boolean() }))
+    .input(
+      z.object({
+        showCompleted: z.boolean(),
+        projectId: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
       return await ctx.db.task.findMany({
         where: {
           userId,
+          projectId: input.projectId,
           ...(input.showCompleted ? {} : { status: { not: "completed" } }),
         },
         orderBy: {
@@ -95,7 +126,12 @@ export const taskRouter = createTRPCRouter({
     }),
 
   bulkCreateTasks: protectedProcedure
-    .input(z.object({ tasks: z.array(z.string()) }))
+    .input(
+      z.object({
+        tasks: z.array(z.string()),
+        projectId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.session.user.id;
 
@@ -104,6 +140,7 @@ export const taskRouter = createTRPCRouter({
           title: text,
           status: "Open",
           userId,
+          projectId: input.projectId,
         })),
       });
 

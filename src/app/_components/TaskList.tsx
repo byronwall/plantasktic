@@ -38,13 +38,27 @@ function formatTextWithLinks(text: string) {
   });
 }
 
-export function TaskList() {
+type TaskListProps = {
+  projectName?: string;
+};
+
+export function TaskList({ projectName }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const { data: rawTasks } = api.task.getTasks.useQuery({ showCompleted });
+
+  // Find the project ID from the name
+  const { data: projects = [] } = api.task.getProjects.useQuery();
+  const projectId = projectName
+    ? projects.find((p) => p.name === projectName)?.id
+    : undefined;
+
+  const { data: rawTasks } = api.task.getTasks.useQuery({
+    showCompleted,
+    projectId,
+  });
   const { data: categories = [] } = api.task.getCategories.useQuery();
   const [selectedCategory, setSelectedCategory] = useState("");
 
@@ -52,7 +66,7 @@ export function TaskList() {
 
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
   const deleteTaskMutation = api.task.deleteTask.useMutation();
-  const updateTaskCategoryMutation = api.task.updateTaskCategory.useMutation();
+
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
     api.task.bulkUpdateTaskCategory.useMutation();
