@@ -20,30 +20,39 @@ import {
 } from "~/components/ui/popover";
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-// Helper function to detect and format URLs in text
-function formatTextWithLinks(text: string) {
-  // URL regex pattern
-  const urlPattern = /(https?:\/\/[^\s]+)/g;
-
-  const parts = text.split(urlPattern);
-  return parts.map((part, index) => {
-    if (part.match(urlPattern)) {
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
+// Replace the formatTextWithLinks function with this new component
+function TaskText({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        // Open links in new tab
+        a: (props) => (
+          <a
+            {...props}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        // Style code blocks and inline code
+        code: (props) => (
+          <code
+            className="rounded bg-muted px-1 py-0.5 font-mono text-sm"
+            {...props}
+          />
+        ),
+        // Style paragraphs to work well in the task list
+        p: (props) => <span {...props} className="inline" />,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
 }
 
 type TaskListProps = {
@@ -294,7 +303,7 @@ export function TaskList({ projectName }: TaskListProps) {
                       autoFocus
                     />
                   ) : (
-                    formatTextWithLinks(task.title)
+                    <TaskText text={task.title} />
                   )}
                 </div>
                 <TaskCategory
