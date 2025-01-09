@@ -5,7 +5,9 @@ import { type Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 
 import { TRPCReactProvider } from "~/trpc/react";
-import { Navbar } from "./_components/Navbar";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
+import { AppSidebar } from "~/components/AppSidebar";
+import { TaskInput } from "~/components/TaskInput";
 
 export const metadata: Metadata = {
   title: "Task Manager",
@@ -21,8 +23,17 @@ export default function RootLayout({
       <body className="min-h-screen bg-background">
         <TRPCReactProvider>
           <SessionProvider>
-            <Navbar />
-            <main className="container mx-auto px-4 py-8">{children}</main>
+            <SidebarProvider>
+              <AppSidebar />
+              <main className="ml-64 min-h-screen">
+                <div className="sticky top-0 z-50 border-b bg-background">
+                  <div className="container mx-auto px-4 py-4">
+                    <TaskInput />
+                  </div>
+                </div>
+                <div className="container mx-auto px-4 py-8">{children}</div>
+              </main>
+            </SidebarProvider>
           </SessionProvider>
         </TRPCReactProvider>
       </body>
