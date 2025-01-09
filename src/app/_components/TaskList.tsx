@@ -20,15 +20,6 @@ import {
 } from "~/components/ui/popover";
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-} from "~/components/ui/command";
-import { cn } from "~/lib/utils";
 
 // Helper function to detect and format URLs in text
 function formatTextWithLinks(text: string) {
