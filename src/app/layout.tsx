@@ -25,7 +25,7 @@ export default function RootLayout({
           <SessionProvider>
             <SidebarProvider>
               <AppSidebar />
-              <main className="ml-64 min-h-screen">
+              <main className="min-h-screen w-full">
                 <div className="sticky top-0 z-50 border-b bg-background">
                   <div className="container mx-auto px-4 py-4">
                     <TaskInput />

@@ -80,7 +80,9 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            <Check /> Task Manager
+            <Link href="/" className="flex items-center text-xl font-bold">
+              <Check className="mr-2 h-4 w-4" /> Task Manager
+            </Link>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
