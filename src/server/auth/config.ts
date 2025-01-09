@@ -1,8 +1,15 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
-import { db } from "~/server/db";
+import { type User as NextUser } from "next-auth";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+    } & DefaultSession["user"];
+  }
+}
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -45,24 +52,27 @@ export const authConfig = {
         };
       },
     }),
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
   ],
-  adapter: PrismaAdapter(db),
+
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    jwt({ token, user }) {
+      if (user) token.user = user;
+      return token;
+    },
+    session(sessionArgs) {
+      // token only exists when the strategy is jwt and not database, so sessionArgs here will be { session, token }
+      // with a database strategy it would be { session, user }
+      if ("token" in sessionArgs) {
+        const session = sessionArgs.session;
+        if ("user" in sessionArgs.token) {
+          const tokenUser = sessionArgs.token.user as NextUser;
+          if (tokenUser.id) {
+            session.user.id = tokenUser.id;
+            return session;
+          }
+        }
+      }
+      return sessionArgs.session;
+    },
   },
 } satisfies NextAuthConfig;
