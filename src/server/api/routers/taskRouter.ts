@@ -220,4 +220,23 @@ export const taskRouter = createTRPCRouter({
       });
       return "Categories updated!";
     }),
+
+  moveTaskToProject: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.number(),
+        projectId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.task.update({
+        where: {
+          task_id: input.taskId,
+          userId: ctx.session.user.id,
+        },
+        data: {
+          projectId: input.projectId,
+        },
+      });
+    }),
 });

@@ -1,6 +1,13 @@
 "use client";
 
-import { Copy, Check, Trash2, CheckSquare, Square } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Trash2,
+  CheckSquare,
+  Square,
+  FolderInput,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
@@ -12,6 +19,15 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { ComboBox } from "./ComboBox";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "~/components/ui/command";
+import { cn } from "~/lib/utils";
 
 // Helper function to detect and format URLs in text
 function formatTextWithLinks(text: string) {
@@ -70,6 +86,8 @@ export function TaskList({ projectName }: TaskListProps) {
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
     api.task.bulkUpdateTaskCategory.useMutation();
+
+  const moveTaskToProjectMutation = api.task.moveTaskToProject.useMutation();
 
   const handleEditKeyPress = async (e: React.KeyboardEvent, taskId: number) => {
     if (e.key === "Enter") {
@@ -153,6 +171,13 @@ export function TaskList({ projectName }: TaskListProps) {
     setSelectedCategory("");
   };
 
+  const handleMoveToProject = async (
+    taskId: number,
+    projectId: string | null,
+  ) => {
+    await moveTaskToProjectMutation.mutateAsync({ taskId, projectId });
+  };
+
   return (
     <div className="flex w-full max-w-2xl flex-col items-center gap-6">
       <div className="flex w-full items-center justify-between gap-2">
@@ -213,7 +238,8 @@ export function TaskList({ projectName }: TaskListProps) {
               <div className="flex-grow" />
               <span className="mr-24 text-sm font-medium">Category</span>
             </div>
-            <div className="w-[120px]" /> {/* Space for action buttons */}
+            <div className="w-[160px]" />{" "}
+            {/* Increased width for project selector */}
           </div>
           {tasks.map((task) => (
             <div
@@ -261,6 +287,59 @@ export function TaskList({ projectName }: TaskListProps) {
                 />
               </div>
               <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <FolderInput className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0" align="end">
+                    <Command>
+                      <CommandInput placeholder="Search projects..." />
+                      <CommandList>
+                        <CommandEmpty>No projects found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="none"
+                            onSelect={() =>
+                              void handleMoveToProject(task.task_id, null)
+                            }
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                !task.projectId ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            No Project
+                          </CommandItem>
+                          {projects.map((project) => (
+                            <CommandItem
+                              key={project.id}
+                              value={project.name}
+                              onSelect={() =>
+                                void handleMoveToProject(
+                                  task.task_id,
+                                  project.id,
+                                )
+                              }
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  task.projectId === project.id
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              {project.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="ghost"
                   size="icon"
