@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { ComboBox } from "./ComboBox";
+import { ProjectSelector } from "./ProjectSelector";
 import {
   Command,
   CommandInput,
@@ -226,35 +227,11 @@ export function TaskList({ projectName }: TaskListProps) {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search projects..." />
-                    <CommandList>
-                      <CommandEmpty>No projects found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="none"
-                          onSelect={() => void handleBulkMoveToProject(null)}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
-                          No Project
-                        </CommandItem>
-                        {projects.map((project) => (
-                          <CommandItem
-                            key={project.id}
-                            value={project.name}
-                            onSelect={() =>
-                              void handleBulkMoveToProject(project.id)
-                            }
-                          >
-                            <Check
-                              className={cn("mr-2 h-4 w-4", "opacity-0")}
-                            />
-                            {project.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
+                  <ProjectSelector
+                    onProjectSelect={(projectId) =>
+                      void handleBulkMoveToProject(projectId)
+                    }
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -342,50 +319,12 @@ export function TaskList({ projectName }: TaskListProps) {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[200px] p-0" align="end">
-                    <Command>
-                      <CommandInput placeholder="Search projects..." />
-                      <CommandList>
-                        <CommandEmpty>No projects found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="none"
-                            onSelect={() =>
-                              void handleMoveToProject(task.task_id, null)
-                            }
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                !task.projectId ? "opacity-100" : "opacity-0",
-                              )}
-                            />
-                            No Project
-                          </CommandItem>
-                          {projects.map((project) => (
-                            <CommandItem
-                              key={project.id}
-                              value={project.name}
-                              onSelect={() =>
-                                void handleMoveToProject(
-                                  task.task_id,
-                                  project.id,
-                                )
-                              }
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  task.projectId === project.id
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                              {project.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
+                    <ProjectSelector
+                      currentProjectId={task.projectId}
+                      onProjectSelect={(projectId) =>
+                        void handleMoveToProject(task.task_id, projectId)
+                      }
+                    />
                   </PopoverContent>
                 </Popover>
                 <Button
