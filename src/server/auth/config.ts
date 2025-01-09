@@ -1,6 +1,10 @@
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
+/* AUTH stuff stymied by Prisma running in Middleware.  Using JWT strategy.
+Guide here: https://github.com/nextauthjs/next-auth/issues/9122#issuecomment-1922631022
+*/
+
 import { type User as NextUser } from "next-auth";
 
 declare module "next-auth" {
