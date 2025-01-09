@@ -16,19 +16,29 @@ import {
   SidebarMenuButton,
 } from "~/components/ui/sidebar";
 import { api } from "~/trpc/react";
-import { Check, Loader2, Upload } from "lucide-react";
+import { Check, ChevronRight, Loader2, Upload } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
+import { cn } from "~/lib/utils";
 
 export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { data: projects = [] } = api.task.getProjects.useQuery();
+  const { data: projects = [], refetch: refetchProjects } =
+    api.task.getProjects.useQuery();
   const [bulkText, setBulkText] = useState("");
   const bulkCreateTasksMutater = api.task.bulkCreateTasks.useMutation();
+  const createProjectMutation = api.task.createProject.useMutation({
+    onSuccess: () => void refetchProjects(),
+  });
 
   // Get current project from URL if we're on a project page
   const currentProjectName = pathname.startsWith("/project/")
@@ -92,59 +102,68 @@ export function AppSidebar() {
           <SidebarGroupLabel>Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      {currentProjectName ?? "Select Project"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px]" align="start">
-                    <div className="space-y-2">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start"
-                        asChild
-                      >
-                        <Link href="/">All Projects</Link>
-                      </Button>
-                      {projects.map((project) => (
-                        <Button
-                          key={project.id}
-                          variant="ghost"
-                          className="w-full justify-start"
+              <Collapsible defaultOpen className="w-full">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="w-full justify-between">
+                      {currentProjectName ?? "All Projects"}
+                      <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenu className="mt-1 pl-4">
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
                           asChild
+                          className={cn(
+                            "w-full justify-start",
+                            !currentProjectName &&
+                              "bg-accent text-accent-foreground",
+                          )}
                         >
-                          <Link
-                            href={`/project/${encodeURIComponent(project.name)}`}
+                          <Link href="/">All Projects</Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      {projects.map((project) => (
+                        <SidebarMenuItem key={project.id}>
+                          <SidebarMenuButton
+                            asChild
+                            className={cn(
+                              "w-full justify-start",
+                              currentProjectName === project.name &&
+                                "bg-accent text-accent-foreground",
+                            )}
                           >
-                            {project.name}
-                          </Link>
-                        </Button>
+                            <Link
+                              href={`/project/${encodeURIComponent(project.name)}`}
+                            >
+                              {project.name}
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
                       ))}
-                      <hr className="my-2" />
-                      <div className="space-y-2">
+                      <SidebarMenuItem>
                         <input
                           type="text"
                           placeholder="New Project Name"
-                          className="w-full rounded-md border px-3 py-2"
+                          className="w-full rounded-md border px-3 py-2 text-sm"
                           onKeyDown={(e) => {
                             if (
                               e.key === "Enter" &&
                               e.currentTarget.value.trim()
                             ) {
-                              void api.task.createProject.mutateAsync({
+                              void createProjectMutation.mutate({
                                 name: e.currentTarget.value.trim(),
                               });
                               e.currentTarget.value = "";
                             }
                           }}
                         />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </SidebarMenuItem>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
