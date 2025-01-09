@@ -4,5 +4,5 @@ export default async function ProjectPage(props: {
   params: Promise<{ name: string }>;
 }) {
   const params = await props.params;
-  return <TaskList projectName={params.name} />;
+  return <TaskList projectName={decodeURIComponent(params.name)} />;
 }

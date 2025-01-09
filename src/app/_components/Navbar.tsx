@@ -35,7 +35,7 @@ export function Navbar() {
 
   // Get current project from URL if we're on a project page
   const currentProjectName = pathname.startsWith("/project/")
-    ? pathname.split("/")[2]
+    ? decodeURIComponent(pathname.split("/")[2] ?? "")
     : null;
 
   // Find the project ID from the name
@@ -131,7 +131,11 @@ export function Navbar() {
                     key={project.id}
                     variant="ghost"
                     className="w-full justify-start"
-                    onClick={() => router.push(`/project/${project.name}`)}
+                    onClick={() =>
+                      router.push(
+                        `/project/${encodeURIComponent(project.name)}`,
+                      )
+                    }
                   >
                     {project.name}
                   </Button>
