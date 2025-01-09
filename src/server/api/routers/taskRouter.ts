@@ -31,6 +31,40 @@ export const taskRouter = createTRPCRouter({
     });
   }),
 
+  deleteProject: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // First delete all tasks in the project
+      await ctx.db.task.deleteMany({
+        where: {
+          projectId: input.projectId,
+          userId: ctx.session.user.id,
+        },
+      });
+
+      // Then delete the project
+      return await ctx.db.project.delete({
+        where: {
+          id: input.projectId,
+          userId: ctx.session.user.id,
+        },
+      });
+    }),
+
+  renameProject: protectedProcedure
+    .input(z.object({ projectId: z.string(), name: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.project.update({
+        where: {
+          id: input.projectId,
+          userId: ctx.session.user.id,
+        },
+        data: {
+          name: input.name,
+        },
+      });
+    }),
+
   createTask: protectedProcedure
     .input(z.object({ text: z.string(), projectId: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {

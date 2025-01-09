@@ -1,5 +1,8 @@
 import { TaskList } from "~/app/_components/TaskList";
 
-export default function ProjectPage({ params }: { params: { name: string } }) {
+export default async function ProjectPage(props: {
+  params: Promise<{ name: string }>;
+}) {
+  const params = await props.params;
   return <TaskList projectName={params.name} />;
 }
