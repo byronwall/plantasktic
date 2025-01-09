@@ -221,6 +221,26 @@ export const taskRouter = createTRPCRouter({
       return "Categories updated!";
     }),
 
+  bulkMoveTasksToProject: protectedProcedure
+    .input(
+      z.object({
+        taskIds: z.array(z.number()),
+        projectId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.task.updateMany({
+        where: {
+          task_id: { in: input.taskIds },
+          userId: ctx.session.user.id, // Ensure user owns all tasks
+        },
+        data: {
+          projectId: input.projectId,
+        },
+      });
+      return "Tasks moved!";
+    }),
+
   moveTaskToProject: protectedProcedure
     .input(
       z.object({

@@ -86,6 +86,8 @@ export function TaskList({ projectName }: TaskListProps) {
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
     api.task.bulkUpdateTaskCategory.useMutation();
+  const bulkMoveTasksToProjectMutation =
+    api.task.bulkMoveTasksToProject.useMutation();
 
   const moveTaskToProjectMutation = api.task.moveTaskToProject.useMutation();
 
@@ -171,6 +173,14 @@ export function TaskList({ projectName }: TaskListProps) {
     setSelectedCategory("");
   };
 
+  const handleBulkMoveToProject = async (projectId: string | null) => {
+    await bulkMoveTasksToProjectMutation.mutateAsync({
+      taskIds: Array.from(selectedTasks),
+      projectId,
+    });
+    setSelectedTasks(new Set());
+  };
+
   const handleMoveToProject = async (
     taskId: number,
     projectId: string | null,
@@ -207,6 +217,44 @@ export function TaskList({ projectName }: TaskListProps) {
                     }
                     placeholder="Select category..."
                   />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Move to Project
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search projects..." />
+                    <CommandList>
+                      <CommandEmpty>No projects found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="none"
+                          onSelect={() => void handleBulkMoveToProject(null)}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", "opacity-0")} />
+                          No Project
+                        </CommandItem>
+                        {projects.map((project) => (
+                          <CommandItem
+                            key={project.id}
+                            value={project.name}
+                            onSelect={() =>
+                              void handleBulkMoveToProject(project.id)
+                            }
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", "opacity-0")}
+                            />
+                            {project.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
                 </PopoverContent>
               </Popover>
             </div>
