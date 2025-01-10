@@ -2,9 +2,11 @@
 
 import { Loader2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+
 import { Button } from "~/components/ui/button";
-import { api } from "~/trpc/react";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { api } from "~/trpc/react";
+
 import { BulkImportButton } from "./BulkImportButton";
 
 export function TaskInput() {

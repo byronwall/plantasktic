@@ -3,12 +3,12 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
-import { auth } from "~/server/auth";
 
-import { TRPCReactProvider } from "~/trpc/react";
-import { SidebarProvider } from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/AppSidebar";
 import { TaskInput } from "~/components/TaskInput";
+import { SidebarProvider } from "~/components/ui/sidebar";
+import { auth } from "~/server/auth";
+import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
   title: "Task Manager",

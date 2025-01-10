@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { api } from "~/trpc/react";
+import { useState } from "react";
+
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import {
   Card,
   CardContent,
@@ -15,10 +14,12 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { api } from "~/trpc/react";
 
 export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<{

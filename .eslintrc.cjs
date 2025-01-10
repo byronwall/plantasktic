@@ -4,11 +4,13 @@ const config = {
   parserOptions: {
     project: true,
   },
-  plugins: ["@typescript-eslint", "unused-imports"],
+  plugins: ["@typescript-eslint", "unused-imports", "import"],
   extends: [
     "next/core-web-vitals",
     "plugin:@typescript-eslint/recommended-type-checked",
     "plugin:@typescript-eslint/stylistic-type-checked",
+    "plugin:import/recommended",
+    "plugin:import/typescript",
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
@@ -40,6 +42,45 @@ const config = {
         },
       },
     ],
+    // Import ordering rules
+    "sort-imports": ["warn", { ignoreCase: true, ignoreDeclarationSort: true }],
+    "import/order": [
+      "warn",
+      {
+        "newlines-between": "always",
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "index",
+          "sibling",
+          "parent",
+          "object",
+          "type",
+        ],
+        alphabetize: {
+          order: "asc",
+          caseInsensitive: true,
+        },
+      },
+    ],
+    "import/no-duplicates": "warn",
+    "import/newline-after-import": "warn",
+  },
+  settings: {
+    "import/resolver": {
+      typescript: {
+        alwaysTryTypes: true,
+      },
+      node: {
+        extensions: [".ts", ".tsx"],
+      },
+    },
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true,
+      "source.organizeImports": true,
+    },
   },
 };
+
 module.exports = config;

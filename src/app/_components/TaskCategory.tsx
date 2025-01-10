@@ -1,9 +1,11 @@
 "use client";
 
-import { Badge } from "~/components/ui/badge";
-import { ComboBox } from "./ComboBox";
-import { api } from "~/trpc/react";
 import { Loader2 } from "lucide-react";
+
+import { Badge } from "~/components/ui/badge";
+import { api } from "~/trpc/react";
+
+import { ComboBox } from "./ComboBox";
 
 function stringToColor(str: string) {
   let hash = 0;

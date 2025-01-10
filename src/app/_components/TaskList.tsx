@@ -8,9 +8,11 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
 import { Button } from "~/components/ui/button";
 import {
   Popover,
@@ -20,6 +22,7 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
+
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
 import { TaskCategory } from "./TaskCategory";
@@ -66,6 +69,8 @@ export function TaskList({ projectName }: TaskListProps) {
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState("");
+
+  const path = usePathname();
 
   const { projects } = useCurrentProject();
   const projectId = projectName

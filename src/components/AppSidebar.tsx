@@ -2,12 +2,10 @@
 
 import { Check } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
 import { useSession } from "next-auth/react";
-import { useCurrentProject } from "~/hooks/useCurrentProject";
-import { cn } from "~/lib/utils";
+
+import { Button } from "~/components/ui/button";
+import { Collapsible } from "~/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -15,14 +13,16 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
 } from "~/components/ui/sidebar";
-import { Collapsible } from "~/components/ui/collapsible";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const pathname = usePathname();
+
   const { currentProjectId, projects } = useCurrentProject();
 
   const { refetch: refetchProjects } = api.task.getProjects.useQuery();

@@ -1,4 +1,5 @@
 import { usePathname } from "next/navigation";
+
 import { api } from "~/trpc/react";
 
 export function useCurrentProject() {

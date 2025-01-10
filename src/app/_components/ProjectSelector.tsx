@@ -1,14 +1,15 @@
 import { Check } from "lucide-react";
-import { api } from "~/trpc/react";
+
 import {
   Command,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
+  CommandList,
 } from "~/components/ui/command";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 interface ProjectSelectorProps {
   currentProjectId?: string | null;
