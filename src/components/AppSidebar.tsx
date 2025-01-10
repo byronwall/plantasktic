@@ -1,9 +1,13 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { useSession } from "next-auth/react";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { cn } from "~/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -14,34 +18,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "~/components/ui/sidebar";
-import { api } from "~/trpc/react";
-import { Check, ChevronRight } from "lucide-react";
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "./ui/collapsible";
-import { cn } from "~/lib/utils";
+import { Collapsible } from "~/components/ui/collapsible";
 
 export function AppSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const { data: projects = [], refetch: refetchProjects } =
-    api.task.getProjects.useQuery();
+  const { currentProjectId, projects } = useCurrentProject();
+
+  const { refetch: refetchProjects } = api.task.getProjects.useQuery();
+
   const createProjectMutation = api.task.createProject.useMutation({
     onSuccess: () => void refetchProjects(),
   });
-
-  // Get current project from URL if we're on a project page
-  const currentProjectName = pathname.startsWith("/project/")
-    ? decodeURIComponent(pathname.split("/")[2] ?? "")
-    : null;
-
-  // Find the project ID from the name
-  const currentProjectId = currentProjectName
-    ? projects.find((p) => p.name === currentProjectName)?.id
-    : null;
 
   return (
     <Sidebar>
@@ -73,70 +61,47 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            <Collapsible defaultOpen className="group/collapsible w-full">
+            <Collapsible defaultOpen>
               <SidebarGroup>
-                <SidebarGroupLabel>Projects</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="w-full justify-between">
-                          Projects
-                          <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenu className="mt-1 pl-4">
-                          <SidebarMenuItem>
+                      <SidebarMenu>
+                        {projects.map((project) => (
+                          <SidebarMenuItem key={project.id}>
                             <SidebarMenuButton
                               asChild
                               className={cn(
                                 "w-full justify-start",
-                                !currentProjectName &&
+                                currentProjectId === project.id &&
                                   "bg-accent text-accent-foreground",
                               )}
                             >
-                              <Link href="/">All Projects</Link>
+                              <Link href={`/project/${project.name}`}>
+                                {project.name}
+                              </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
-                          {projects.map((project) => (
-                            <SidebarMenuItem key={project.id}>
-                              <SidebarMenuButton
-                                asChild
-                                className={cn(
-                                  "w-full justify-start",
-                                  currentProjectName === project.name &&
-                                    "bg-accent text-accent-foreground",
-                                )}
-                              >
-                                <Link
-                                  href={`/project/${encodeURIComponent(project.name)}`}
-                                >
-                                  {project.name}
-                                </Link>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          ))}
-                          <SidebarMenuItem>
-                            <input
-                              type="text"
-                              placeholder="New Project Name"
-                              className="w-full rounded-md border px-3 py-2 text-sm"
-                              onKeyDown={(e) => {
-                                if (
-                                  e.key === "Enter" &&
-                                  e.currentTarget.value.trim()
-                                ) {
-                                  void createProjectMutation.mutate({
-                                    name: e.currentTarget.value.trim(),
-                                  });
-                                  e.currentTarget.value = "";
-                                }
-                              }}
-                            />
-                          </SidebarMenuItem>
-                        </SidebarMenu>
-                      </CollapsibleContent>
+                        ))}
+                        <SidebarMenuItem>
+                          <input
+                            type="text"
+                            placeholder="New Project Name"
+                            className="w-full rounded-md border px-3 py-2 text-sm"
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === "Enter" &&
+                                e.currentTarget.value.trim()
+                              ) {
+                                void createProjectMutation.mutate({
+                                  name: e.currentTarget.value.trim(),
+                                });
+                                e.currentTarget.value = "";
+                              }
+                            }}
+                          />
+                        </SidebarMenuItem>
+                      </SidebarMenu>
                     </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
@@ -148,7 +113,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <div className="px-4 py-2 text-center">
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Please sign in to manage your tasks
+                  Please sign in to manage tasks
                 </p>
                 <Button asChild>
                   <Link href="/api/auth/signin">Sign in</Link>

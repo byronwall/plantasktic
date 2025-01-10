@@ -1,27 +1,16 @@
 "use client";
 
 import { Loader2, Plus } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { BulkImportButton } from "./BulkImportButton";
 
 export function TaskInput() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const pathname = usePathname();
   const createTaskMutater = api.task.createTask.useMutation();
-
-  // Get current project from URL if we're on a project page
-  const currentProjectName = pathname.startsWith("/project/")
-    ? decodeURIComponent(pathname.split("/")[2] ?? "")
-    : null;
-
-  // Find the project ID from the name
-  const { data: projects = [] } = api.task.getProjects.useQuery();
-  const currentProjectId = currentProjectName
-    ? projects.find((p) => p.name === currentProjectName)?.id
-    : null;
+  const { currentProjectId } = useCurrentProject();
 
   const createTask = async () => {
     if (newTaskTitle.trim()) {
@@ -70,11 +59,10 @@ export function TaskInput() {
         disabled={createTaskMutater.isPending}
       >
         {createTaskMutater.isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
         )}
-        Add Task
       </Button>
       <BulkImportButton projectId={currentProjectId ?? undefined} />
     </div>

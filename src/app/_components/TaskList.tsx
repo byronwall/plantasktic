@@ -1,29 +1,29 @@
 "use client";
 
 import {
-  Copy,
   Check,
-  Trash2,
   CheckSquare,
-  Square,
+  Copy,
   FolderInput,
+  Square,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "~/components/ui/button";
-import { Switch } from "~/components/ui/switch";
-import { api } from "~/trpc/react";
-import { TaskCategory } from "./TaskCategory";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { Switch } from "~/components/ui/switch";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { api } from "~/trpc/react";
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { TaskCategory } from "./TaskCategory";
 
-// Replace the formatTextWithLinks function with this new component
 function TaskText({ text }: { text: string }) {
   return (
     <ReactMarkdown
@@ -65,9 +65,9 @@ export function TaskList({ projectName }: TaskListProps) {
   const [editText, setEditText] = useState("");
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [selectedCategory, setSelectedCategory] = useState("");
 
-  // Find the project ID from the name
-  const { data: projects = [] } = api.task.getProjects.useQuery();
+  const { projects } = useCurrentProject();
   const projectId = projectName
     ? projects.find((p) => p.name === projectName)?.id
     : undefined;
@@ -77,19 +77,16 @@ export function TaskList({ projectName }: TaskListProps) {
     projectId,
   });
   const { data: categories = [] } = api.task.getCategories.useQuery();
-  const [selectedCategory, setSelectedCategory] = useState("");
 
   const tasks = rawTasks ?? [];
 
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
   const deleteTaskMutation = api.task.deleteTask.useMutation();
-
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
     api.task.bulkUpdateTaskCategory.useMutation();
   const bulkMoveTasksToProjectMutation =
     api.task.bulkMoveTasksToProject.useMutation();
-
   const moveTaskToProjectMutation = api.task.moveTaskToProject.useMutation();
 
   const handleEditKeyPress = async (e: React.KeyboardEvent, taskId: number) => {
@@ -135,13 +132,13 @@ export function TaskList({ projectName }: TaskListProps) {
   };
 
   const toggleTaskSelection = (taskId: number) => {
-    const newSelected = new Set(selectedTasks);
-    if (newSelected.has(taskId)) {
-      newSelected.delete(taskId);
+    const newSelectedTasks = new Set(selectedTasks);
+    if (newSelectedTasks.has(taskId)) {
+      newSelectedTasks.delete(taskId);
     } else {
-      newSelected.add(taskId);
+      newSelectedTasks.add(taskId);
     }
-    setSelectedTasks(newSelected);
+    setSelectedTasks(newSelectedTasks);
   };
 
   const toggleSelectAll = () => {
@@ -263,8 +260,7 @@ export function TaskList({ projectName }: TaskListProps) {
               <div className="flex-grow" />
               <span className="mr-24 text-sm font-medium">Category</span>
             </div>
-            <div className="w-[160px]" />{" "}
-            {/* Increased width for project selector */}
+            <div className="w-[160px]" />
           </div>
           {tasks.map((task) => (
             <div

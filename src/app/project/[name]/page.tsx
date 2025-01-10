@@ -1,8 +1,10 @@
-import { TaskList } from "~/app/_components/TaskList";
+"use client";
 
-export default async function ProjectPage(props: {
-  params: Promise<{ name: string }>;
-}) {
-  const params = await props.params;
-  return <TaskList projectName={decodeURIComponent(params.name)} />;
+import { TaskList } from "~/app/_components/TaskList";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+
+export default function ProjectPage() {
+  const { currentProjectName } = useCurrentProject();
+
+  return <TaskList projectName={currentProjectName ?? undefined} />;
 }
