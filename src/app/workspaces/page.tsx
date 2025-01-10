@@ -25,33 +25,26 @@ export default function WorkspacesPage() {
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [newWorkspaceDescription, setNewWorkspaceDescription] = useState("");
 
-  const { data: workspaces = [], refetch: refetchWorkspaces } =
-    api.workspace.getAll.useQuery();
+  const { data: workspaces = [] } = api.workspace.getAll.useQuery();
   const { data: projects = [] } = api.project.getAll.useQuery();
 
   const createWorkspace = api.workspace.create.useMutation({
     onSuccess: () => {
-      void refetchWorkspaces();
       setIsCreatingWorkspace(false);
       setNewWorkspaceName("");
       setNewWorkspaceDescription("");
     },
   });
 
-  const deleteWorkspace = api.workspace.delete.useMutation({
-    onSuccess: () => void refetchWorkspaces(),
-  });
+  const deleteWorkspace = api.workspace.delete.useMutation();
 
   const renameWorkspace = api.workspace.rename.useMutation({
     onSuccess: () => {
-      void refetchWorkspaces();
       setEditingWorkspace(null);
     },
   });
 
-  const assignProject = api.workspace.assignProject.useMutation({
-    onSuccess: () => void refetchWorkspaces(),
-  });
+  const assignProject = api.workspace.assignProject.useMutation();
 
   // Group projects by workspace
   const unassignedProjects = projects.filter((p: Project) => !p.workspaceId);

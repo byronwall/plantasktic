@@ -1,6 +1,7 @@
 import { Pencil, Trash2, X } from "lucide-react";
 import Link from "next/link";
 
+import { ProjectActions } from "~/app/_components/ProjectActions";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -82,14 +83,21 @@ export function WorkspaceCard({
                     </p>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onRemoveProject(project.id)}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Remove from workspace
-                </Button>
+                <div className="flex items-center gap-2">
+                  <ProjectActions
+                    project={project}
+                    variant="outline"
+                    size="sm"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRemoveProject(project.id)}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
               </div>
             ))
           )}
