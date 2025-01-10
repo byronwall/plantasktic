@@ -25,6 +25,11 @@ export function SimpleMarkdown({ text }: { text: string }) {
             {...props}
           />
         ),
+        // Style lists
+        ul: (props) => <ul {...props} className="ml-4 list-disc" />,
+        ol: (props) => <ol {...props} className="ml-4 list-decimal" />,
+        li: (props) => <li {...props} className="my-0.5" />,
+
         // Style paragraphs to work well in the task list
         p: (props) => <span {...props} className="inline" />,
       }}
