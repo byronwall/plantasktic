@@ -2,7 +2,6 @@
 
 import { Edit2, MessageSquare } from "lucide-react";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -15,13 +14,15 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
+import { SimpleMarkdown } from "./SimpleMarkdown";
+
 interface TaskCommentsProps {
   taskId: number;
   comments?: string | null;
 }
 
 export function TaskComments({ taskId, comments }: TaskCommentsProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!comments);
   const [editText, setEditText] = useState(comments ?? "");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,9 +41,11 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
     });
   };
 
+  const previewLength = 20;
+
   const commentPreview = comments
-    ? comments.split("\n")[0]?.slice(0, 50) +
-      (comments.length > 50 ? "..." : "")
+    ? comments.split("\n")[0]?.slice(0, previewLength) +
+      (comments.length > previewLength ? "..." : "")
     : "";
 
   return (
@@ -59,7 +62,7 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
+          <DialogTitle className="flex items-center gap-2">
             <span>Task Comments</span>
             <Button
               variant="outline"
@@ -79,6 +82,13 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
                 onChange={(e) => setEditText(e.target.value)}
                 className="min-h-[200px]"
                 placeholder="Write your comments in Markdown..."
+                autoFocus
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    void handleSave();
+                  }
+                }}
               />
               <div className="flex justify-end gap-2">
                 <Button
@@ -95,7 +105,7 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
             </div>
           ) : (
             <div className="prose dark:prose-invert max-w-none">
-              <ReactMarkdown>{comments ?? ""}</ReactMarkdown>
+              <SimpleMarkdown text={comments ?? ""} />
             </div>
           )}
         </div>

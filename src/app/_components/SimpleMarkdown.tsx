@@ -1,8 +1,9 @@
 "use client";
+
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export function TaskText({ text }: { text: string }) {
+export function SimpleMarkdown({ text }: { text: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}

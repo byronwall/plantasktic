@@ -22,9 +22,9 @@ import { api } from "~/trpc/react";
 
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
+import { SimpleMarkdown } from "./SimpleMarkdown";
 import { TaskCategory } from "./TaskCategory";
 import { TaskComments } from "./TaskComments";
-import { TaskText } from "./TaskText";
 
 type TaskListProps = {
   projectName?: string;
@@ -280,7 +280,7 @@ export function TaskList({ projectName }: TaskListProps) {
                           autoFocus
                         />
                       ) : (
-                        <TaskText text={task.title} />
+                        <SimpleMarkdown text={task.title} />
                       )}
                     </div>
                     <TaskComments
