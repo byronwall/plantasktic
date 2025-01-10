@@ -8,10 +8,7 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -26,37 +23,7 @@ import { api } from "~/trpc/react";
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
 import { TaskCategory } from "./TaskCategory";
-
-function TaskText({ text }: { text: string }) {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        // Open links in new tab
-        a: (props) => (
-          <a
-            {...props}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ),
-        // Style code blocks and inline code
-        code: (props) => (
-          <code
-            className="rounded bg-muted px-1 py-0.5 font-mono text-sm"
-            {...props}
-          />
-        ),
-        // Style paragraphs to work well in the task list
-        p: (props) => <span {...props} className="inline" />,
-      }}
-    >
-      {text}
-    </ReactMarkdown>
-  );
-}
+import { TaskText } from "./TaskText";
 
 type TaskListProps = {
   projectName?: string;
@@ -69,8 +36,6 @@ export function TaskList({ projectName }: TaskListProps) {
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState("");
-
-  const path = usePathname();
 
   const { projects } = useCurrentProject();
   const projectId = projectName
