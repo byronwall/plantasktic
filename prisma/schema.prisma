@@ -68,15 +68,16 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
+    id            String      @id @default(cuid())
     name          String?
-    email         String?   @unique
+    email         String?     @unique
     emailVerified DateTime?
     image         String?
     gh_username   String?
     accounts      Account[]
     sessions      Session[]
     projects      Project[]
+    workspaces    Workspace[]
     Task          Task[]
 }
 
@@ -112,14 +113,30 @@ model Task_Tags {
 }
 
 model Project {
-    id          String   @id @default(cuid())
+    id          String     @id @default(cuid())
     name        String
     description String?
-    created_at  DateTime @default(now())
-    updated_at  DateTime @updatedAt
+    created_at  DateTime   @default(now())
+    updated_at  DateTime   @updatedAt
     userId      String
-    user        User     @relation(fields: [userId], references: [id])
+    user        User       @relation(fields: [userId], references: [id])
     tasks       Task[]
+    workspaceId String?
+    workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+    @@index([userId])
+    @@index([workspaceId])
+}
+
+model Workspace {
+    id          String    @id @default(cuid())
+    name        String
+    description String?
+    created_at  DateTime  @default(now())
+    updated_at  DateTime  @updatedAt
+    userId      String
+    user        User      @relation(fields: [userId], references: [id])
+    projects    Project[]
 
     @@index([userId])
 }
