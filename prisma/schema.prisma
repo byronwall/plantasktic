@@ -11,6 +11,7 @@ model Task {
     task_id      Int       @id @default(autoincrement())
     title        String
     description  String?
+    comments     String?
     category     String?
     due_date     DateTime?
     start_date   DateTime?
