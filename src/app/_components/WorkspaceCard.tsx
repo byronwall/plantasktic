@@ -1,4 +1,4 @@
-import { Pencil, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 
 import { ProjectActions } from "~/app/_components/ProjectActions";
@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { api } from "~/trpc/react";
 
 import type { Project, Workspace } from "@prisma/client";
 
@@ -30,6 +31,8 @@ export function WorkspaceCard({
   onDelete,
   onRemoveProject,
 }: WorkspaceCardProps) {
+  const createProject = api.project.create.useMutation();
+
   return (
     <Card className="max-w-md">
       <CardHeader>
@@ -56,6 +59,22 @@ export function WorkspaceCard({
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
+            </Button>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => {
+                const name = prompt("Enter project name:");
+                if (name) {
+                  void createProject.mutate({
+                    name,
+                    workspaceId: workspace.id,
+                  });
+                }
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
             </Button>
           </div>
         </div>

@@ -41,4 +41,23 @@ export const projectRouter = createTRPCRouter({
         },
       });
     }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        workspaceId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.project.create({
+        data: {
+          name: input.name,
+          description: input.description,
+          userId: ctx.session.user.id,
+          workspaceId: input.workspaceId,
+        },
+      });
+    }),
 });
