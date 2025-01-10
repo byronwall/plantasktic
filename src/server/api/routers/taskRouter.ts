@@ -5,13 +5,20 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 export const taskRouter = createTRPCRouter({
   // Project-related endpoints
   createProject: protectedProcedure
-    .input(z.object({ name: z.string(), description: z.string().optional() }))
+    .input(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        workspaceId: z.string().nullable().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       return await ctx.db.project.create({
         data: {
           name: input.name,
           description: input.description,
           userId: ctx.session.user.id,
+          workspaceId: input.workspaceId,
         },
       });
     }),
@@ -23,6 +30,9 @@ export const taskRouter = createTRPCRouter({
       },
       orderBy: {
         created_at: "desc",
+      },
+      include: {
+        workspace: true,
       },
     });
   }),

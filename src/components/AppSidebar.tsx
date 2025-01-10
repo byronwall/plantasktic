@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -16,12 +17,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
+import { WorkspaceSelector } from "~/components/WorkspaceSelector";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
+    null,
+  );
 
   const { currentProjectId, projects } = useCurrentProject();
 
@@ -30,6 +35,10 @@ export function AppSidebar() {
   const createProjectMutation = api.task.createProject.useMutation({
     onSuccess: () => void refetchProjects(),
   });
+
+  const filteredProjects = selectedWorkspaceId
+    ? projects.filter((project) => project.workspaceId === selectedWorkspaceId)
+    : projects;
 
   return (
     <Sidebar>
@@ -66,13 +75,24 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="px-4">
+                  <WorkspaceSelector
+                    value={selectedWorkspaceId}
+                    onChange={setSelectedWorkspaceId}
+                  />
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
             <Collapsible defaultOpen>
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenu>
-                        {projects.map((project) => (
+                        {filteredProjects.map((project) => (
                           <SidebarMenuItem key={project.id}>
                             <SidebarMenuButton
                               asChild
@@ -100,6 +120,7 @@ export function AppSidebar() {
                               ) {
                                 void createProjectMutation.mutate({
                                   name: e.currentTarget.value.trim(),
+                                  workspaceId: selectedWorkspaceId,
                                 });
                                 e.currentTarget.value = "";
                               }
