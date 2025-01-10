@@ -66,6 +66,7 @@ const config = {
     ],
     "import/no-duplicates": "warn",
     "import/newline-after-import": "warn",
+    "import/no-unresolved": "warn",
   },
   settings: {
     "import/resolver": {
