@@ -23,6 +23,7 @@ import { api } from "~/trpc/react";
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
 import { TaskCategory } from "./TaskCategory";
+import { TaskComments } from "./TaskComments";
 import { TaskText } from "./TaskText";
 
 type TaskListProps = {
@@ -256,28 +257,36 @@ export function TaskList({ projectName }: TaskListProps) {
                     )}
                   </Button>
                   <div
-                    className={`flex-1 ${
+                    className={`flex flex-1 justify-between gap-1 ${
                       task.status === "completed"
                         ? "line-through opacity-50"
                         : ""
                     }`}
-                    onClick={() => startEditing(task.task_id, task.title)}
                   >
-                    {editingTaskId === task.task_id ? (
-                      <input
-                        type="text"
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        onKeyDown={(e) =>
-                          void handleEditKeyPress(e, task.task_id)
-                        }
-                        onBlur={() => setEditingTaskId(null)}
-                        className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        autoFocus
-                      />
-                    ) : (
-                      <TaskText text={task.title} />
-                    )}
+                    <div
+                      onClick={() => startEditing(task.task_id, task.title)}
+                      className="w-full"
+                    >
+                      {editingTaskId === task.task_id ? (
+                        <input
+                          type="text"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={(e) =>
+                            void handleEditKeyPress(e, task.task_id)
+                          }
+                          onBlur={() => setEditingTaskId(null)}
+                          className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          autoFocus
+                        />
+                      ) : (
+                        <TaskText text={task.title} />
+                      )}
+                    </div>
+                    <TaskComments
+                      taskId={task.task_id}
+                      comments={task.comments}
+                    />
                   </div>
                   <TaskCategory
                     taskId={task.task_id}

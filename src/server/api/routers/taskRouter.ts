@@ -265,4 +265,23 @@ export const taskRouter = createTRPCRouter({
         },
       });
     }),
+
+  updateTaskComments: protectedProcedure
+    .input(
+      z.object({
+        taskId: z.number(),
+        comments: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await ctx.db.task.update({
+        where: {
+          task_id: input.taskId,
+          userId: ctx.session.user.id,
+        },
+        data: {
+          comments: input.comments,
+        },
+      });
+    }),
 });
