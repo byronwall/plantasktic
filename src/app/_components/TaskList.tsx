@@ -232,103 +232,111 @@ export function TaskList({ projectName }: TaskListProps) {
             </div>
             <div className="w-[160px]" />
           </div>
-          {tasks.map((task) => (
-            <div
-              key={task.task_id}
-              className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0"
-            >
-              <div className="flex flex-1 items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => toggleTaskSelection(task.task_id)}
-                  className="h-8 w-8"
-                >
-                  {selectedTasks.has(task.task_id) ? (
-                    <CheckSquare className="h-4 w-4" />
-                  ) : (
-                    <Square className="h-4 w-4" />
-                  )}
-                </Button>
-                <div
-                  className={`flex-1 ${
-                    task.status === "completed" ? "line-through opacity-50" : ""
-                  }`}
-                  onClick={() => startEditing(task.task_id, task.title)}
-                >
-                  {editingTaskId === task.task_id ? (
-                    <input
-                      type="text"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) =>
-                        void handleEditKeyPress(e, task.task_id)
-                      }
-                      onBlur={() => setEditingTaskId(null)}
-                      className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      autoFocus
-                    />
-                  ) : (
-                    <TaskText text={task.title} />
-                  )}
-                </div>
-                <TaskCategory
-                  taskId={task.task_id}
-                  currentCategory={task.category}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <FolderInput className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="end">
-                    <ProjectSelector
-                      currentProjectId={task.projectId}
-                      onProjectSelect={(projectId) =>
-                        void handleMoveToProject(task.task_id, projectId)
-                      }
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyToClipboard(task.task_id, task.title);
-                  }}
-                  className="h-8 w-8 transition-opacity"
-                  disabled={copiedTaskId === task.task_id}
-                >
-                  {copiedTaskId === task.task_id ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void handleDelete(task.task_id, e);
-                  }}
-                  className="h-8 w-8 text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <Switch
-                  checked={task.status === "completed"}
-                  onCheckedChange={() =>
-                    void toggleTaskStatus(task.task_id, task.status)
-                  }
-                />
-              </div>
+          {tasks.length === 0 ? (
+            <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
+              No tasks found. Create a new task to get started.
             </div>
-          ))}
+          ) : (
+            tasks.map((task) => (
+              <div
+                key={task.task_id}
+                className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0"
+              >
+                <div className="flex flex-1 items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleTaskSelection(task.task_id)}
+                    className="h-8 w-8"
+                  >
+                    {selectedTasks.has(task.task_id) ? (
+                      <CheckSquare className="h-4 w-4" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <div
+                    className={`flex-1 ${
+                      task.status === "completed"
+                        ? "line-through opacity-50"
+                        : ""
+                    }`}
+                    onClick={() => startEditing(task.task_id, task.title)}
+                  >
+                    {editingTaskId === task.task_id ? (
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) =>
+                          void handleEditKeyPress(e, task.task_id)
+                        }
+                        onBlur={() => setEditingTaskId(null)}
+                        className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        autoFocus
+                      />
+                    ) : (
+                      <TaskText text={task.title} />
+                    )}
+                  </div>
+                  <TaskCategory
+                    taskId={task.task_id}
+                    currentCategory={task.category}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <FolderInput className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0" align="end">
+                      <ProjectSelector
+                        currentProjectId={task.projectId}
+                        onProjectSelect={(projectId) =>
+                          void handleMoveToProject(task.task_id, projectId)
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(task.task_id, task.title);
+                    }}
+                    className="h-8 w-8 transition-opacity"
+                    disabled={copiedTaskId === task.task_id}
+                  >
+                    {copiedTaskId === task.task_id ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleDelete(task.task_id, e);
+                    }}
+                    className="h-8 w-8 text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Switch
+                    checked={task.status === "completed"}
+                    onCheckedChange={() =>
+                      void toggleTaskStatus(task.task_id, task.status)
+                    }
+                  />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
