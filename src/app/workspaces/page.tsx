@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { api } from "~/trpc/server";
 
 import type { Project, Workspace } from "@prisma/client";
@@ -43,12 +45,12 @@ export default async function WorkspacesPage() {
                     key={project.id}
                     className="rounded border border-gray-200 p-3"
                   >
-                    <a
+                    <Link
                       href={`/project/${project.name}`}
                       className="text-blue-600 hover:underline"
                     >
                       {project.name}
-                    </a>
+                    </Link>
                     {project.description && (
                       <p className="mt-1 text-sm text-gray-600">
                         {project.description}
@@ -73,12 +75,12 @@ export default async function WorkspacesPage() {
                   key={project.id}
                   className="rounded border border-gray-200 p-3"
                 >
-                  <a
+                  <Link
                     href={`/project/${project.name}`}
                     className="text-blue-600 hover:underline"
                   >
                     {project.name}
-                  </a>
+                  </Link>
                   {project.description && (
                     <p className="mt-1 text-sm text-gray-600">
                       {project.description}
