@@ -63,13 +63,17 @@ export function ProjectActions({
           size={size}
           variant={variant}
           onClick={() => setIsRenaming(true)}
+          title="Rename Project"
         >
-          <Pencil className="mr-2 h-4 w-4" />
-          Rename
+          <Pencil className="h-4 w-4" />
         </Button>
-        <Button size={size} variant="destructive" onClick={handleDelete}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
+        <Button
+          size={size}
+          variant="destructive"
+          onClick={handleDelete}
+          title="Delete Project"
+        >
+          <Trash2 className="h-4 w-4" />
         </Button>
       </div>
 
@@ -81,17 +85,28 @@ export function ProjectActions({
               Enter a new name for the project
             </DialogDescription>
           </DialogHeader>
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Project name"
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRenaming(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRename}>Rename</Button>
-          </DialogFooter>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleRename();
+            }}
+          >
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Project name"
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsRenaming(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Rename</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>
