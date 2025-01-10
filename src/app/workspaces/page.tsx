@@ -124,11 +124,13 @@ export default function WorkspacesPage() {
           />
         ))}
 
-        <UnassignedProjects
-          projects={unassignedProjects}
-          workspaces={workspaces}
-          onAssignProject={handleAssignProject}
-        />
+        {unassignedProjects.length > 0 && (
+          <UnassignedProjects
+            projects={unassignedProjects}
+            workspaces={workspaces}
+            onAssignProject={handleAssignProject}
+          />
+        )}
       </div>
 
       <RenameWorkspaceDialog

@@ -1,3 +1,5 @@
+import { Save, X } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -49,9 +51,13 @@ export function RenameWorkspaceDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit">
+              <Save className="mr-2 h-4 w-4" />
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

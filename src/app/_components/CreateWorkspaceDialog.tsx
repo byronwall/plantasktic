@@ -1,3 +1,5 @@
+import { Plus, X } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -57,9 +59,13 @@ export function CreateWorkspaceDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button type="submit">Create</Button>
+            <Button type="submit">
+              <Plus className="mr-2 h-4 w-4" />
+              Create
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
