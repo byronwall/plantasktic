@@ -1,8 +1,8 @@
 "use client";
 
 import { Check } from "lucide-react";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -55,6 +55,11 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
                       <Link href="/projects">Projects</Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/workspaces">Workspaces</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
