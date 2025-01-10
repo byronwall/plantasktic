@@ -1,26 +1,13 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 
-import { ComboBox } from "~/app/_components/ComboBox";
+import { CreateWorkspaceDialog } from "~/app/_components/CreateWorkspaceDialog";
+import { RenameWorkspaceDialog } from "~/app/_components/RenameWorkspaceDialog";
+import { UnassignedProjects } from "~/app/_components/UnassignedProjects";
+import { WorkspaceCard } from "~/app/_components/WorkspaceCard";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 
 import type { Project, Workspace } from "@prisma/client";
@@ -30,10 +17,9 @@ interface WorkspaceWithProjects extends Workspace {
 }
 
 export default function WorkspacesPage() {
-  const [editingWorkspace, setEditingWorkspace] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(
+    null,
+  );
   const [newName, setNewName] = useState("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
@@ -127,210 +113,48 @@ export default function WorkspacesPage() {
 
       <div className="space-y-8">
         {workspaceProjects.map((workspace: WorkspaceWithProjects) => (
-          <Card key={workspace.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{workspace.name}</CardTitle>
-                  {workspace.description && (
-                    <CardDescription>{workspace.description}</CardDescription>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingWorkspace(workspace);
-                      setNewName(workspace.name);
-                    }}
-                  >
-                    Rename
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(workspace.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {workspace.projects.length === 0 ? (
-                  <p className="text-gray-500">No projects in this workspace</p>
-                ) : (
-                  workspace.projects.map((project: Project) => (
-                    <div
-                      key={project.id}
-                      className="flex items-center justify-between rounded border border-gray-200 p-3"
-                    >
-                      <div>
-                        <Link
-                          href={`/project/${project.name}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {project.name}
-                        </Link>
-                        {project.description && (
-                          <p className="mt-1 text-sm text-gray-600">
-                            {project.description}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAssignProject(project.id, null)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <WorkspaceCard
+            key={workspace.id}
+            workspace={workspace}
+            onRename={setEditingWorkspace}
+            onDelete={handleDelete}
+            onRemoveProject={(projectId) =>
+              handleAssignProject(projectId, null)
+            }
+          />
         ))}
 
-        {/* Unassigned Projects Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Unassigned Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {unassignedProjects.length === 0 ? (
-                <p className="text-gray-500">No unassigned projects</p>
-              ) : (
-                unassignedProjects.map((project: Project) => (
-                  <div
-                    key={project.id}
-                    className="flex items-center justify-between rounded border border-gray-200 p-3"
-                  >
-                    <div>
-                      <Link
-                        href={`/project/${project.name}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {project.name}
-                      </Link>
-                      {project.description && (
-                        <p className="mt-1 text-sm text-gray-600">
-                          {project.description}
-                        </p>
-                      )}
-                    </div>
-                    <ComboBox
-                      options={workspaces.map((w) => w.name)}
-                      value=""
-                      onChange={(workspaceName) => {
-                        const workspace = workspaces.find(
-                          (w) => w.name === workspaceName,
-                        );
-                        if (workspace) {
-                          handleAssignProject(project.id, workspace.id);
-                        }
-                      }}
-                      placeholder="Assign to workspace..."
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <UnassignedProjects
+          projects={unassignedProjects}
+          workspaces={workspaces}
+          onAssignProject={handleAssignProject}
+        />
       </div>
 
-      {/* Rename Workspace Dialog */}
-      <Dialog
-        open={editingWorkspace !== null}
-        onOpenChange={(open) => !open && setEditingWorkspace(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Workspace</DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleRename();
-            }}
-          >
-            <div className="py-4">
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="New workspace name"
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEditingWorkspace(null);
-                  setNewName("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Save</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <RenameWorkspaceDialog
+        workspace={editingWorkspace}
+        newName={newName}
+        onNewNameChange={setNewName}
+        onClose={() => {
+          setEditingWorkspace(null);
+          setNewName("");
+        }}
+        onRename={handleRename}
+      />
 
-      {/* Create Workspace Dialog */}
-      <Dialog
-        open={isCreatingWorkspace}
-        onOpenChange={(open) => !open && setIsCreatingWorkspace(false)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Workspace</DialogTitle>
-          </DialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateWorkspace();
-            }}
-          >
-            <div className="space-y-4 py-4">
-              <div>
-                <Input
-                  value={newWorkspaceName}
-                  onChange={(e) => setNewWorkspaceName(e.target.value)}
-                  placeholder="Workspace name"
-                />
-              </div>
-              <div>
-                <Input
-                  value={newWorkspaceDescription}
-                  onChange={(e) => setNewWorkspaceDescription(e.target.value)}
-                  placeholder="Description (optional)"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsCreatingWorkspace(false);
-                  setNewWorkspaceName("");
-                  setNewWorkspaceDescription("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Create</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CreateWorkspaceDialog
+        isOpen={isCreatingWorkspace}
+        name={newWorkspaceName}
+        description={newWorkspaceDescription}
+        onNameChange={setNewWorkspaceName}
+        onDescriptionChange={setNewWorkspaceDescription}
+        onClose={() => {
+          setIsCreatingWorkspace(false);
+          setNewWorkspaceName("");
+          setNewWorkspaceDescription("");
+        }}
+        onCreate={handleCreateWorkspace}
+      />
     </div>
   );
 }
