@@ -4,21 +4,23 @@ FROM node:20
 # Create app directory
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Install dependencies
 COPY package*.json ./
 COPY prisma/schema.prisma ./prisma/
 
-RUN npm i
+RUN pnpm install
 
 # Copy the rest of the app's source code
 COPY . .
 
-
 # build prisma types, build, clear cache
-RUN npx prisma generate && npm run build && npm cache clean --force
+RUN npx prisma generate && pnpm run build && pnpm store prune
 
 # Expose port
 EXPOSE 3000
 
 # Start the app
-CMD ["npm", "run", "start-prod"]
+CMD ["pnpm", "run", "start-prod"]
