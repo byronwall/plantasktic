@@ -18,6 +18,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
+import { Textarea } from "~/components/ui/textarea";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
@@ -275,15 +276,21 @@ export function TaskList({ projectName }: TaskListProps) {
                       className="w-full"
                     >
                       {editingTaskId === task.task_id ? (
-                        <input
-                          type="text"
+                        <Textarea
                           value={editText}
+                          ref={(textarea) => {
+                            if (textarea) {
+                              textarea.style.height = "0px";
+                              textarea.style.height =
+                                textarea.scrollHeight + "px";
+                            }
+                          }}
                           onChange={(e) => setEditText(e.target.value)}
                           onKeyDown={(e) =>
                             void handleEditKeyPress(e, task.task_id)
                           }
                           onBlur={() => setEditingTaskId(null)}
-                          className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="w-full"
                           autoFocus
                         />
                       ) : (
