@@ -40,15 +40,21 @@ export function TaskInput() {
   useEffect(() => {
     const handleGlobalKeyPress = (e: KeyboardEvent) => {
       // Check if the key is '/' and the target is not an input or textarea element
+      // If the key is '?' and the target is an input or textarea element, set the newTaskTitle to "?" + newTaskTitle
       if (
-        e.key === "/" &&
+        (e.key === "/" || e.key === "?") &&
         !(
           e.target instanceof HTMLInputElement ||
           e.target instanceof HTMLTextAreaElement
         )
       ) {
         e.preventDefault();
+
         const inputElement = document.getElementById("new-task-input");
+        if (e.shiftKey) {
+          setNewTaskTitle("?" + newTaskTitle);
+        }
+
         inputElement?.focus();
       }
     };

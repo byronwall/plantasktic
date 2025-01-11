@@ -8,16 +8,7 @@ import { useSearch } from "~/components/SearchContext";
 import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 
-interface MarkdownNode {
-  type: string;
-  value?: string;
-  tagName?: string;
-  children?: MarkdownNode[];
-  parent?: MarkdownNode;
-}
-
 function highlightText(text: string | ReactNode, searchQuery: string) {
-  console.log("highlightText", text, searchQuery);
   if (!searchQuery) {
     return text;
   }
