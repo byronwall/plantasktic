@@ -101,6 +101,7 @@ export function Filter<T>({
         onChange={(value) => column.setFilterValue(value)}
         value={columnFilterValue as string}
         options={sortedUniqueValues}
+        allowClear
       />
       <div className="h-1" />
     </>
