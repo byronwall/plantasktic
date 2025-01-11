@@ -45,7 +45,7 @@ export function ComboBox({
 
   const filteredOptions = React.useMemo(() => {
     return options.filter((option) =>
-      option.toLowerCase().includes(search.toLowerCase()),
+      option?.toLowerCase().includes(search.toLowerCase()),
     );
   }, [options, search]);
 

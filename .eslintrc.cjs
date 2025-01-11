@@ -68,6 +68,7 @@ const config = {
     "import/newline-after-import": "warn",
     "import/no-unresolved": "warn",
     curly: "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
   },
   settings: {
     "import/resolver": {
