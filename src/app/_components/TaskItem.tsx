@@ -9,12 +9,6 @@ import { TaskActions } from "./TaskActions";
 import { TaskCategory } from "./TaskCategory";
 import { TaskComments } from "./TaskComments";
 
-type Comment = {
-  id: number;
-  content: string;
-  createdAt: Date;
-};
-
 type Task = {
   task_id: number;
   title: string;
@@ -115,10 +109,7 @@ export function TaskItem({
           </div>
           <TaskComments taskId={task.task_id} comments={task.comments} />
         </div>
-        <TaskCategory
-          taskId={task.task_id}
-          currentCategory={task.category ?? ""}
-        />
+        <TaskCategory taskId={task.task_id} currentCategory={task.category} />
       </div>
       <TaskActions
         taskId={task.task_id}

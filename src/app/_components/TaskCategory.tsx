@@ -22,7 +22,9 @@ function stringToColor(str: string) {
 
 // Function to determine if white or black text should be used
 function getContrastingTextColor(backgroundColor: string | undefined) {
-  if (!backgroundColor) return "white";
+  if (!backgroundColor) {
+    return "white";
+  }
 
   // Extract values from HSL or RGB color
   const hslMatch = /hsl\(\d+,\s*\d+%,\s*(\d+)%\)/.exec(backgroundColor);
