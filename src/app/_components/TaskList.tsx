@@ -1,7 +1,5 @@
 "use client";
 
-import { type Task } from "@prisma/client";
-import { type ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
@@ -9,9 +7,9 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
-import { GenericTable } from "./tables/GenericTable";
 import { TaskItem } from "./TaskItem";
 import { TaskListHeader } from "./TaskListHeader";
+import { TaskTable } from "./TaskTable";
 
 type TaskListProps = {
   projectName?: string;
@@ -100,19 +98,6 @@ export function TaskList({ projectName }: TaskListProps) {
   ) => {
     await moveTaskToProjectMutation.mutateAsync({ taskId, projectId });
   };
-
-  const columns: ColumnDef<Task>[] = [
-    {
-      accessorKey: "title",
-      header: "Title",
-      enableColumnFilter: false,
-    },
-    {
-      accessorKey: "category",
-      header: "Category",
-    },
-  ];
-
   return (
     <div className="flex w-full max-w-4xl flex-col items-center gap-6">
       <TaskListHeader
@@ -156,9 +141,8 @@ export function TaskList({ projectName }: TaskListProps) {
             ))
           )}
         </div>
-
-        <GenericTable columns={columns} data={tasks} shouldHideGLobalFilter />
       </div>
+      <TaskTable tasks={tasks} />
     </div>
   );
 }
