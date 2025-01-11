@@ -8,14 +8,20 @@ import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 import { BulkImportButton } from "./BulkImportButton";
+import { useSearch } from "./SearchContext";
 
 export function TaskInput() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const createTaskMutater = api.task.createTask.useMutation();
   const { currentProjectId } = useCurrentProject();
 
+  const { setSearchQuery } = useSearch();
+
+  const isSearchMode = newTaskTitle.startsWith("?");
+  const searchQuery = isSearchMode ? newTaskTitle.slice(1) : "";
+
   const createTask = async () => {
-    if (newTaskTitle.trim()) {
+    if (!isSearchMode && newTaskTitle.trim()) {
       await createTaskMutater.mutateAsync({
         text: newTaskTitle,
         projectId: currentProjectId ?? undefined,
@@ -25,7 +31,7 @@ export function TaskInput() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isSearchMode) {
       void createTask();
     }
   };
@@ -51,28 +57,39 @@ export function TaskInput() {
     return () => document.removeEventListener("keydown", handleGlobalKeyPress);
   }, []);
 
+  // Update search query when input changes
+  useEffect(() => {
+    setSearchQuery(searchQuery);
+  }, [searchQuery, setSearchQuery]);
+
   return (
-    <div className="flex items-center gap-2">
-      <input
-        id="new-task-input"
-        type="text"
-        value={newTaskTitle}
-        onChange={(e) => setNewTaskTitle(e.target.value)}
-        onKeyDown={handleKeyPress}
-        placeholder='Press "/" to create a new task...'
-        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-      <Button
-        onClick={() => void createTask()}
-        disabled={createTaskMutater.isPending}
-      >
-        {createTaskMutater.isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Plus className="h-4 w-4" />
-        )}
-      </Button>
-      <BulkImportButton projectId={currentProjectId ?? undefined} />
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <input
+          id="new-task-input"
+          type="text"
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder={
+            isSearchMode
+              ? "Search tasks..."
+              : 'Press "/" to create a new task...'
+          }
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        />
+        <Button
+          onClick={() => void createTask()}
+          disabled={createTaskMutater.isPending || isSearchMode}
+        >
+          {createTaskMutater.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+        </Button>
+        <BulkImportButton projectId={currentProjectId ?? undefined} />
+      </div>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { useSearch } from "~/components/SearchContext";
 import { Button } from "~/components/ui/button";
 import {
   Popover,
@@ -37,6 +38,7 @@ export function TaskList({ projectName }: TaskListProps) {
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState("");
+  const { searchQuery } = useSearch();
 
   const { projects } = useCurrentProject();
   const projectId = projectName
@@ -47,9 +49,14 @@ export function TaskList({ projectName }: TaskListProps) {
     showCompleted,
     projectId,
   });
+
+  const searchResults = rawTasks?.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   const { data: categories = [] } = api.task.getCategories.useQuery();
 
-  const tasks = rawTasks ?? [];
+  const tasks = searchQuery ? (searchResults ?? []) : (rawTasks ?? []);
 
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
   const deleteTaskMutation = api.task.deleteTask.useMutation();

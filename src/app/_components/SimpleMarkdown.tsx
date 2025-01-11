@@ -3,6 +3,43 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { useSearch } from "~/components/SearchContext";
+
+import type { ReactNode } from "react";
+
+function HighlightedText({ text }: { text: string }) {
+  const { searchQuery } = useSearch();
+
+  if (!searchQuery) return <>{text}</>;
+
+  const parts = text.split(new RegExp(`(${searchQuery})`, "gi"));
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === searchQuery.toLowerCase() ? (
+          <span key={i} className="bg-yellow-200 dark:bg-yellow-900">
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+function getTextFromChildren(children: ReactNode): string {
+  if (typeof children === "string") return children;
+  if (Array.isArray(children))
+    return children.map(getTextFromChildren).join("");
+  if (children === null || children === undefined) return "";
+  if (typeof children === "number") return children.toString();
+  if (typeof children === "boolean") return children.toString();
+  // For objects (including React elements), return an empty string to avoid [object Object]
+  return "";
+}
+
 export function SimpleMarkdown({ text }: { text: string }) {
   return (
     <ReactMarkdown
@@ -30,8 +67,16 @@ export function SimpleMarkdown({ text }: { text: string }) {
         ol: (props) => <ol {...props} className="ml-4 list-decimal" />,
         li: (props) => <li {...props} className="my-0.5" />,
 
-        // Style paragraphs to work well in the task list
-        p: (props) => <span {...props} className="inline" />,
+        // Style paragraphs to work well in the task list and highlight matching text
+        p: (props) => (
+          <span {...props} className="inline">
+            <HighlightedText text={getTextFromChildren(props.children)} />
+          </span>
+        ),
+        // Add highlighting to text nodes
+        text: (props) => (
+          <HighlightedText text={getTextFromChildren(props.children)} />
+        ),
       }}
     >
       {text}
