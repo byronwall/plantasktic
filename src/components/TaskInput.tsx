@@ -33,8 +33,14 @@ export function TaskInput() {
   // Add keyboard shortcut listener
   useEffect(() => {
     const handleGlobalKeyPress = (e: KeyboardEvent) => {
-      // Check if the key is '/' and the target is not an input element
-      if (e.key === "/" && !(e.target instanceof HTMLInputElement)) {
+      // Check if the key is '/' and the target is not an input or textarea element
+      if (
+        e.key === "/" &&
+        !(
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement
+        )
+      ) {
         e.preventDefault();
         const inputElement = document.getElementById("new-task-input");
         inputElement?.focus();
