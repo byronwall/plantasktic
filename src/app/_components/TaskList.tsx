@@ -1,17 +1,11 @@
 "use client";
 
-import {
-  Check,
-  CheckSquare,
-  Copy,
-  FolderInput,
-  Square,
-  Trash2,
-} from "lucide-react";
+import { Check, Copy, FolderInput, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -222,18 +216,11 @@ export function TaskList({ projectName }: TaskListProps) {
       <div className="w-full rounded-lg border bg-card shadow">
         <div className="flex flex-col items-center">
           <div className="flex w-full items-center border-b border-gray-200 px-4 py-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSelectAll}
-              className="h-8 w-8"
-            >
-              {selectedTasks.size === tasks.length ? (
-                <CheckSquare className="h-4 w-4" />
-              ) : (
-                <Square className="h-4 w-4" />
-              )}
-            </Button>
+            <Checkbox
+              checked={selectedTasks.size === tasks.length}
+              onCheckedChange={toggleSelectAll}
+              className="h-5 w-5"
+            />
             <div className="flex flex-1 items-center gap-2">
               <span className="ml-2 text-sm font-medium">Title</span>
               <div className="flex-grow" />
@@ -252,18 +239,13 @@ export function TaskList({ projectName }: TaskListProps) {
                 className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0"
               >
                 <div className="flex flex-1 items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleTaskSelection(task.task_id)}
-                    className="h-8 w-8"
-                  >
-                    {selectedTasks.has(task.task_id) ? (
-                      <CheckSquare className="h-4 w-4" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <Checkbox
+                    checked={selectedTasks.has(task.task_id)}
+                    onCheckedChange={() =>
+                      void toggleTaskSelection(task.task_id)
+                    }
+                    className="h-5 w-5"
+                  />
                   <div
                     className={`flex flex-1 justify-between gap-1 ${
                       task.status === "completed"
