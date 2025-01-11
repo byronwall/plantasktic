@@ -16,7 +16,6 @@ type TaskListProps = {
 
 export function TaskList({ projectName }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
-  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const { searchQuery } = useSearch();
 
@@ -38,37 +37,12 @@ export function TaskList({ projectName }: TaskListProps) {
 
   const tasks = searchQuery ? (searchResults ?? []) : (rawTasks ?? []);
 
-  const deleteTaskMutation = api.task.deleteTask.useMutation();
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
     api.task.bulkUpdateTaskCategory.useMutation();
   const bulkMoveTasksToProjectMutation =
     api.task.bulkMoveTasksToProject.useMutation();
   const moveTaskToProjectMutation = api.task.moveTaskToProject.useMutation();
-  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
-
-  const copyToClipboard = (taskId: number, text: string) => {
-    void navigator.clipboard.writeText(text);
-    setCopiedTaskId(taskId);
-    setTimeout(() => setCopiedTaskId(null), 1000);
-  };
-
-  const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
-    await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
-  };
-
-  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
-    const isMac = navigator.platform.toUpperCase().includes("MAC");
-    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
-
-    if (
-      skipConfirm ||
-      window.confirm("Are you sure you want to delete this task?")
-    ) {
-      await deleteTaskMutation.mutateAsync({ taskId });
-    }
-  };
 
   const toggleTaskSelection = (taskId: number) => {
     const newSelectedTasks = new Set(selectedTasks);
@@ -162,10 +136,6 @@ export function TaskList({ projectName }: TaskListProps) {
                 task={task}
                 isSelected={selectedTasks.has(task.task_id)}
                 onToggleSelect={toggleTaskSelection}
-                copiedTaskId={copiedTaskId}
-                onCopy={copyToClipboard}
-                onDelete={handleDelete}
-                onStatusChange={toggleTaskStatus}
                 onMoveToProject={handleMoveToProject}
               />
             ))

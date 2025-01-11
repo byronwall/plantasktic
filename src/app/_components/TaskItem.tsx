@@ -27,10 +27,6 @@ type TaskItemProps = {
   task: Task;
   isSelected: boolean;
   onToggleSelect: (taskId: number) => void;
-  copiedTaskId: number | null;
-  onCopy: (taskId: number, text: string) => void;
-  onDelete: (taskId: number, e: React.MouseEvent) => void;
-  onStatusChange: (taskId: number, status: string) => void;
   onMoveToProject: (taskId: number, projectId: string | null) => void;
 };
 
@@ -38,15 +34,14 @@ export function TaskItem({
   task,
   isSelected,
   onToggleSelect,
-  copiedTaskId,
-  onCopy,
-  onDelete,
-  onStatusChange,
   onMoveToProject,
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(task.title);
+  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const updateTaskTextMutation = api.task.updateTaskText.useMutation();
+  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
+  const deleteTaskMutation = api.task.deleteTask.useMutation();
 
   const handleEditKeyPress = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -72,6 +67,29 @@ export function TaskItem({
   const handleBlur = () => {
     setIsEditing(false);
     setEditText(task.title);
+  };
+
+  const copyToClipboard = (taskId: number, text: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopiedTaskId(taskId);
+    setTimeout(() => setCopiedTaskId(null), 1000);
+  };
+
+  const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+    await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
+  };
+
+  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
+    const isMac = navigator.platform.toUpperCase().includes("MAC");
+    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
+
+    if (
+      skipConfirm ||
+      window.confirm("Are you sure you want to delete this task?")
+    ) {
+      await deleteTaskMutation.mutateAsync({ taskId });
+    }
   };
 
   return (
@@ -116,9 +134,9 @@ export function TaskItem({
         status={task.status}
         projectId={task.projectId}
         copiedTaskId={copiedTaskId}
-        onCopy={(taskId) => onCopy(taskId, task.title)}
-        onDelete={onDelete}
-        onStatusChange={onStatusChange}
+        onCopy={(taskId) => copyToClipboard(taskId, task.title)}
+        onDelete={handleDelete}
+        onStatusChange={toggleTaskStatus}
         onMoveToProject={onMoveToProject}
       />
     </div>
