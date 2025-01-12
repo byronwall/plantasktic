@@ -69,6 +69,10 @@ const config = {
     "import/no-unresolved": "warn",
     curly: "warn",
     "@typescript-eslint/no-explicit-any": "warn",
+    "import/no-named-as-default-member": "warn",
+    "react/display-name": "warn",
+    "react/no-unescaped-entities": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
   },
   settings: {
     "import/resolver": {

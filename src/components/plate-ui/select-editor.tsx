@@ -1,29 +1,28 @@
-'use client';
+"use client";
 
-import React from 'react';
-
-import { useCommandActions } from '@udecode/cmdk';
-import { isHotkey } from '@udecode/plate';
+import { useCommandActions } from "@udecode/cmdk";
+import { isHotkey } from "@udecode/plate";
+import { isEqualTags } from "@udecode/plate-tag";
+import {
+  MultiSelectPlugin,
+  TagPlugin,
+  useSelectableItems,
+  useSelectEditorCombobox,
+} from "@udecode/plate-tag/react";
 import {
   Plate,
   useEditorContainerRef,
   useEditorRef,
   usePlateEditor,
-} from '@udecode/plate/react';
-import { isEqualTags } from '@udecode/plate-tag';
-import {
-  MultiSelectPlugin,
-  TagPlugin,
-  useSelectEditorCombobox,
-  useSelectableItems,
-} from '@udecode/plate-tag/react';
-import { Fzf } from 'fzf';
-import { PlusIcon } from 'lucide-react';
+} from "@udecode/plate/react";
+import { Fzf } from "fzf";
+import { PlusIcon } from "lucide-react";
+import React from "react";
 
-import { Command, CommandGroup, CommandItem, CommandList } from './command';
-import { Editor, EditorContainer } from './editor';
-import { Popover, PopoverAnchor, PopoverContent } from './popover';
-import { TagElement } from './tag-element';
+import { Command, CommandGroup, CommandItem, CommandList } from "./command";
+import { Editor, EditorContainer } from "./editor";
+import { Popover, PopoverAnchor, PopoverContent } from "./popover";
+import { TagElement } from "./tag-element";
 
 export type SelectItem = {
   value: string;
@@ -47,7 +46,7 @@ const useSelectEditorContext = () => {
   const context = React.useContext(SelectEditorContext);
 
   if (!context) {
-    throw new Error('useSelectEditor must be used within SelectEditor');
+    throw new Error("useSelectEditor must be used within SelectEditor");
   }
 
   return context;
@@ -99,7 +98,7 @@ export function SelectEditorContent({
       plugins: [MultiSelectPlugin.withComponent(TagElement)],
       value: createEditorValue(value),
     },
-    []
+    [],
   );
 
   React.useEffect(() => {
@@ -141,12 +140,12 @@ export const SelectEditorInput = React.forwardRef<
         selectFirstItem();
       }}
       onKeyDown={(e) => {
-        if (isHotkey('enter', e)) {
+        if (isHotkey("enter", e)) {
           e.preventDefault();
           selectCurrentItem();
           editor.tf.removeNodes({ at: [], empty: false, text: true });
         }
-        if (isHotkey('escape', e) || isHotkey('mod+enter', e)) {
+        if (isHotkey("escape", e) || isHotkey("mod+enter", e)) {
           e.preventDefault();
           e.currentTarget.blur();
         }
@@ -169,7 +168,9 @@ export function SelectEditorCombobox() {
 
   useSelectEditorCombobox({ open, selectFirstItem, onValueChange });
 
-  if (!open || selectableItems.length === 0) return null;
+  if (!open || selectableItems.length === 0) {
+    return null;
+  }
 
   return (
     <Popover open={open}>
@@ -218,27 +219,29 @@ export function SelectEditorCombobox() {
 const createEditorValue = (value?: SelectItem[]) => [
   {
     children: [
-      { text: '' },
+      { text: "" },
       ...(value?.flatMap((item) => [
         {
-          children: [{ text: '' }],
+          children: [{ text: "" }],
           type: TagPlugin.key,
           ...item,
         },
         {
-          text: '',
+          text: "",
         },
       ]) ?? []),
     ],
-    type: 'p',
+    type: "p",
   },
 ];
 
 const fzfFilter = (value: string, search: string): boolean => {
-  if (!search) return true;
+  if (!search) {
+    return true;
+  }
 
   const fzf = new Fzf([value], {
-    casing: 'case-insensitive',
+    casing: "case-insensitive",
     selector: (v: string) => v,
   });
 
