@@ -109,7 +109,6 @@ function ColumnSelector({
           no results found.
         </p>
       }
-      selectFirstItem={false}
     />
   );
 }
