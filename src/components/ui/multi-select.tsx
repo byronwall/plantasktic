@@ -259,9 +259,8 @@ const MultipleSelector = React.forwardRef<
           if (e.key === "Delete" || e.key === "Backspace") {
             if (input.value === "" && selected.length > 0) {
               const lastSelectOption = selected[selected.length - 1];
-              // If last item is fixed, we should not remove it.
-              if (!lastSelectOption.fixed) {
-                handleUnselect(selected[selected.length - 1]);
+              if (!lastSelectOption?.fixed && lastSelectOption) {
+                handleUnselect(lastSelectOption);
               }
             }
           }
@@ -530,9 +529,11 @@ const MultipleSelector = React.forwardRef<
                 }
                 inputProps?.onBlur?.(event);
               }}
-              onFocus={(event) => {
+              onFocus={async (event) => {
                 setOpen(true);
-                triggerSearchOnFocus && onSearch?.(debouncedSearchTerm);
+                if (triggerSearchOnFocus) {
+                  await onSearch?.(debouncedSearchTerm);
+                }
                 inputProps?.onFocus?.(event);
               }}
               placeholder={

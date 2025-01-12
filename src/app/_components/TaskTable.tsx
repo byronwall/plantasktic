@@ -92,7 +92,6 @@ function ColumnSelector({
 
   const handleValueChange = (columns: { value: string }[]) => {
     const newColumns = columns.map((col) => col.value as ColumnKey);
-    console.log("newColumns", newColumns);
     if (isEqual(newColumns, selectedColumns)) {
       return;
     }
@@ -110,6 +109,7 @@ function ColumnSelector({
           no results found.
         </p>
       }
+      selectFirstItem={false}
     />
   );
 }
