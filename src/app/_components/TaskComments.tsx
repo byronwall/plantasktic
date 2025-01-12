@@ -27,7 +27,7 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const utils = api.useUtils();
-  const updateCommentsMutation = api.task.updateTaskComments.useMutation({
+  const updateTask = api.task.updateTask.useMutation({
     onSuccess: () => {
       void utils.task.getTasks.invalidate();
       setIsEditing(false);
@@ -35,9 +35,11 @@ export function TaskComments({ taskId, comments }: TaskCommentsProps) {
   });
 
   const handleSave = async () => {
-    await updateCommentsMutation.mutateAsync({
+    await updateTask.mutateAsync({
       taskId,
-      comments: editText,
+      data: {
+        comments: editText,
+      },
     });
   };
 

@@ -53,11 +53,16 @@ interface TaskCategoryProps {
 }
 
 export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
-  const updateCategoryMutation = api.task.updateTaskCategory.useMutation();
+  const updateCategoryMutation = api.task.updateTask.useMutation();
   const { data: categories = [] } = api.task.getCategories.useQuery();
 
   const handleCategorySelect = async (category: string) => {
-    await updateCategoryMutation.mutateAsync({ taskId, category });
+    await updateCategoryMutation.mutateAsync({
+      taskId,
+      data: {
+        category,
+      },
+    });
   };
 
   const backgroundColor = currentCategory

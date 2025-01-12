@@ -2,6 +2,22 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
+// Define the schema for task updates
+const taskUpdateSchema = z.object({
+  title: z.string().optional(),
+  status: z
+    .enum(["open", "completed", "pending", "waiting", "blocked", "cancelled"])
+    .optional(),
+  category: z.string().nullable().optional(),
+  comments: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  due_date: z.date().nullable().optional(),
+  start_date: z.date().nullable().optional(),
+  priority: z.string().nullable().optional(),
+  duration: z.number().nullable().optional(),
+  projectId: z.string().nullable().optional(),
+});
+
 export const taskRouter = createTRPCRouter({
   // Project-related endpoints
   createProject: protectedProcedure
@@ -108,31 +124,20 @@ export const taskRouter = createTRPCRouter({
       });
     }),
 
-  updateTaskStatus: protectedProcedure
+  updateTask: protectedProcedure
     .input(
       z.object({
         taskId: z.number(),
-        status: z.enum(["pending", "completed"]),
+        data: taskUpdateSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.task.update({
-        where: { task_id: input.taskId },
-        data: { status: input.status },
-      });
-    }),
-
-  updateTaskCategory: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.number(),
-        category: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.task.update({
-        where: { task_id: input.taskId },
-        data: { category: input.category },
+        where: {
+          task_id: input.taskId,
+          userId: ctx.session.user.id,
+        },
+        data: input.data,
       });
     }),
 
@@ -150,20 +155,6 @@ export const taskRouter = createTRPCRouter({
 
     return tasks.map((t) => t.category!);
   }),
-
-  updateTaskText: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.number(),
-        text: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.task.update({
-        where: { task_id: input.taskId },
-        data: { title: input.text },
-      });
-    }),
 
   bulkCreateTasks: protectedProcedure
     .input(
@@ -201,7 +192,7 @@ export const taskRouter = createTRPCRouter({
       await ctx.db.task.deleteMany({
         where: {
           task_id: { in: input.taskIds },
-          userId: ctx.session.user.id, // Ensure user owns all tasks
+          userId: ctx.session.user.id,
         },
       });
       return "Tasks deleted!";
@@ -218,7 +209,7 @@ export const taskRouter = createTRPCRouter({
       await ctx.db.task.updateMany({
         where: {
           task_id: { in: input.taskIds },
-          userId: ctx.session.user.id, // Ensure user owns all tasks
+          userId: ctx.session.user.id,
         },
         data: {
           category: input.category,
@@ -238,7 +229,7 @@ export const taskRouter = createTRPCRouter({
       await ctx.db.task.updateMany({
         where: {
           task_id: { in: input.taskIds },
-          userId: ctx.session.user.id, // Ensure user owns all tasks
+          userId: ctx.session.user.id,
         },
         data: {
           projectId: input.projectId,
@@ -262,25 +253,6 @@ export const taskRouter = createTRPCRouter({
         },
         data: {
           projectId: input.projectId,
-        },
-      });
-    }),
-
-  updateTaskComments: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.number(),
-        comments: z.string().nullable(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      return await ctx.db.task.update({
-        where: {
-          task_id: input.taskId,
-          userId: ctx.session.user.id,
-        },
-        data: {
-          comments: input.comments,
         },
       });
     }),

@@ -1,13 +1,12 @@
 import { useState } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
-import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
-import { SimpleMarkdown } from "./SimpleMarkdown";
 import { TaskActions } from "./TaskActions";
 import { TaskCategory } from "./TaskCategory";
 import { TaskComments } from "./TaskComments";
+import { TaskTitle } from "./TaskTitle";
 
 type Task = {
   task_id: number;
@@ -36,38 +35,9 @@ export function TaskItem({
   onToggleSelect,
   onMoveToProject,
 }: TaskItemProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(task.title);
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
-  const updateTaskTextMutation = api.task.updateTaskText.useMutation();
-  const updateTaskMutation = api.task.updateTaskStatus.useMutation();
+  const updateTask = api.task.updateTask.useMutation();
   const deleteTaskMutation = api.task.deleteTask.useMutation();
-
-  const handleEditKeyPress = async (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (editText.trim()) {
-        await updateTaskTextMutation.mutateAsync({
-          taskId: task.task_id,
-          text: editText,
-        });
-        setIsEditing(false);
-      }
-    } else if (e.key === "Escape") {
-      setIsEditing(false);
-      setEditText(task.title);
-    }
-  };
-
-  const startEditing = () => {
-    setIsEditing(true);
-    setEditText(task.title);
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    setEditText(task.title);
-  };
 
   const copyToClipboard = (taskId: number, text: string) => {
     void navigator.clipboard.writeText(text);
@@ -77,7 +47,10 @@ export function TaskItem({
 
   const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
     const newStatus = currentStatus === "completed" ? "pending" : "completed";
-    await updateTaskMutation.mutateAsync({ taskId, status: newStatus });
+    await updateTask.mutateAsync({
+      taskId,
+      data: { status: newStatus },
+    });
   };
 
   const handleDelete = async (taskId: number, e: React.MouseEvent) => {
@@ -105,26 +78,7 @@ export function TaskItem({
             task.status === "completed" ? "line-through opacity-50" : ""
           }`}
         >
-          <div onClick={startEditing} className="w-full">
-            {isEditing ? (
-              <Textarea
-                value={editText}
-                ref={(textarea) => {
-                  if (textarea) {
-                    textarea.style.height = "0px";
-                    textarea.style.height = textarea.scrollHeight + "px";
-                  }
-                }}
-                onChange={(e) => setEditText(e.target.value)}
-                onKeyDown={handleEditKeyPress}
-                onBlur={handleBlur}
-                className="w-full"
-                autoFocus
-              />
-            ) : (
-              <SimpleMarkdown text={task.title} />
-            )}
-          </div>
+          <TaskTitle taskId={task.task_id} title={task.title} />
           <TaskComments taskId={task.task_id} comments={task.comments} />
         </div>
         <TaskCategory taskId={task.task_id} currentCategory={task.category} />
