@@ -47,7 +47,7 @@ export function TaskListHeader({
                 <ComboBox
                   options={categories}
                   value=""
-                  onChange={onBulkCategoryUpdate}
+                  onChange={(value) => onBulkCategoryUpdate(value ?? "")}
                   placeholder="Select category..."
                 />
               </PopoverContent>

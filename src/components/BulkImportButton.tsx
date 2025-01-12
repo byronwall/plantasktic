@@ -18,7 +18,9 @@ export function BulkImportButton({ projectId }: BulkImportButtonProps) {
   const bulkCreateTasksMutater = api.task.bulkCreateTasks.useMutation();
 
   const handleBulkImport = async () => {
-    if (!bulkText.trim()) return;
+    if (!bulkText.trim()) {
+      return;
+    }
 
     const lines = bulkText
       .split("\n")

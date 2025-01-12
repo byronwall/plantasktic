@@ -73,7 +73,7 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
       <ComboBox
         options={categories}
         value={currentCategory ?? ""}
-        onChange={(value) => void handleCategorySelect(value)}
+        onChange={(value) => void handleCategorySelect(value ?? "")}
         onCreateNew={(value) => void handleCategorySelect(value)}
         placeholder="Assign category..."
         searchPlaceholder="Search categories..."

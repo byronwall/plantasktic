@@ -18,14 +18,14 @@ export function DateRangePicker(props: DateRangePickerProps) {
     (newStart: Date | undefined) => {
       onChange(newStart, endDate);
     },
-    [endDate, onChange]
+    [endDate, onChange],
   );
 
   const handleEndChange = useCallback(
     (newEnd: Date | undefined) => {
       onChange(startDate, newEnd);
     },
-    [startDate, onChange]
+    [startDate, onChange],
   );
 
   return (
