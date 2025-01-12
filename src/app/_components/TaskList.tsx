@@ -1,13 +1,14 @@
 "use client";
 
+import { ListIcon, TableIcon } from "lucide-react";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
-import { Checkbox } from "~/components/ui/checkbox";
+import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 
-import { TaskItem } from "./TaskItem";
+import { TaskItemList } from "./TaskItemList";
 import { TaskListHeader } from "./TaskListHeader";
 import { TaskTable } from "./TaskTable";
 
@@ -15,9 +16,14 @@ type TaskListProps = {
   projectName?: string;
 };
 
+type ViewMode = "list" | "table";
+
+export type Task = RouterOutputs["task"]["getTasks"][number];
+
 export function TaskList({ projectName }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const { searchQuery } = useSearch();
 
   const { projects } = useCurrentProject();
@@ -43,24 +49,20 @@ export function TaskList({ projectName }: TaskListProps) {
     api.task.bulkUpdateTaskCategory.useMutation();
   const bulkMoveTasksToProjectMutation =
     api.task.bulkMoveTasksToProject.useMutation();
-  const moveTaskToProjectMutation = api.task.moveTaskToProject.useMutation();
 
   const toggleTaskSelection = (taskId: number) => {
     const newSelectedTasks = new Set(selectedTasks);
+    if (taskId === -1) {
+      // special case to clear
+      setSelectedTasks(new Set());
+      return;
+    }
     if (newSelectedTasks.has(taskId)) {
       newSelectedTasks.delete(taskId);
     } else {
       newSelectedTasks.add(taskId);
     }
     setSelectedTasks(newSelectedTasks);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedTasks.size === tasks.length) {
-      setSelectedTasks(new Set());
-    } else {
-      setSelectedTasks(new Set(tasks.map((t) => t.task_id)));
-    }
   };
 
   const handleBulkDelete = async () => {
@@ -92,14 +94,25 @@ export function TaskList({ projectName }: TaskListProps) {
     setSelectedTasks(new Set());
   };
 
-  const handleMoveToProject = async (
-    taskId: number,
-    projectId: string | null,
-  ) => {
-    await moveTaskToProjectMutation.mutateAsync({ taskId, projectId });
-  };
   return (
     <div className="flex w-full max-w-4xl flex-col items-center gap-6">
+      <div className="flex w-full gap-2">
+        <Button
+          variant={viewMode === "list" ? "default" : "outline"}
+          onClick={() => setViewMode("list")}
+        >
+          <ListIcon className="h-4 w-4" />
+          List View
+        </Button>
+        <Button
+          variant={viewMode === "table" ? "default" : "outline"}
+          onClick={() => setViewMode("table")}
+        >
+          <TableIcon className="h-4 w-4" />
+          Table View
+        </Button>
+      </div>
+
       <TaskListHeader
         selectedTasks={selectedTasks}
         showCompleted={showCompleted}
@@ -110,39 +123,15 @@ export function TaskList({ projectName }: TaskListProps) {
         categories={categories}
       />
 
-      <div className="w-full rounded-lg border bg-card shadow">
-        <div className="flex flex-col items-center">
-          <div className="flex w-full items-center border-b border-gray-200 px-4 py-2">
-            <Checkbox
-              checked={selectedTasks.size === tasks.length}
-              onCheckedChange={toggleSelectAll}
-              className="h-5 w-5"
-            />
-            <div className="flex flex-1 items-center gap-2">
-              <span className="ml-2 text-sm font-medium">Title</span>
-              <div className="flex-grow" />
-              <span className="mr-24 text-sm font-medium">Category</span>
-            </div>
-            <div className="w-[160px]" />
-          </div>
-          {tasks.length === 0 ? (
-            <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
-              No tasks found. Create a new task to get started.
-            </div>
-          ) : (
-            tasks.map((task) => (
-              <TaskItem
-                key={task.task_id}
-                task={task}
-                isSelected={selectedTasks.has(task.task_id)}
-                onToggleSelect={toggleTaskSelection}
-                onMoveToProject={handleMoveToProject}
-              />
-            ))
-          )}
-        </div>
-      </div>
-      <TaskTable tasks={tasks} />
+      {viewMode === "list" ? (
+        <TaskItemList
+          tasks={tasks}
+          selectedTasks={selectedTasks}
+          toggleTaskSelection={toggleTaskSelection}
+        />
+      ) : (
+        <TaskTable tasks={tasks} />
+      )}
     </div>
   );
 }
