@@ -10,15 +10,6 @@
     "cssVariables": true,
     "prefix": ""
   },
-  "registries": {
-    "plate": {
-      "style": "default",
-      "aliases": {
-        "ui": "@/components/plate-ui"
-      },
-      "url": "https://platejs.org/r"
-    }
-  },
   "aliases": {
     "components": "~/components",
     "utils": "~/lib/utils",
