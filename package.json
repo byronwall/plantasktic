@@ -41,6 +41,10 @@
     "@trpc/client": "^11.0.0-rc.446",
     "@trpc/react-query": "^11.0.0-rc.446",
     "@trpc/server": "^11.0.0-rc.446",
+    "@udecode/cn": "^42.0.0",
+    "@udecode/plate": "^42.0.1",
+    "@udecode/plate-basic-elements": "^42.0.0",
+    "@udecode/plate-basic-marks": "^42.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
@@ -57,6 +61,7 @@
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
     "tailwind-merge": "^2.6.0",
+    "tailwind-scrollbar-hide": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.3",
     "zustand": "^5.0.3"
