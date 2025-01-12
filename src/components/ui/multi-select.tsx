@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Command as CommandPrimitive, useCommandState } from "cmdk";
 import { X } from "lucide-react";
 import * as React from "react";
@@ -174,6 +191,80 @@ const CommandEmpty = forwardRef<
 });
 
 CommandEmpty.displayName = "CommandEmpty";
+
+interface SortableBadgeProps {
+  option: Option;
+  disabled?: boolean;
+  onUnselect: (option: Option) => void;
+  badgeClassName?: string;
+}
+
+const SortableBadge = ({
+  option,
+  disabled,
+  onUnselect,
+  badgeClassName,
+}: SortableBadgeProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: option.value });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+  };
+
+  return (
+    <Badge
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground",
+        "data-[fixed]:bg-muted-foreground data-[fixed]:text-muted data-[fixed]:hover:bg-muted-foreground",
+        "flex items-center gap-1",
+        isDragging && "opacity-50",
+        badgeClassName,
+      )}
+      data-fixed={option.fixed}
+      data-disabled={disabled || undefined}
+    >
+      <button
+        className={cn(
+          "flex cursor-grab items-center gap-1",
+          disabled && "hidden",
+        )}
+        {...attributes}
+        {...listeners}
+      >
+        {option.label}
+      </button>
+      <button
+        className={cn(
+          "ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          (disabled || option.fixed) && "hidden",
+        )}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            onUnselect(option);
+          }
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={() => onUnselect(option)}
+      >
+        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+      </button>
+    </Badge>
+  );
+};
 
 const MultipleSelector = React.forwardRef<
   MultipleSelectorRef,
@@ -443,6 +534,29 @@ const MultipleSelector = React.forwardRef<
       return undefined;
     }, [creatable, commandProps?.filter]);
 
+    const sensors = useSensors(
+      useSensor(PointerSensor),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      }),
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over) {
+        return;
+      }
+
+      if (active.id !== over.id) {
+        const oldIndex = selected.findIndex((item) => item.value === active.id);
+        const newIndex = selected.findIndex((item) => item.value === over.id);
+
+        const newSelected = arrayMove(selected, oldIndex, newIndex);
+        setSelected(newSelected);
+        onChange?.(newSelected);
+      }
+    };
+
     return (
       <Command
         ref={dropdownRef}
@@ -479,41 +593,26 @@ const MultipleSelector = React.forwardRef<
           }}
         >
           <div className="relative flex flex-wrap gap-1">
-            {selected.map((option) => {
-              return (
-                <Badge
-                  key={option.value}
-                  className={cn(
-                    "data-[disabled]:bg-muted-foreground data-[disabled]:text-muted data-[disabled]:hover:bg-muted-foreground",
-                    "data-[fixed]:bg-muted-foreground data-[fixed]:text-muted data-[fixed]:hover:bg-muted-foreground",
-                    badgeClassName,
-                  )}
-                  data-fixed={option.fixed}
-                  data-disabled={disabled || undefined}
-                >
-                  {option.label}
-                  <button
-                    className={cn(
-                      "ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                      (disabled || option.fixed) && "hidden",
-                    )}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleUnselect(option);
-                      }
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={() => handleUnselect(option)}
-                  >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
-                </Badge>
-              );
-            })}
-            {/* Avoid having the "Search" Icon */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={selected.map((s) => s.value)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {selected.map((option) => (
+                  <SortableBadge
+                    key={option.value}
+                    option={option}
+                    disabled={disabled}
+                    onUnselect={handleUnselect}
+                    badgeClassName={badgeClassName}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
             <CommandPrimitive.Input
               {...inputProps}
               ref={inputRef}

@@ -109,6 +109,7 @@ function ColumnSelector({
           no results found.
         </p>
       }
+      badgeClassName="text-base"
     />
   );
 }
