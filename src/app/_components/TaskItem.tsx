@@ -3,28 +3,16 @@ import { useState } from "react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { api } from "~/trpc/react";
 
+import { type ColumnKey } from "./tables/ColumnSelector";
 import { TaskActions } from "./TaskActions";
-import { TaskCategory } from "./TaskCategory";
-import { TaskComments } from "./TaskComments";
+import { TaskFieldBadge } from "./TaskFieldBadge";
+import { type Task } from "./TaskList";
 import { TaskTitle } from "./TaskTitle";
-
-type Task = {
-  task_id: number;
-  title: string;
-  status: string;
-  category: string | null;
-  projectId: string | null;
-  comments: string | null;
-  description: string | null;
-  created_at: Date;
-  updated_at: Date;
-  userId: string | null;
-  parentTaskId: number | null;
-};
 
 type TaskItemProps = {
   task: Task;
   isSelected: boolean;
+  selectedColumns: ColumnKey[];
   onToggleSelect: (taskId: number) => void;
   onMoveToProject: (taskId: number, projectId: string | null) => void;
 };
@@ -32,6 +20,7 @@ type TaskItemProps = {
 export function TaskItem({
   task,
   isSelected,
+  selectedColumns,
   onToggleSelect,
   onMoveToProject,
 }: TaskItemProps) {
@@ -74,14 +63,24 @@ export function TaskItem({
           className="h-5 w-5"
         />
         <div
-          className={`flex flex-1 justify-between gap-1 ${
+          className={`flex flex-1 items-center gap-2 ${
             task.status === "completed" ? "line-through opacity-50" : ""
           }`}
         >
           <TaskTitle taskId={task.task_id} title={task.title} />
-          <TaskComments taskId={task.task_id} comments={task.comments} />
+          <div className="flex flex-wrap gap-2">
+            {selectedColumns
+              .filter((col) => col !== "title")
+              .map((col) => (
+                <TaskFieldBadge
+                  key={col}
+                  field={col}
+                  value={task[col as keyof Task]}
+                  task={task}
+                />
+              ))}
+          </div>
         </div>
-        <TaskCategory taskId={task.task_id} currentCategory={task.category} />
       </div>
       <TaskActions
         taskId={task.task_id}
