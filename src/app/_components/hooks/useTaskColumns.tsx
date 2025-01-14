@@ -1,13 +1,5 @@
-import { format } from "date-fns";
-
-import { DateInput } from "~/components/ui/date-input";
-import { api } from "~/trpc/react";
-
-import { ComboBox } from "../ComboBox";
 import { DateRangePicker } from "../DateRangePicker";
-import { TaskCategory } from "../TaskCategory";
-import { TaskComments } from "../TaskComments";
-import { TaskTitle } from "../TaskTitle";
+import { TaskField } from "../TaskField";
 
 import type { Task } from "@prisma/client";
 import type { Column, ColumnDef } from "@tanstack/react-table";
@@ -34,8 +26,6 @@ export interface TaskColumnConfig {
 }
 
 export function useTaskColumns() {
-  const updateTask = api.task.updateTask.useMutation();
-
   const AVAILABLE_COLUMNS: TaskColumnConfig[] = [
     {
       value: "title",
@@ -43,11 +33,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "title",
         header: "Title",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const title = row.getValue<string>("title");
-          return <TaskTitle taskId={taskId} title={title} />;
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="title" />,
       },
     },
     {
@@ -56,11 +42,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "category",
         header: "Category",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const category = row.getValue<string | null>("category");
-          return <TaskCategory taskId={taskId} currentCategory={category} />;
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="category" />,
       },
     },
     {
@@ -69,32 +51,9 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "description",
         header: "Description",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const description = row.getValue<string | null>("description");
-          return (
-            <div className="flex items-center gap-2">
-              <span>{description ? description.slice(0, 50) + "..." : ""}</span>
-              <button
-                onClick={() => {
-                  const newDescription = window.prompt(
-                    "Enter new description:",
-                    description ?? "",
-                  );
-                  if (newDescription !== null) {
-                    void updateTask.mutateAsync({
-                      taskId,
-                      data: { description: newDescription || null },
-                    });
-                  }
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Edit
-              </button>
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <TaskField task={row.original} field="description" />
+        ),
       },
     },
     {
@@ -103,11 +62,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "comments",
         header: "Comments",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const comments = row.getValue<string | null>("comments");
-          return <TaskComments taskId={taskId} comments={comments} />;
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="comments" />,
       },
     },
     {
@@ -116,21 +71,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "due_date",
         header: "Due Date",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const date = row.getValue<Date | null>("due_date");
-          return (
-            <DateInput
-              value={date ?? undefined}
-              onChange={(date) => {
-                void updateTask.mutateAsync({
-                  taskId,
-                  data: { due_date: date ?? null },
-                });
-              }}
-            />
-          );
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="due_date" />,
       },
     },
     {
@@ -139,21 +80,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "start_date",
         header: "Start Date",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const date = row.getValue<Date | null>("start_date");
-          return (
-            <DateInput
-              value={date ?? undefined}
-              onChange={(date) => {
-                void updateTask.mutateAsync({
-                  taskId,
-                  data: { start_date: date ?? null },
-                });
-              }}
-            />
-          );
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="start_date" />,
         Filter: ({ column }) => {
           const [min, max] = (column.getFilterValue() as [
             Date | undefined,
@@ -175,37 +102,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "duration",
         header: "Duration",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const duration = row.getValue<number | null>("duration");
-          return (
-            <div className="flex items-center gap-2">
-              <span>{duration ?? ""}</span>
-              <button
-                onClick={() => {
-                  const newDuration = window.prompt(
-                    "Enter new duration (in hours):",
-                    duration?.toString() ?? "",
-                  );
-                  if (newDuration !== null) {
-                    const parsed = parseFloat(newDuration);
-                    if (!isNaN(parsed) || newDuration === "") {
-                      void updateTask.mutateAsync({
-                        taskId,
-                        data: {
-                          duration: newDuration === "" ? null : parsed,
-                        },
-                      });
-                    }
-                  }
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Edit
-              </button>
-            </div>
-          );
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="duration" />,
       },
     },
     {
@@ -214,32 +111,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "priority",
         header: "Priority",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const priority = row.getValue<string | null>("priority");
-          return (
-            <div className="flex items-center gap-2">
-              <span>{priority ?? ""}</span>
-              <button
-                onClick={() => {
-                  const newPriority = window.prompt(
-                    "Enter new priority:",
-                    priority ?? "",
-                  );
-                  if (newPriority !== null) {
-                    void updateTask.mutateAsync({
-                      taskId,
-                      data: { priority: newPriority || null },
-                    });
-                  }
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Edit
-              </button>
-            </div>
-          );
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="priority" />,
       },
     },
     {
@@ -248,24 +120,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => {
-          const taskId = row.original.task_id;
-          const status = row.getValue<TaskStatus>("status");
-          return (
-            <ComboBox
-              options={[...TASK_STATUSES]}
-              value={status}
-              onChange={(newStatus) => {
-                if (newStatus) {
-                  void updateTask.mutateAsync({
-                    taskId,
-                    data: { status: newStatus as TaskStatus },
-                  });
-                }
-              }}
-            />
-          );
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="status" />,
       },
     },
     {
@@ -274,10 +129,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "created_at",
         header: "Created At",
-        cell: ({ row }) => {
-          const date = row.getValue<Date>("created_at");
-          return date ? format(date, "MMM d, yyyy") : "";
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="created_at" />,
       },
     },
     {
@@ -286,10 +138,7 @@ export function useTaskColumns() {
       columnDef: {
         accessorKey: "updated_at",
         header: "Updated At",
-        cell: ({ row }) => {
-          const date = row.getValue<Date>("updated_at");
-          return date ? format(date, "MMM d, yyyy") : "";
-        },
+        cell: ({ row }) => <TaskField task={row.original} field="updated_at" />,
       },
     },
   ];

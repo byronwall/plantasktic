@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 
 import { DateInput } from "~/components/ui/date-input";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 import { ComboBox } from "./ComboBox";
@@ -161,15 +162,14 @@ export function TaskField({
   };
 
   const label = showLabel ? (
-    <span className="mr-2 font-medium">
-      {field.replace(/_/g, " ").toUpperCase()}:
-    </span>
+    <span className="font-xs mr-2 text-gray-500">{field}:</span>
   ) : null;
 
   return (
-    <div className={className}>
-      {label}
-      {renderField()}
+    <div className={cn(className, "flex flex-1 items-center gap-1")}>
+      <span className="text-sm text-gray-500">{label}</span>
+
+      <div className="flex-1">{renderField()}</div>
     </div>
   );
 }
