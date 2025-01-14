@@ -1,6 +1,6 @@
 "use client";
 
-import { KanbanSquare, ListIcon, TableIcon } from "lucide-react";
+import { GanttChart, KanbanSquare, ListIcon, TableIcon } from "lucide-react";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api, type RouterOutputs } from "~/trpc/react";
 
+import { TaskGanttChart } from "./TaskGanttChart";
 import { TaskItemList } from "./TaskItemList";
 import { TaskKanbanView } from "./TaskKanbanView";
 import { TaskListHeader } from "./TaskListHeader";
@@ -17,7 +18,7 @@ type TaskListProps = {
   projectName?: string;
 };
 
-type ViewMode = "list" | "table" | "kanban";
+type ViewMode = "list" | "table" | "kanban" | "gantt";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
@@ -131,6 +132,13 @@ export function TaskList({ projectName }: TaskListProps) {
           >
             <KanbanSquare className="h-4 w-4" />
           </Button>
+          <Button
+            variant={viewMode === "gantt" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("gantt")}
+          >
+            <GanttChart className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       <TaskListHeader
@@ -154,8 +162,10 @@ export function TaskList({ projectName }: TaskListProps) {
         />
       ) : viewMode === "table" ? (
         <TaskTable tasks={tasks} />
-      ) : (
+      ) : viewMode === "kanban" ? (
         <TaskKanbanView tasks={tasks} />
+      ) : (
+        <TaskGanttChart tasks={tasks} />
       )}
     </div>
   );
