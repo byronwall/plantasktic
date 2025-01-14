@@ -13,6 +13,8 @@ type TaskListHeaderProps = {
   selectedTasks: Set<number>;
   showCompleted: boolean;
   setShowCompleted: (show: boolean) => void;
+  showFieldNames: boolean;
+  setShowFieldNames: (show: boolean) => void;
   onBulkDelete: () => void;
   onBulkCategoryUpdate: (category: string) => void;
   onBulkMoveToProject: (projectId: string | null) => void;
@@ -23,6 +25,8 @@ export function TaskListHeader({
   selectedTasks,
   showCompleted,
   setShowCompleted,
+  showFieldNames,
+  setShowFieldNames,
   onBulkDelete,
   onBulkCategoryUpdate,
   onBulkMoveToProject,
@@ -65,9 +69,18 @@ export function TaskListHeader({
           </div>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-sm">Show Completed Tasks</span>
-        <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Show Field Names</span>
+          <Switch
+            checked={showFieldNames}
+            onCheckedChange={setShowFieldNames}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Show Completed Tasks</span>
+          <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+        </div>
       </div>
     </div>
   );

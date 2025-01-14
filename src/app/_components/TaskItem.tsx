@@ -15,6 +15,7 @@ type TaskItemProps = {
   selectedColumns: ColumnKey[];
   onToggleSelect: (taskId: number) => void;
   onMoveToProject: (taskId: number, projectId: string | null) => void;
+  showFieldNames: boolean;
 };
 
 export function TaskItem({
@@ -23,20 +24,21 @@ export function TaskItem({
   selectedColumns,
   onToggleSelect,
   onMoveToProject,
+  showFieldNames,
 }: TaskItemProps) {
   const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
   const updateTask = api.task.updateTask.useMutation();
   const deleteTaskMutation = api.task.deleteTask.useMutation();
 
-  const copyToClipboard = (taskId: number, text: string) => {
-    void navigator.clipboard.writeText(text);
+  const copyToClipboard = (taskId: number, title: string) => {
+    void navigator.clipboard.writeText(title);
     setCopiedTaskId(taskId);
-    setTimeout(() => setCopiedTaskId(null), 1000);
+    setTimeout(() => setCopiedTaskId(null), 2000);
   };
 
-  const toggleTaskStatus = async (taskId: number, currentStatus: string) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
-    await updateTask.mutateAsync({
+  const toggleTaskStatus = (taskId: number, status: string) => {
+    const newStatus = status === "completed" ? "open" : "completed";
+    void updateTask.mutateAsync({
       taskId,
       data: { status: newStatus },
     });
@@ -79,6 +81,7 @@ export function TaskItem({
                   field={col}
                   value={task[col as keyof Task]}
                   task={task}
+                  showFieldNames={showFieldNames}
                 />
               ))}
           </div>

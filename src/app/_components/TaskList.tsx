@@ -22,6 +22,7 @@ export type Task = RouterOutputs["task"]["getTasks"][number];
 
 export function TaskList({ projectName }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showFieldNames, setShowFieldNames] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const { searchQuery } = useSearch();
@@ -86,6 +87,16 @@ export function TaskList({ projectName }: TaskListProps) {
     setSelectedTasks(new Set());
   };
 
+  const handleMoveTaskToProject = async (
+    taskId: number,
+    projectId: string | null,
+  ) => {
+    await bulkMoveTasksToProjectMutation.mutateAsync({
+      taskIds: [taskId],
+      projectId,
+    });
+  };
+
   const handleBulkMoveToProject = async (projectId: string | null) => {
     await bulkMoveTasksToProjectMutation.mutateAsync({
       taskIds: Array.from(selectedTasks),
@@ -95,39 +106,43 @@ export function TaskList({ projectName }: TaskListProps) {
   };
 
   return (
-    <div className="flex max-w-full flex-col items-center gap-6">
-      <div className="flex w-full gap-2">
-        <Button
-          variant={viewMode === "list" ? "default" : "outline"}
-          onClick={() => setViewMode("list")}
-        >
-          <ListIcon className="h-4 w-4" />
-          List View
-        </Button>
-        <Button
-          variant={viewMode === "table" ? "default" : "outline"}
-          onClick={() => setViewMode("table")}
-        >
-          <TableIcon className="h-4 w-4" />
-          Table View
-        </Button>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("list")}
+          >
+            <ListIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setViewMode("table")}
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-
       <TaskListHeader
         selectedTasks={selectedTasks}
         showCompleted={showCompleted}
         setShowCompleted={setShowCompleted}
+        showFieldNames={showFieldNames}
+        setShowFieldNames={setShowFieldNames}
         onBulkDelete={handleBulkDelete}
         onBulkCategoryUpdate={handleBulkCategoryUpdate}
         onBulkMoveToProject={handleBulkMoveToProject}
         categories={categories}
       />
-
       {viewMode === "list" ? (
         <TaskItemList
           tasks={tasks}
           selectedTasks={selectedTasks}
-          toggleTaskSelection={toggleTaskSelection}
+          onToggleSelect={toggleTaskSelection}
+          onMoveToProject={handleMoveTaskToProject}
+          showFieldNames={showFieldNames}
         />
       ) : (
         <TaskTable tasks={tasks} />

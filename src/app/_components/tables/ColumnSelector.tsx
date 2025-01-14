@@ -1,7 +1,20 @@
-import { useMemo } from "react";
-import isEqual from "react-fast-compare";
+import { Check } from "lucide-react";
 
-import MultipleSelector from "~/components/ui/multi-select";
+import { Button } from "~/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { cn } from "~/lib/utils";
 
 export const COLUMN_PRESETS = {
   basic: {
@@ -56,55 +69,80 @@ export type AvailableColumn = {
   label: string;
 };
 
-interface ColumnSelectorProps {
+export interface ColumnSelectorProps {
+  availableColumns: { value: string; label: string }[];
   selectedColumns: ColumnKey[];
   onColumnToggle: (columns: ColumnKey[]) => void;
-  availableColumns: AvailableColumn[];
+  onPresetClick?: (preset: PresetKey) => void;
 }
 
 export function ColumnSelector({
+  availableColumns,
   selectedColumns,
   onColumnToggle,
-  availableColumns,
+  onPresetClick,
 }: ColumnSelectorProps) {
-  const selectedColumnsValue = useMemo(
-    () =>
-      selectedColumns.map((col) => ({
-        value: col,
-        label: availableColumns.find((c) => c.value === col)?.label ?? col,
-      })),
-    [selectedColumns, availableColumns],
-  );
-
-  const availableColumnsItems = useMemo(
-    () =>
-      availableColumns.map((col) => ({
-        value: col.value,
-        label: col.label,
-      })),
-    [availableColumns],
-  );
-
-  const handleValueChange = (columns: { value: string }[]) => {
-    const newColumns = columns.map((col) => col.value) as ColumnKey[];
-    if (isEqual(newColumns, selectedColumns)) {
-      return;
-    }
-    onColumnToggle(newColumns);
-  };
-
   return (
-    <MultipleSelector
-      defaultOptions={availableColumnsItems}
-      placeholder="Select columns..."
-      value={selectedColumnsValue}
-      onChange={handleValueChange}
-      emptyIndicator={
-        <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-          no results found.
-        </p>
-      }
-      badgeClassName="text-base"
-    />
+    <div className="flex items-center gap-2">
+      {onPresetClick && (
+        <div className="flex gap-2">
+          {Object.entries(COLUMN_PRESETS).map(([key, preset]) => (
+            <Button
+              key={key}
+              variant="outline"
+              size="sm"
+              onClick={() => onPresetClick(key as PresetKey)}
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
+      )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm">
+            Columns
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[200px]">
+          <Command>
+            <CommandInput placeholder="Search columns..." />
+            <CommandList>
+              <CommandEmpty>No columns found.</CommandEmpty>
+              <CommandGroup>
+                {availableColumns.map((column) => {
+                  const isSelected = selectedColumns.includes(
+                    column.value as ColumnKey,
+                  );
+                  return (
+                    <CommandItem
+                      key={column.value}
+                      onSelect={() => {
+                        const newColumns = isSelected
+                          ? selectedColumns.filter((c) => c !== column.value)
+                          : [...selectedColumns, column.value as ColumnKey];
+                        onColumnToggle(newColumns);
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "opacity-50 [&_svg]:invisible",
+                        )}
+                      >
+                        <Check className={cn("h-4 w-4")} />
+                      </div>
+                      {column.label}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }

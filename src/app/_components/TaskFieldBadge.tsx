@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -17,16 +17,22 @@ interface TaskFieldBadgeProps {
   field: keyof Task;
   value: Task[keyof Task];
   task: Task;
+  showFieldNames?: boolean;
 }
 
-export function TaskFieldBadge({ field, value, task }: TaskFieldBadgeProps) {
+export function TaskFieldBadge({
+  field,
+  value,
+  task,
+  showFieldNames = true,
+}: TaskFieldBadgeProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState("");
+  const [editValue, setEditValue] = useState(value);
   const updateTask = api.task.updateTask.useMutation();
 
-  if (value === null || value === undefined) {
-    return null;
-  }
+  useEffect(() => {
+    setEditValue(value);
+  }, [value]);
 
   let displayValue: string;
 
@@ -58,10 +64,6 @@ export function TaskFieldBadge({ field, value, task }: TaskFieldBadgeProps) {
       displayValue = String(value);
   }
 
-  if (!displayValue) {
-    return null;
-  }
-
   const handleEdit = async () => {
     try {
       await updateTask.mutateAsync({
@@ -85,8 +87,10 @@ export function TaskFieldBadge({ field, value, task }: TaskFieldBadgeProps) {
             isEditable ? "hover:shadow-sm" : ""
           }`}
         >
-          <span className="font-medium text-gray-600">{field}:</span>{" "}
-          <span>{displayValue}</span>
+          {showFieldNames && (
+            <span className="font-medium text-gray-600">{field}:</span>
+          )}{" "}
+          <span>{displayValue || "<null>"}</span>
         </Badge>
       </PopoverTrigger>
       {isEditable && (
@@ -94,7 +98,11 @@ export function TaskFieldBadge({ field, value, task }: TaskFieldBadgeProps) {
           <div className="space-y-2">
             <h4 className="font-medium">Edit {field}</h4>
             <Input
-              value={editValue}
+              value={
+                typeof editValue === "string"
+                  ? editValue
+                  : (editValue?.toString() ?? "")
+              }
               onChange={(e) => setEditValue(e.target.value)}
               placeholder={`Enter ${field}`}
               onKeyDown={(e) => {
