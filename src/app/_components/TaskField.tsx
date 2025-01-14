@@ -83,6 +83,7 @@ export function TaskField({
                 data: { [field]: date ?? null },
               });
             }}
+            minimal
           />
         );
       case "duration":
