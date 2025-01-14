@@ -104,7 +104,11 @@ export function TaskKanbanView({ tasks }: { tasks: Task[] }) {
   const updateTask = api.task.updateTask.useMutation();
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 4,
+      },
+    }),
     useSensor(KeyboardSensor),
   );
 
