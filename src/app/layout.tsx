@@ -29,9 +29,9 @@ export default async function RootLayout({
             {session ? (
               <SidebarProvider>
                 <AppSidebar />
-                <main className="min-h-screen w-full">
+                <main className="min-h-screen overflow-x-hidden p-1">
                   <div className="sticky top-0 z-50 border-b bg-background">
-                    <div className="container mx-auto px-4 py-4">
+                    <div className="">
                       <TaskInput />
                     </div>
                   </div>

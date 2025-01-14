@@ -95,7 +95,7 @@ export function TaskList({ projectName }: TaskListProps) {
   };
 
   return (
-    <div className="flex w-full max-w-4xl flex-col items-center gap-6">
+    <div className="flex max-w-full flex-col items-center gap-6">
       <div className="flex w-full gap-2">
         <Button
           variant={viewMode === "list" ? "default" : "outline"}

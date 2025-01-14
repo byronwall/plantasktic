@@ -433,7 +433,7 @@ export function TaskTable({ tasks }: { tasks: Task[] }) {
   );
 
   return (
-    <div>
+    <div className="max-w-full overflow-x-auto">
       <div className="mb-4 space-y-2">
         <div className="flex flex-wrap gap-2">
           {Object.entries(COLUMN_PRESETS).map(([key, preset]) => (
