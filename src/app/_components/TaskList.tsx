@@ -1,6 +1,12 @@
 "use client";
 
-import { GanttChart, KanbanSquare, ListIcon, TableIcon } from "lucide-react";
+import {
+  GanttChart,
+  Grid2X2,
+  KanbanSquare,
+  ListIcon,
+  TableIcon,
+} from "lucide-react";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
@@ -12,13 +18,14 @@ import { TaskGanttChart } from "./TaskGanttChart";
 import { TaskItemList } from "./TaskItemList";
 import { TaskKanbanView } from "./TaskKanbanView";
 import { TaskListHeader } from "./TaskListHeader";
+import { TaskMatrixView } from "./TaskMatrixView";
 import { TaskTable } from "./TaskTable";
 
 type TaskListProps = {
   projectName?: string;
 };
 
-type ViewMode = "list" | "table" | "kanban" | "gantt";
+type ViewMode = "list" | "table" | "kanban" | "gantt" | "matrix";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
@@ -135,6 +142,12 @@ export function TaskList({ projectName }: TaskListProps) {
           >
             <GanttChart className="h-4 w-4" /> Gantt
           </Button>
+          <Button
+            variant={viewMode === "matrix" ? "default" : "outline"}
+            onClick={() => setViewMode("matrix")}
+          >
+            <Grid2X2 className="h-4 w-4" /> Matrix
+          </Button>
         </div>
       </div>
       <TaskListHeader
@@ -162,6 +175,8 @@ export function TaskList({ projectName }: TaskListProps) {
         <TaskKanbanView tasks={tasks} />
       ) : viewMode === "gantt" ? (
         <TaskGanttChart tasks={tasks} />
+      ) : viewMode === "matrix" ? (
+        <TaskMatrixView tasks={tasks} />
       ) : null}
     </div>
   );

@@ -18,6 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "~/lib/utils";
@@ -60,12 +61,21 @@ function SortableTaskCard({ task, selectedField }: SortableTaskCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className="w-full cursor-grab rounded-lg border bg-card p-4 shadow-sm"
+      className="w-full rounded-lg border bg-card p-4 shadow-sm"
     >
-      <TaskField task={task} field="title" />
-      <TaskField task={task} field={selectedField} />
+      <div className="flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab rounded p-1 hover:bg-muted"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1">
+          <TaskField task={task} field="title" />
+          <TaskField task={task} field={selectedField} />
+        </div>
+      </div>
     </div>
   );
 }
