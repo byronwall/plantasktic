@@ -19,6 +19,8 @@ export function Filter<T>({
     .getPreSortedRowModel()
     .flatRows.map((row) => row.getValue(column.id));
 
+  console.log("allColValues", allColValues);
+
   const columnFilterValue = column.getFilterValue();
   const [minValue, maxValue] = column.getFacetedMinMaxValues() ?? [];
 
@@ -39,6 +41,11 @@ export function Filter<T>({
         : [],
     [column.getFacetedUniqueValues(), isNumberColumn],
   );
+
+  // if all are null, set the filter to null
+  if (allColValues.every((v) => v === null)) {
+    return null;
+  }
 
   if (isDateColumn) {
     const [filterMin, filterMax] = (columnFilterValue as [Date, Date]) ?? [];
