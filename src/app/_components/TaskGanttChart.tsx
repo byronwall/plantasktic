@@ -22,8 +22,11 @@ type GanttTaskProps = {
   startDate: Date;
   daysToShow: number;
   dayWidth: number;
-  onResizeStart: () => void;
+  onResizeStart: (edge: "left" | "right") => void;
+  onResizeMove: (dx: number) => void;
   onResizeEnd: () => void;
+  previewOffset?: number;
+  previewDuration?: number;
 };
 
 function GanttTask({
@@ -32,7 +35,10 @@ function GanttTask({
   daysToShow,
   dayWidth,
   onResizeStart,
+  onResizeMove,
   onResizeEnd,
+  previewOffset,
+  previewDuration,
 }: GanttTaskProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.task_id,
@@ -42,12 +48,12 @@ function GanttTask({
     ? startOfDay(task.start_date)
     : startOfDay(new Date());
   const taskDuration = task.duration ?? 1;
-  const taskEndDate = addDays(taskStartDate, taskDuration);
 
   const leftOffset =
-    Math.max(0, differenceInDays(taskStartDate, startDate)) * dayWidth;
+    Math.max(0, differenceInDays(taskStartDate, startDate)) * dayWidth +
+    (previewOffset ?? 0);
   const width = Math.min(
-    taskDuration * dayWidth,
+    (previewDuration ?? taskDuration) * dayWidth,
     daysToShow * dayWidth - leftOffset,
   );
 
@@ -55,6 +61,15 @@ function GanttTask({
     transform: CSS.Transform.toString(transform),
     width: `${width}px`,
     left: `${leftOffset}px`,
+  };
+
+  const handleMouseMove = (e: React.MouseEvent, edge: "left" | "right") => {
+    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+    const dx = e.clientX - (edge === "left" ? rect.left : rect.right);
+    onResizeMove(dx);
   };
 
   return (
@@ -70,13 +85,15 @@ function GanttTask({
       </div>
       <div
         className="absolute left-0 top-0 h-full w-2 cursor-ew-resize"
-        onMouseDown={() => onResizeStart()}
-        onMouseUp={() => onResizeEnd()}
+        onMouseDown={() => onResizeStart("left")}
+        onMouseMove={(e) => handleMouseMove(e, "left")}
+        onMouseUp={onResizeEnd}
       />
       <div
         className="absolute right-0 top-0 h-full w-2 cursor-ew-resize"
-        onMouseDown={() => onResizeStart()}
-        onMouseUp={() => onResizeEnd()}
+        onMouseDown={() => onResizeStart("right")}
+        onMouseMove={(e) => handleMouseMove(e, "right")}
+        onMouseUp={onResizeEnd}
       />
     </div>
   );
@@ -138,6 +155,9 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const [dayWidth] = useState(80);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeEdge, setResizeEdge] = useState<"left" | "right" | null>(null);
+  const [previewOffset, setPreviewOffset] = useState(0);
+  const [previewDuration, setPreviewDuration] = useState<number | null>(null);
 
   const updateTask = api.task.updateTask.useMutation();
 
@@ -159,6 +179,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, delta } = event;
     setActiveId(null);
+    setPreviewOffset(0);
 
     if (!active || isResizing) {
       return;
@@ -180,6 +201,61 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         start_date: newStartDate,
       },
     });
+  };
+
+  const handleResizeStart = (edge: "left" | "right") => {
+    setIsResizing(true);
+    setResizeEdge(edge);
+  };
+
+  const handleResizeMove = (dx: number) => {
+    if (!isResizing || !resizeEdge) {
+      return;
+    }
+
+    const daysChange = Math.round(dx / dayWidth);
+
+    if (resizeEdge === "left") {
+      setPreviewOffset(daysChange * dayWidth);
+      const task = tasks.find((t) => t.task_id === activeId);
+      if (task) {
+        setPreviewDuration((task.duration ?? 1) - daysChange);
+      }
+    } else {
+      const task = tasks.find((t) => t.task_id === activeId);
+      if (task) {
+        setPreviewDuration((task.duration ?? 1) + daysChange);
+      }
+    }
+  };
+
+  const handleResizeEnd = async () => {
+    setIsResizing(false);
+    setResizeEdge(null);
+
+    if (activeId) {
+      const task = tasks.find((t) => t.task_id === activeId);
+      if (task && previewDuration !== null) {
+        await updateTask.mutateAsync({
+          taskId: task.task_id,
+          data: {
+            duration: Math.max(1, previewDuration),
+            ...(resizeEdge === "left" && task.start_date
+              ? {
+                  start_date: addDays(
+                    task.start_date,
+                    Math.round(previewOffset / dayWidth),
+                  ),
+                }
+              : {}),
+          },
+        });
+      }
+    }
+
+    setPreviewOffset(0);
+    setPreviewDuration(null);
+    setActiveId(null);
   };
 
   return (
@@ -205,8 +281,17 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                     startDate={startDate}
                     daysToShow={daysToShow}
                     dayWidth={dayWidth}
-                    onResizeStart={() => setIsResizing(true)}
-                    onResizeEnd={() => setIsResizing(false)}
+                    onResizeStart={handleResizeStart}
+                    onResizeMove={handleResizeMove}
+                    onResizeEnd={handleResizeEnd}
+                    previewOffset={
+                      task.task_id === activeId ? previewOffset : undefined
+                    }
+                    previewDuration={
+                      task.task_id === activeId
+                        ? (previewDuration ?? undefined)
+                        : undefined
+                    }
                   />
                 </div>
               ))}
