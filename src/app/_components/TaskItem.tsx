@@ -56,19 +56,21 @@ export function TaskItem({
 
   return (
     <div className="flex w-full items-center justify-between gap-2 border-b border-gray-200 px-4 py-2 last:border-b-0">
-      <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-1 items-start gap-4">
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggleSelect(task.task_id)}
-          className="h-5 w-5"
+          className="mt-1 h-5 w-5"
         />
         <div
-          className={`flex flex-1 items-center gap-2 ${
+          className={`flex-1 ${
             task.status === "completed" ? "line-through opacity-50" : ""
           }`}
         >
-          <TaskTitle taskId={task.task_id} title={task.title} />
-          <div className="flex flex-wrap gap-2">
+          <div className="mb-2">
+            <TaskTitle taskId={task.task_id} title={task.title} />
+          </div>
+          <div className="grid auto-cols-max grid-flow-row gap-2 sm:grid-flow-col sm:flex-wrap">
             {selectedColumns
               .filter((col) => col !== "title")
               .map((col) => (
