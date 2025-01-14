@@ -113,31 +113,27 @@ export function TaskList({ projectName }: TaskListProps) {
         <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
-            size="icon"
             onClick={() => setViewMode("list")}
           >
-            <ListIcon className="h-4 w-4" />
+            <ListIcon className="h-4 w-4" /> List
           </Button>
           <Button
             variant={viewMode === "table" ? "default" : "outline"}
-            size="icon"
             onClick={() => setViewMode("table")}
           >
-            <TableIcon className="h-4 w-4" />
+            <TableIcon className="h-4 w-4" /> Table
           </Button>
           <Button
             variant={viewMode === "kanban" ? "default" : "outline"}
-            size="icon"
             onClick={() => setViewMode("kanban")}
           >
-            <KanbanSquare className="h-4 w-4" />
+            <KanbanSquare className="h-4 w-4" /> Kanban
           </Button>
           <Button
             variant={viewMode === "gantt" ? "default" : "outline"}
-            size="icon"
             onClick={() => setViewMode("gantt")}
           >
-            <GanttChart className="h-4 w-4" />
+            <GanttChart className="h-4 w-4" /> Gantt
           </Button>
         </div>
       </div>
@@ -164,9 +160,9 @@ export function TaskList({ projectName }: TaskListProps) {
         <TaskTable tasks={tasks} />
       ) : viewMode === "kanban" ? (
         <TaskKanbanView tasks={tasks} />
-      ) : (
+      ) : viewMode === "gantt" ? (
         <TaskGanttChart tasks={tasks} />
-      )}
+      ) : null}
     </div>
   );
 }
