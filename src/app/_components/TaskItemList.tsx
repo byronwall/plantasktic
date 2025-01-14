@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 
+import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
   COLUMN_PRESETS,
   type ColumnKey,
@@ -10,20 +11,6 @@ import {
 } from "./tables/ColumnSelector";
 import { TaskItem } from "./TaskItem";
 import { type Task } from "./TaskList";
-
-const AVAILABLE_COLUMNS = [
-  { value: "title", label: "Title" },
-  { value: "category", label: "Category" },
-  { value: "status", label: "Status" },
-  { value: "priority", label: "Priority" },
-  { value: "description", label: "Description" },
-  { value: "comments", label: "Comments" },
-  { value: "due_date", label: "Due Date" },
-  { value: "start_date", label: "Start Date" },
-  { value: "duration", label: "Duration" },
-  { value: "created_at", label: "Created At" },
-  { value: "updated_at", label: "Updated At" },
-];
 
 export function TaskItemList({
   tasks,
@@ -38,6 +25,7 @@ export function TaskItemList({
   onMoveToProject: (taskId: number, projectId: string | null) => void;
   showFieldNames: boolean;
 }) {
+  const { AVAILABLE_COLUMNS } = useTaskColumns();
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.basic.columns,
   ]);
