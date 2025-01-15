@@ -86,6 +86,18 @@ export function TaskCardList({
             key={task.task_id}
             className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm"
           >
+            <div className="self-end">
+              <TaskActions
+                taskId={task.task_id}
+                status={task.status}
+                projectId={task.projectId}
+                copiedTaskId={copiedTaskId}
+                onCopy={(taskId) => copyToClipboard(taskId, task.title)}
+                onDelete={handleDelete}
+                onStatusChange={toggleTaskStatus}
+                onMoveToProject={onMoveToProject}
+              />
+            </div>
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -104,16 +116,6 @@ export function TaskCardList({
                   ))}
                 </div>
               </div>
-              <TaskActions
-                taskId={task.task_id}
-                status={task.status}
-                projectId={task.projectId}
-                copiedTaskId={copiedTaskId}
-                onCopy={(taskId) => copyToClipboard(taskId, task.title)}
-                onDelete={handleDelete}
-                onStatusChange={toggleTaskStatus}
-                onMoveToProject={onMoveToProject}
-              />
             </div>
           </div>
         ))}

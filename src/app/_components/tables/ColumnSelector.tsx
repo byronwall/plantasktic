@@ -100,7 +100,7 @@ export function ColumnSelector({
     </Popover>
   );
   return (
-    <div className="flex items-stretch gap-2">
+    <div className="flex max-w-[640px] items-stretch gap-2">
       <MultipleSelector
         options={availableColumns}
         value={selectedColumns.map((col) => ({
@@ -110,7 +110,7 @@ export function ColumnSelector({
         onChange={(options) =>
           onColumnToggle(options.map((c) => c.value) as ColumnKey[])
         }
-        className="max-w-[640px]"
+        className=""
         badgeClassName="text-sm"
       />
       {presetPopover}

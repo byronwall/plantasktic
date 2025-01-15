@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
-
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
   COLUMN_PRESETS,
@@ -44,27 +42,18 @@ export function TaskTable({ tasks }: { tasks: Task[] }) {
   );
 
   return (
-    <div className="max-w-full overflow-x-auto">
+    <>
       <div className="mb-4 space-y-2">
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(COLUMN_PRESETS).map(([key, preset]) => (
-            <Button
-              key={key}
-              variant="outline"
-              size="sm"
-              onClick={() => handlePresetClick(key as PresetKey)}
-            >
-              {preset.label}
-            </Button>
-          ))}
-        </div>
         <ColumnSelector
           selectedColumns={selectedColumns}
           onColumnToggle={handleColumnToggle}
           availableColumns={AVAILABLE_COLUMNS}
+          onPresetClick={handlePresetClick}
         />
       </div>
-      <GenericTable columns={columns} data={tasks} shouldHideGLobalFilter />
-    </div>
+      <div className="max-w-full overflow-x-auto">
+        <GenericTable columns={columns} data={tasks} shouldHideGLobalFilter />
+      </div>
+    </>
   );
 }
