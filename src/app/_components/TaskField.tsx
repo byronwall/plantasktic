@@ -4,6 +4,7 @@ import {
   ArrowUpDown,
   Calendar,
   CalendarClock,
+  ChevronDown,
   Clock,
   ListTodo,
   MessageSquare,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
+import { Badge } from "~/components/ui/badge";
 import { DateInput } from "~/components/ui/date-input";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -165,7 +167,15 @@ export function TaskField({
                 });
               }
             }}
-          />
+          >
+            <Badge
+              variant="outline"
+              className="flex cursor-pointer items-center justify-between gap-2 text-base hover:bg-muted"
+            >
+              {task.status}
+              <ChevronDown className="h-4 w-4" />
+            </Badge>
+          </ComboBox>
         );
       case "created_at":
       case "updated_at":
@@ -222,7 +232,7 @@ export function TaskField({
   ) : null;
 
   return (
-    <div className={cn(className, "flex flex-1 items-center gap-1")}>
+    <div className={cn(className, "flex flex-1 items-center gap-0.5")}>
       {label}
 
       <div className="flex-1">{renderField()}</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -86,12 +86,16 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
       >
         <Badge
           variant="outline"
+          className="flex cursor-pointer items-center justify-between gap-2 text-base hover:bg-muted"
           style={{
             backgroundColor,
             color: textColor,
           }}
         >
-          {currentCategory ?? "category..."}
+          <>
+            {currentCategory ?? "category..."}
+            <ChevronDown className="h-4 w-4" />
+          </>
         </Badge>
       </ComboBox>
       {updateCategoryMutation.isPending && (

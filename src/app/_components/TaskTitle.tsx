@@ -43,7 +43,7 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
   };
 
   return (
-    <div onClick={startEditing} className="w-full">
+    <div onClick={startEditing} className="w-72 break-words">
       {isEditing ? (
         <Textarea
           value={editText}
