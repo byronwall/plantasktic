@@ -594,7 +594,7 @@ const MultipleSelector = React.forwardRef<
             inputRef?.current?.focus();
           }}
         >
-          <div className="relative flex flex-wrap gap-1">
+          <div className="relative flex flex-wrap items-center gap-1">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}

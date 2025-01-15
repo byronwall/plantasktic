@@ -86,7 +86,11 @@ export function TaskCardList({
             key={task.task_id}
             className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm"
           >
-            <div className="self-end">
+            <div className="flex items-center justify-between gap-2">
+              <Checkbox
+                checked={selectedTasks.has(task.task_id)}
+                onCheckedChange={() => onToggleSelect([task.task_id])}
+              />
               <TaskActions
                 taskId={task.task_id}
                 status={task.status}
@@ -100,10 +104,6 @@ export function TaskCardList({
             </div>
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={selectedTasks.has(task.task_id)}
-                  onCheckedChange={() => onToggleSelect([task.task_id])}
-                />
                 <div className="flex flex-1 flex-col gap-2">
                   {selectedColumns.map((field) => (
                     <TaskField
