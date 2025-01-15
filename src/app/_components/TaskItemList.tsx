@@ -52,7 +52,7 @@ export function TaskItemList({
   };
 
   return (
-    <div className="flex w-fit max-w-full flex-col gap-4">
+    <>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Checkbox
@@ -68,19 +68,21 @@ export function TaskItemList({
           onPresetClick={handlePresetClick}
         />
       </div>
-      <div className="flex flex-col gap-2">
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.task_id}
-            task={task}
-            isSelected={selectedTasks.has(task.task_id)}
-            selectedColumns={selectedColumns}
-            onToggleSelect={onToggleSelect}
-            onMoveToProject={onMoveToProject}
-            showFieldNames={showFieldNames}
-          />
-        ))}
+      <div className="flex w-fit max-w-full flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          {tasks.map((task) => (
+            <TaskItem
+              key={task.task_id}
+              task={task}
+              isSelected={selectedTasks.has(task.task_id)}
+              selectedColumns={selectedColumns}
+              onToggleSelect={onToggleSelect}
+              onMoveToProject={onMoveToProject}
+              showFieldNames={showFieldNames}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

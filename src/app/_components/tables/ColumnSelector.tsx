@@ -1,20 +1,5 @@
-import { Check } from "lucide-react";
-
 import { Button } from "~/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "~/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
-import { cn } from "~/lib/utils";
+import MultipleSelector from "~/components/ui/multi-select";
 
 export const COLUMN_PRESETS = {
   basic: {
@@ -83,7 +68,7 @@ export function ColumnSelector({
   onPresetClick,
 }: ColumnSelectorProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-2">
       {onPresetClick && (
         <div className="flex gap-2">
           {Object.entries(COLUMN_PRESETS).map(([key, preset]) => (
@@ -98,51 +83,17 @@ export function ColumnSelector({
           ))}
         </div>
       )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm">
-            Columns
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px]">
-          <Command>
-            <CommandInput placeholder="Search columns..." />
-            <CommandList>
-              <CommandEmpty>No columns found.</CommandEmpty>
-              <CommandGroup>
-                {availableColumns.map((column) => {
-                  const isSelected = selectedColumns.includes(
-                    column.value as ColumnKey,
-                  );
-                  return (
-                    <CommandItem
-                      key={column.value}
-                      onSelect={() => {
-                        const newColumns = isSelected
-                          ? selectedColumns.filter((c) => c !== column.value)
-                          : [...selectedColumns, column.value as ColumnKey];
-                        onColumnToggle(newColumns);
-                      }}
-                    >
-                      <div
-                        className={cn(
-                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "opacity-50 [&_svg]:invisible",
-                        )}
-                      >
-                        <Check className={cn("h-4 w-4")} />
-                      </div>
-                      {column.label}
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <MultipleSelector
+        options={availableColumns}
+        value={selectedColumns.map((col) => ({
+          value: col,
+          label: col,
+        }))}
+        onChange={(options) =>
+          onColumnToggle(options.map((c) => c.value) as ColumnKey[])
+        }
+        className="max-w-[640px]"
+      />
     </div>
   );
 }
