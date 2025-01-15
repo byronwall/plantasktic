@@ -51,7 +51,7 @@ export function TaskTable({ tasks }: { tasks: Task[] }) {
           onPresetClick={handlePresetClick}
         />
       </div>
-      <div className="max-w-full overflow-x-auto">
+      <div className="w-fit max-w-full overflow-x-auto">
         <GenericTable columns={columns} data={tasks} shouldHideGLobalFilter />
       </div>
     </>

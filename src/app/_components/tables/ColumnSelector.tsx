@@ -88,7 +88,6 @@ export function ColumnSelector({
             <Button
               key={key}
               variant="ghost"
-              size="sm"
               className="justify-start"
               onClick={() => onPresetClick(key as PresetKey)}
             >
