@@ -4,6 +4,7 @@ import {
   GanttChart,
   Grid2X2,
   KanbanSquare,
+  LayoutGrid,
   ListIcon,
   TableIcon,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api, type RouterOutputs } from "~/trpc/react";
 
+import { TaskCardList } from "./TaskCardList";
 import { TaskGanttChart } from "./TaskGanttChart";
 import { TaskItemList } from "./TaskItemList";
 import { TaskKanbanView } from "./TaskKanbanView";
@@ -25,7 +27,7 @@ type TaskListProps = {
   projectName?: string;
 };
 
-type ViewMode = "list" | "table" | "kanban" | "gantt" | "matrix";
+type ViewMode = "list" | "table" | "kanban" | "gantt" | "matrix" | "card";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
@@ -137,6 +139,12 @@ export function TaskList({ projectName }: TaskListProps) {
             <TableIcon className="h-4 w-4" /> Table
           </Button>
           <Button
+            variant={viewMode === "card" ? "default" : "outline"}
+            onClick={() => setViewMode("card")}
+          >
+            <LayoutGrid className="h-4 w-4" /> Cards
+          </Button>
+          <Button
             variant={viewMode === "kanban" ? "default" : "outline"}
             onClick={() => setViewMode("kanban")}
           >
@@ -177,6 +185,13 @@ export function TaskList({ projectName }: TaskListProps) {
         />
       ) : viewMode === "table" ? (
         <TaskTable tasks={tasks} />
+      ) : viewMode === "card" ? (
+        <TaskCardList
+          tasks={tasks}
+          selectedTasks={selectedTasks}
+          onToggleSelect={toggleTaskSelection}
+          onMoveToProject={handleMoveTaskToProject}
+        />
       ) : viewMode === "kanban" ? (
         <TaskKanbanView tasks={tasks} />
       ) : viewMode === "gantt" ? (
