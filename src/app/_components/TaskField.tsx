@@ -1,4 +1,17 @@
 import { format } from "date-fns";
+import {
+  AlignLeft,
+  ArrowUpDown,
+  Calendar,
+  CalendarClock,
+  Clock,
+  ListTodo,
+  MessageSquare,
+  Plus,
+  RefreshCw,
+  Tag,
+  Text,
+} from "lucide-react";
 
 import { DateInput } from "~/components/ui/date-input";
 import { cn } from "~/lib/utils";
@@ -161,13 +174,47 @@ export function TaskField({
     }
   };
 
+  const getFieldIcon = () => {
+    switch (field) {
+      case "title":
+        return <Text className="h-4 w-4" />;
+      case "category":
+        return <Tag className="h-4 w-4" />;
+      case "description":
+        return <AlignLeft className="h-4 w-4" />;
+      case "comments":
+        return <MessageSquare className="h-4 w-4" />;
+      case "due_date":
+        return <CalendarClock className="h-4 w-4" />;
+      case "start_date":
+        return <Calendar className="h-4 w-4" />;
+      case "duration":
+        return <Clock className="h-4 w-4" />;
+      case "priority":
+        return <ArrowUpDown className="h-4 w-4" />;
+      case "status":
+        return <ListTodo className="h-4 w-4" />;
+      case "created_at":
+        return <Plus className="h-4 w-4" />;
+      case "updated_at":
+        return <RefreshCw className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
   const label = showLabel ? (
-    <span className="font-xs mr-2 text-gray-500">{field}:</span>
+    <span
+      className="mr-2 text-gray-500"
+      title={field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+    >
+      {getFieldIcon()}
+    </span>
   ) : null;
 
   return (
     <div className={cn(className, "flex flex-1 items-center gap-1")}>
-      <span className="text-sm text-gray-500">{label}</span>
+      {label}
 
       <div className="flex-1">{renderField()}</div>
     </div>
