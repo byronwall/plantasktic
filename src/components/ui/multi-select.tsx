@@ -31,6 +31,8 @@ import {
 } from "~/components/ui/command";
 import { cn } from "~/lib/utils";
 
+import { Button } from "./button";
+
 export interface Option {
   value: string;
   label: string;
@@ -580,7 +582,7 @@ const MultipleSelector = React.forwardRef<
           className={cn(
             "min-h-10 rounded-md border border-input text-base ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 md:text-sm",
             {
-              "px-3 py-2": selected.length !== 0,
+              "px-1 py-1": selected.length !== 0,
               "cursor-text": !disabled && selected.length !== 0,
             },
             className,
@@ -650,8 +652,8 @@ const MultipleSelector = React.forwardRef<
                 inputProps?.className,
               )}
             />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => {
                 setSelected(selected.filter((s) => s.fixed));
                 onChange?.(selected.filter((s) => s.fixed));
@@ -666,7 +668,7 @@ const MultipleSelector = React.forwardRef<
               )}
             >
               <X />
-            </button>
+            </Button>
           </div>
         </div>
         <div className="relative">

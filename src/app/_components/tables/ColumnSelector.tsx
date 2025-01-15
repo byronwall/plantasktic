@@ -1,5 +1,12 @@
+import { ChevronDown, Columns } from "lucide-react";
+
 import { Button } from "~/components/ui/button";
 import MultipleSelector from "~/components/ui/multi-select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 
 export const COLUMN_PRESETS = {
   basic: {
@@ -67,22 +74,33 @@ export function ColumnSelector({
   onColumnToggle,
   onPresetClick,
 }: ColumnSelectorProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      {onPresetClick && (
-        <div className="flex gap-2">
+  const presetPopover = onPresetClick && (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-auto">
+          <Columns className="mr-2 h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2">
+        <div className="flex flex-col gap-1">
           {Object.entries(COLUMN_PRESETS).map(([key, preset]) => (
             <Button
               key={key}
-              variant="outline"
+              variant="ghost"
               size="sm"
+              className="justify-start"
               onClick={() => onPresetClick(key as PresetKey)}
             >
               {preset.label}
             </Button>
           ))}
         </div>
-      )}
+      </PopoverContent>
+    </Popover>
+  );
+  return (
+    <div className="flex items-stretch gap-2">
       <MultipleSelector
         options={availableColumns}
         value={selectedColumns.map((col) => ({
@@ -93,7 +111,9 @@ export function ColumnSelector({
           onColumnToggle(options.map((c) => c.value) as ColumnKey[])
         }
         className="max-w-[640px]"
+        badgeClassName="text-sm"
       />
+      {presetPopover}
     </div>
   );
 }
