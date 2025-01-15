@@ -13,6 +13,7 @@ import {
   Text,
 } from "lucide-react";
 
+import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { DateInput } from "~/components/ui/date-input";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -204,12 +205,20 @@ export function TaskField({
   };
 
   const label = showLabel ? (
-    <span
-      className="mr-2 text-gray-500"
-      title={field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+    <SimpleTooltip
+      content={field
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (l) => l.toUpperCase())}
     >
-      {getFieldIcon()}
-    </span>
+      <span
+        className="mr-2 text-gray-500"
+        title={field
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase())}
+      >
+        {getFieldIcon()}
+      </span>
+    </SimpleTooltip>
   ) : null;
 
   return (
