@@ -18,7 +18,7 @@ export function TaskItem({
   task: Task;
   isSelected: boolean;
   selectedColumns: string[];
-  onToggleSelect: (taskId: number) => void;
+  onToggleSelect: (taskIds: number[]) => void;
   onMoveToProject: (taskId: number, projectId: string | null) => void;
   showFieldNames: boolean;
 }) {
@@ -57,7 +57,7 @@ export function TaskItem({
       <div className="flex items-center gap-2">
         <Checkbox
           checked={isSelected}
-          onCheckedChange={() => onToggleSelect(task.task_id)}
+          onCheckedChange={() => onToggleSelect([task.task_id])}
         />
         <div className="flex flex-1 flex-col gap-2">
           {selectedColumns.map((field) => (

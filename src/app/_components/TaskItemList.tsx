@@ -21,7 +21,7 @@ export function TaskItemList({
 }: {
   tasks: Task[];
   selectedTasks: Set<number>;
-  onToggleSelect: (taskId: number) => void;
+  onToggleSelect: (taskIds: number[]) => void;
   onMoveToProject: (taskId: number, projectId: string | null) => void;
   showFieldNames: boolean;
 }) {
@@ -31,10 +31,15 @@ export function TaskItemList({
   ]);
 
   const toggleSelectAll = () => {
-    if (selectedTasks.size === tasks.length) {
-      onToggleSelect(-1); // signal to clear
+    const allTaskIds = tasks.map((t) => t.task_id);
+    const isAllSelected = allTaskIds.every((id) => selectedTasks.has(id));
+
+    if (isAllSelected) {
+      onToggleSelect([-1]); // signal to clear
     } else {
-      tasks.forEach((t) => onToggleSelect(t.task_id));
+      // Select all tasks that aren't currently selected
+      const unselectedTasks = allTaskIds.filter((id) => !selectedTasks.has(id));
+      onToggleSelect(unselectedTasks);
     }
   };
 

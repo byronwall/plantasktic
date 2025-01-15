@@ -60,18 +60,24 @@ export function TaskList({ projectName }: TaskListProps) {
   const bulkMoveTasksToProjectMutation =
     api.task.bulkMoveTasksToProject.useMutation();
 
-  const toggleTaskSelection = (taskId: number) => {
+  const toggleTaskSelection = (taskIds: number[]) => {
     const newSelectedTasks = new Set(selectedTasks);
-    if (taskId === -1) {
+
+    if (taskIds[0] === -1) {
       // special case to clear
       setSelectedTasks(new Set());
       return;
     }
-    if (newSelectedTasks.has(taskId)) {
-      newSelectedTasks.delete(taskId);
-    } else {
-      newSelectedTasks.add(taskId);
-    }
+
+    // Process all IDs at once
+    taskIds.forEach((taskId) => {
+      if (newSelectedTasks.has(taskId)) {
+        newSelectedTasks.delete(taskId);
+      } else {
+        newSelectedTasks.add(taskId);
+      }
+    });
+
     setSelectedTasks(newSelectedTasks);
   };
 
