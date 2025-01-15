@@ -1,4 +1,5 @@
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -19,6 +20,8 @@ type TaskListHeaderProps = {
   onBulkCategoryUpdate: (category: string) => void;
   onBulkMoveToProject: (projectId: string | null) => void;
   categories: string[];
+  totalTasks: number;
+  onToggleSelectAll: () => void;
 };
 
 export function TaskListHeader({
@@ -31,10 +34,19 @@ export function TaskListHeader({
   onBulkCategoryUpdate,
   onBulkMoveToProject,
   categories,
+  totalTasks,
+  onToggleSelectAll,
 }: TaskListHeaderProps) {
   return (
     <div className="flex h-8 w-full items-center justify-between gap-2">
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={selectedTasks.size === totalTasks && totalTasks > 0}
+            onCheckedChange={onToggleSelectAll}
+          />
+          <span className="text-sm">Select All</span>
+        </div>
         {selectedTasks.size > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-sm">{selectedTasks.size} selected</span>

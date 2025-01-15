@@ -174,6 +174,21 @@ export function TaskList({ projectName }: TaskListProps) {
         onBulkCategoryUpdate={handleBulkCategoryUpdate}
         onBulkMoveToProject={handleBulkMoveToProject}
         categories={categories}
+        totalTasks={tasks.length}
+        onToggleSelectAll={() => {
+          const allTaskIds = tasks.map((t) => t.task_id);
+          const isAllSelected = allTaskIds.every((id) => selectedTasks.has(id));
+
+          if (isAllSelected) {
+            toggleTaskSelection([-1]); // signal to clear
+          } else {
+            // Select all tasks that aren't currently selected
+            const unselectedTasks = allTaskIds.filter(
+              (id) => !selectedTasks.has(id),
+            );
+            toggleTaskSelection(unselectedTasks);
+          }
+        }}
       />
       {viewMode === "list" ? (
         <TaskItemList
