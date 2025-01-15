@@ -33,7 +33,7 @@ export function TaskListHeader({
   categories,
 }: TaskListHeaderProps) {
   return (
-    <div className="flex w-full items-center justify-between gap-2">
+    <div className="flex h-8 w-full items-center justify-between gap-2">
       <div className="flex items-center gap-4">
         {selectedTasks.size > 0 && (
           <div className="flex items-center gap-2">
