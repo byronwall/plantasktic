@@ -185,31 +185,35 @@ export function TaskField({
         );
       case "duration":
         return (
-          <NumberInputPopover
-            value={task.duration}
-            onSubmit={(value) => {
-              void updateTask.mutateAsync({
-                taskId,
-                data: { duration: value },
-              });
-            }}
-            icon={<Clock className="h-4 w-4" />}
-            label="Duration (hours)"
-          />
+          <div className="flex items-center justify-center">
+            <NumberInputPopover
+              value={task.duration}
+              onSubmit={(value) => {
+                void updateTask.mutateAsync({
+                  taskId,
+                  data: { duration: value },
+                });
+              }}
+              icon={<Clock className="h-4 w-4" />}
+              label="Duration (hours)"
+            />
+          </div>
         );
       case "priority":
         return (
-          <NumberInputPopover
-            value={task.priority ? parseFloat(task.priority) : null}
-            onSubmit={(value) => {
-              void updateTask.mutateAsync({
-                taskId,
-                data: { priority: value?.toString() ?? null },
-              });
-            }}
-            icon={<ArrowUpDown className="h-4 w-4" />}
-            label="Priority"
-          />
+          <div className="flex items-center justify-center">
+            <NumberInputPopover
+              value={task.priority ? parseFloat(task.priority) : null}
+              onSubmit={(value) => {
+                void updateTask.mutateAsync({
+                  taskId,
+                  data: { priority: value?.toString() ?? null },
+                });
+              }}
+              icon={<ArrowUpDown className="h-4 w-4" />}
+              label="Priority"
+            />
+          </div>
         );
       case "status":
         return (
@@ -292,7 +296,7 @@ export function TaskField({
     <div className={cn(className, "flex flex-1 items-center gap-0.5")}>
       {label}
 
-      <div className="flex-1">{renderField()}</div>
+      <div className="">{renderField()}</div>
     </div>
   );
 }
