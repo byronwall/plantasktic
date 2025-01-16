@@ -272,17 +272,17 @@ const DateInput: React.FC<DateInputProps> = ({
       <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
         <div className="p-3">
           <Calendar
+            key={value?.toISOString()}
             mode="single"
             selected={value}
+            defaultMonth={value}
             onSelect={(date) => {
               onChange(date);
             }}
-            disabled={(date) =>
-              date > new UTCDate() || date < new UTCDate("1900-01-01")
-            }
+            disabled={(date) => date < new UTCDate("1900-01-01")}
             initialFocus
           />
-          <div className="mb-3 flex items-center gap-1 rounded-lg border px-1">
+          <div className="mb-3 flex items-center justify-center gap-1 rounded-lg border px-1">
             <Input
               ref={monthRef}
               max={12}
