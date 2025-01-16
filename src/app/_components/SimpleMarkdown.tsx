@@ -101,7 +101,11 @@ export function SimpleMarkdown({ text }: { text: string }) {
   };
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={components}
+      className="whitespace-pre-wrap"
+    >
       {text}
     </ReactMarkdown>
   );
