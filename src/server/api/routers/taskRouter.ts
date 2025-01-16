@@ -119,7 +119,7 @@ export const taskRouter = createTRPCRouter({
           ...(input.showCompleted ? {} : { status: { not: "completed" } }),
         },
         orderBy: {
-          task_id: "asc",
+          created_at: "desc",
         },
       });
     }),
