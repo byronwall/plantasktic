@@ -94,28 +94,23 @@ function NumberInputPopover({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-56">
+      <PopoverContent className="w-40">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <label className="text-sm font-medium">{label}</label>
+          <label className="font-medium">{label}</label>
           <Input
             type="number"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             step="any"
-            className="w-full"
+            className="w-full text-lg"
           />
           <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setOpen(false)}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button
               type="submit"
-              className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground"
+              className="rounded bg-primary px-2 py-1 text-primary-foreground"
             >
               Save
             </Button>
@@ -148,7 +143,8 @@ export function TaskField({
             <span>
               {task.description ? task.description.slice(0, 50) + "..." : ""}
             </span>
-            <button
+            <Button
+              variant="outline"
               onClick={() => {
                 const newDescription = window.prompt(
                   "Enter new description:",
@@ -161,10 +157,10 @@ export function TaskField({
                   });
                 }
               }}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className=""
             >
               Edit
-            </button>
+            </Button>
           </div>
         );
       case "comments":

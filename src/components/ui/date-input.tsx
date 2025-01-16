@@ -259,27 +259,15 @@ const DateInput: React.FC<DateInputProps> = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "flex items-center gap-2 pl-3 text-left font-normal",
-            {
-              "w-9 p-0": !value,
-            },
-            className,
-          )}
-        >
-          {value ? (
-            <span>{new UTCDate(value).toLocaleDateString()}</span>
-          ) : (
-            <CalendarIcon
-              className={cn("h-4 w-4 opacity-50", {
-                "ml-auto": value,
-                "m-auto": !value,
-              })}
-            />
-          )}
-        </Button>
+        {value ? (
+          <span className={cn("cursor-pointer text-base", className)}>
+            {new UTCDate(value).toLocaleDateString()}
+          </span>
+        ) : (
+          <Button variant={"outline"} className={cn("w-9 p-0", className)}>
+            <CalendarIcon className="m-auto h-4 w-4 opacity-50" />
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
         <div className="p-3">
