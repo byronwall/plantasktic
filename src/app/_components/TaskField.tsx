@@ -14,17 +14,13 @@ import {
   Text,
 } from "lucide-react";
 import * as React from "react";
+import { useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { DateInput } from "~/components/ui/date-input";
 import { Input } from "~/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -67,57 +63,52 @@ function NumberInputPopover({
   icon,
   label,
 }: NumberInputPopoverProps) {
+  const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = React.useState(value?.toString() ?? "");
-  const [open, setOpen] = React.useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = inputValue === "" ? null : parseFloat(inputValue);
-    if (parsed === null || !isNaN(parsed)) {
-      onSubmit(parsed);
-      setOpen(false);
+  const handleEditKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const parsed = inputValue === "" ? null : parseFloat(inputValue);
+      if (parsed === null || !isNaN(parsed)) {
+        onSubmit(parsed);
+        setIsEditing(false);
+      }
+    } else if (e.key === "Escape") {
+      setIsEditing(false);
+      setInputValue(value?.toString() ?? "");
     }
   };
 
+  const handleBlur = () => {
+    setIsEditing(false);
+    setInputValue(value?.toString() ?? "");
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="flex items-center gap-2 hover:text-foreground">
-        {value !== null ? (
-          <span className="hover:bg-muted">{value}</span>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="text-muted-foreground"
-          >
-            {icon}
-          </Button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent className="w-40">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <label className="font-medium">{label}</label>
-          <Input
-            type="number"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            step="any"
-            className="w-full text-lg"
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="rounded bg-primary px-2 py-1 text-primary-foreground"
-            >
-              Save
-            </Button>
-          </div>
-        </form>
-      </PopoverContent>
-    </Popover>
+    <div
+      onClick={() => setIsEditing(true)}
+      className="flex cursor-pointer items-center gap-2 hover:text-foreground"
+    >
+      {isEditing ? (
+        <Input
+          type="number"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleEditKeyPress}
+          onBlur={handleBlur}
+          className="w-20"
+          autoFocus
+          step="any"
+        />
+      ) : value !== null ? (
+        <span className="hover:bg-muted">{value}</span>
+      ) : (
+        <Button variant="secondary" size="sm" className="text-muted-foreground">
+          {icon}
+        </Button>
+      )}
+    </div>
   );
 }
 
