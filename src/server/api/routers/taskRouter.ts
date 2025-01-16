@@ -169,7 +169,7 @@ export const taskRouter = createTRPCRouter({
       await ctx.db.task.createMany({
         data: input.tasks.map((text) => ({
           title: text,
-          status: "Open",
+          status: "open",
           userId,
           projectId: input.projectId,
         })),
