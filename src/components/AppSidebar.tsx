@@ -1,12 +1,19 @@
 "use client";
 
-import { Check } from "lucide-react";
-import Link from "next/link";
+import { Check, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
@@ -27,13 +34,19 @@ export function AppSidebar() {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(
     null,
   );
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
 
   const { currentProjectId, projects } = useCurrentProject();
 
   const { refetch: refetchProjects } = api.task.getProjects.useQuery();
 
   const createProjectMutation = api.task.createProject.useMutation({
-    onSuccess: () => void refetchProjects(),
+    onSuccess: () => {
+      void refetchProjects();
+      setIsNewProjectDialogOpen(false);
+      setNewProjectName("");
+    },
   });
 
   const filteredProjects = selectedWorkspaceId
@@ -109,23 +122,14 @@ export function AppSidebar() {
                           </SidebarMenuItem>
                         ))}
                         <SidebarMenuItem>
-                          <input
-                            type="text"
-                            placeholder="New Project Name"
-                            className="w-full rounded-md border px-3 py-2 text-sm"
-                            onKeyDown={(e) => {
-                              if (
-                                e.key === "Enter" &&
-                                e.currentTarget.value.trim()
-                              ) {
-                                void createProjectMutation.mutate({
-                                  name: e.currentTarget.value.trim(),
-                                  workspaceId: selectedWorkspaceId,
-                                });
-                                e.currentTarget.value = "";
-                              }
-                            }}
-                          />
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => setIsNewProjectDialogOpen(true)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Project
+                          </Button>
                         </SidebarMenuItem>
                       </SidebarMenu>
                     </SidebarMenuItem>
@@ -166,6 +170,44 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <Dialog
+        open={isNewProjectDialogOpen}
+        onOpenChange={setIsNewProjectDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              placeholder="Project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newProjectName.trim()) {
+                  void createProjectMutation.mutate({
+                    name: newProjectName.trim(),
+                    workspaceId: selectedWorkspaceId,
+                  });
+                }
+              }}
+            />
+            <Button
+              onClick={() => {
+                if (newProjectName.trim()) {
+                  void createProjectMutation.mutate({
+                    name: newProjectName.trim(),
+                    workspaceId: selectedWorkspaceId,
+                  });
+                }
+              }}
+            >
+              Create Project
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }
