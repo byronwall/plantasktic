@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -51,7 +51,7 @@ export function WorkspaceSelector({ value, onChange }: WorkspaceSelectorProps) {
           className="w-full justify-between"
         >
           {selectedWorkspace?.name ?? "Select workspace..."}
-          <Check
+          <ChevronDown
             className={cn(
               "ml-2 h-4 w-4 shrink-0 opacity-50",
               selectedWorkspace && "opacity-100",
