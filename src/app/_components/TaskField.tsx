@@ -13,10 +13,18 @@ import {
   Tag,
   Text,
 } from "lucide-react";
+import * as React from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { DateInput } from "~/components/ui/date-input";
+import { Input } from "~/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -45,6 +53,78 @@ export type TaskFieldProps = {
   showLabel?: boolean;
   className?: string;
 };
+
+type NumberInputPopoverProps = {
+  value: number | null;
+  onSubmit: (value: number | null) => void;
+  icon: React.ReactNode;
+  label: string;
+};
+
+function NumberInputPopover({
+  value,
+  onSubmit,
+  icon,
+  label,
+}: NumberInputPopoverProps) {
+  const [inputValue, setInputValue] = React.useState(value?.toString() ?? "");
+  const [open, setOpen] = React.useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = inputValue === "" ? null : parseFloat(inputValue);
+    if (parsed === null || !isNaN(parsed)) {
+      onSubmit(parsed);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className="flex items-center gap-2 hover:text-foreground">
+        {value !== null ? (
+          <span className="hover:bg-muted">{value}</span>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="text-muted-foreground"
+          >
+            {icon}
+          </Button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className="w-56">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <label className="text-sm font-medium">{label}</label>
+          <Input
+            type="number"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            step="any"
+            className="w-full"
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="rounded bg-primary px-2 py-1 text-sm text-primary-foreground"
+            >
+              Save
+            </Button>
+          </div>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function TaskField({
   task,
@@ -105,54 +185,31 @@ export function TaskField({
         );
       case "duration":
         return (
-          <div className="flex items-center gap-2">
-            <span>{task.duration ?? ""}</span>
-            <button
-              onClick={() => {
-                const newDuration = window.prompt(
-                  "Enter new duration (in hours):",
-                  task.duration?.toString() ?? "",
-                );
-                if (newDuration !== null) {
-                  const parsed = parseFloat(newDuration);
-                  if (!isNaN(parsed) || newDuration === "") {
-                    void updateTask.mutateAsync({
-                      taskId,
-                      data: {
-                        duration: newDuration === "" ? null : parsed,
-                      },
-                    });
-                  }
-                }
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Edit
-            </button>
-          </div>
+          <NumberInputPopover
+            value={task.duration}
+            onSubmit={(value) => {
+              void updateTask.mutateAsync({
+                taskId,
+                data: { duration: value },
+              });
+            }}
+            icon={<Clock className="h-4 w-4" />}
+            label="Duration (hours)"
+          />
         );
       case "priority":
         return (
-          <div className="flex items-center gap-2">
-            <span>{task.priority ?? ""}</span>
-            <button
-              onClick={() => {
-                const newPriority = window.prompt(
-                  "Enter new priority:",
-                  task.priority ?? "",
-                );
-                if (newPriority !== null) {
-                  void updateTask.mutateAsync({
-                    taskId,
-                    data: { priority: newPriority || null },
-                  });
-                }
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Edit
-            </button>
-          </div>
+          <NumberInputPopover
+            value={task.priority ? parseFloat(task.priority) : null}
+            onSubmit={(value) => {
+              void updateTask.mutateAsync({
+                taskId,
+                data: { priority: value?.toString() ?? null },
+              });
+            }}
+            icon={<ArrowUpDown className="h-4 w-4" />}
+            label="Priority"
+          />
         );
       case "status":
         return (
