@@ -9,6 +9,7 @@ import { api } from "~/trpc/react";
 
 import { BulkImportButton } from "./BulkImportButton";
 import { useSearch } from "./SearchContext";
+import { Input } from "./ui/input";
 
 export function TaskInput() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -71,9 +72,9 @@ export function TaskInput() {
   return (
     <>
       <div className="flex items-center gap-2">
-        <input
+        <Input
           id="new-task-input"
-          type="text"
+          autoComplete="off"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
           onKeyDown={handleKeyPress}
