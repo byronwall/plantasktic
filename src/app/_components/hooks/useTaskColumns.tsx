@@ -33,7 +33,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.title ?? undefined,
         header: "Title",
-        cell: ({ row }) => <TaskField task={row.original} field="title" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="title"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -42,7 +48,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.category ?? undefined,
         header: "Category",
-        cell: ({ row }) => <TaskField task={row.original} field="category" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="category"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -52,7 +64,11 @@ export function useTaskColumns() {
         accessorFn: (task) => task.description ?? undefined,
         header: "Description",
         cell: ({ row }) => (
-          <TaskField task={row.original} field="description" />
+          <TaskField
+            task={row.original}
+            field="description"
+            className="justify-center"
+          />
         ),
       },
     },
@@ -62,7 +78,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.comments ?? undefined,
         header: "Comments",
-        cell: ({ row }) => <TaskField task={row.original} field="comments" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="comments"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -71,7 +93,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.due_date ?? undefined,
         header: "Due Date",
-        cell: ({ row }) => <TaskField task={row.original} field="due_date" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="due_date"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -80,7 +108,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.start_date ?? undefined,
         header: "Start Date",
-        cell: ({ row }) => <TaskField task={row.original} field="start_date" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="start_date"
+            className="justify-center"
+          />
+        ),
         Filter: ({ column }) => {
           const [min, max] = (column.getFilterValue() as [
             Date | undefined,
@@ -102,7 +136,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.duration ?? undefined,
         header: "Duration",
-        cell: ({ row }) => <TaskField task={row.original} field="duration" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="duration"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -111,7 +151,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.priority ?? undefined,
         header: "Priority",
-        cell: ({ row }) => <TaskField task={row.original} field="priority" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="priority"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -120,7 +166,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.status ?? undefined,
         header: "Status",
-        cell: ({ row }) => <TaskField task={row.original} field="status" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="status"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -129,7 +181,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.created_at ?? undefined,
         header: "Created At",
-        cell: ({ row }) => <TaskField task={row.original} field="created_at" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="created_at"
+            className="justify-center"
+          />
+        ),
       },
     },
     {
@@ -138,7 +196,13 @@ export function useTaskColumns() {
       columnDef: {
         accessorFn: (task) => task.updated_at ?? undefined,
         header: "Updated At",
-        cell: ({ row }) => <TaskField task={row.original} field="updated_at" />,
+        cell: ({ row }) => (
+          <TaskField
+            task={row.original}
+            field="updated_at"
+            className="justify-center"
+          />
+        ),
       },
     },
   ];

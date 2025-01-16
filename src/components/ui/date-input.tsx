@@ -6,19 +6,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@radix-ui/react-popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 
 import { cn } from "~/lib/utils";
 
 import { Button } from "./button";
 import { Calendar } from "./calendar";
+import { Input } from "./input";
 
 interface DateInputProps {
   value?: Date;
   onChange: (date: Date | undefined) => void;
   className?: string;
-  shouldAllowClear?: boolean;
   minimal?: boolean;
 }
 
@@ -32,7 +32,6 @@ const DateInput: React.FC<DateInputProps> = ({
   value,
   onChange,
   className,
-  shouldAllowClear = true,
   minimal = false,
 }) => {
   const [date, setDate] = React.useState<DateParts | undefined>(() => {
@@ -258,86 +257,32 @@ const DateInput: React.FC<DateInputProps> = ({
     };
 
   return (
-    <div className="flex gap-1">
-      {(!minimal || value) && (
-        <div
-          className={cn("flex items-center rounded-lg border px-1", className)}
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant={"outline"}
+          className={cn(
+            "flex items-center gap-2 pl-3 text-left font-normal",
+            {
+              "w-9 p-0": !value,
+            },
+            className,
+          )}
         >
-          <input
-            type="text"
-            ref={monthRef}
-            max={12}
-            maxLength={2}
-            value={date?.month.toString() ?? ""}
-            onChange={handleInputChange("month")}
-            onKeyDown={handleKeyDown("month")}
-            onFocus={(e) => {
-              if (window.innerWidth > 1024) {
-                e.target.select();
-              }
-            }}
-            onBlur={handleBlur("month")}
-            className="w-6 border-none p-0 text-center outline-none"
-            placeholder="M"
-          />
-          <span className="-mx-px opacity-20">/</span>
-          <input
-            type="text"
-            ref={dayRef}
-            max={31}
-            maxLength={2}
-            value={date?.day.toString() ?? ""}
-            onChange={handleInputChange("day")}
-            onKeyDown={handleKeyDown("day")}
-            onFocus={(e) => {
-              if (window.innerWidth > 1024) {
-                e.target.select();
-              }
-            }}
-            onBlur={handleBlur("day")}
-            className="w-7 border-none p-0 text-center outline-none"
-            placeholder="D"
-          />
-          <span className="-mx-px opacity-20">/</span>
-          <input
-            type="text"
-            ref={yearRef}
-            max={9999}
-            maxLength={4}
-            value={date?.year.toString() ?? ""}
-            onChange={handleInputChange("year")}
-            onKeyDown={handleKeyDown("year")}
-            onFocus={(e) => {
-              if (window.innerWidth > 1024) {
-                e.target.select();
-              }
-            }}
-            onBlur={handleBlur("year")}
-            className="w-12 border-none p-0 text-center outline-none"
-            placeholder="YYYY"
-          />
-        </div>
-      )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant={"outline"}
-            className={cn("pl-3 text-left font-normal", {
-              "w-9 p-0": minimal && !value,
-            })}
-          >
+          {value ? (
+            <span>{new UTCDate(value).toLocaleDateString()}</span>
+          ) : (
             <CalendarIcon
               className={cn("h-4 w-4 opacity-50", {
-                "ml-auto": !minimal || value,
-                "m-auto": minimal && !value,
+                "ml-auto": value,
+                "m-auto": !value,
               })}
             />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="z-10 w-auto border bg-white p-0"
-          align="start"
-        >
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
+        <div className="p-3">
           <Calendar
             mode="single"
             selected={value}
@@ -349,18 +294,71 @@ const DateInput: React.FC<DateInputProps> = ({
             }
             initialFocus
           />
-        </PopoverContent>
-      </Popover>
-      {date && shouldAllowClear && (
-        <Button
-          variant="outline"
-          className="text-gray-500"
-          onClick={() => onChange(undefined)}
-        >
-          &#10006;
-        </Button>
-      )}
-    </div>
+          <div className="mb-3 flex items-center gap-1 rounded-lg border px-1">
+            <Input
+              ref={monthRef}
+              max={12}
+              maxLength={2}
+              value={date?.month.toString() ?? ""}
+              onChange={handleInputChange("month")}
+              onKeyDown={handleKeyDown("month")}
+              onFocus={(e) => {
+                if (window.innerWidth > 1024) {
+                  e.target.select();
+                }
+              }}
+              onBlur={handleBlur("month")}
+              className="w-6 border-none p-0 text-center outline-none"
+              placeholder="M"
+            />
+            <span className="-mx-px opacity-20">/</span>
+            <Input
+              ref={dayRef}
+              max={31}
+              maxLength={2}
+              value={date?.day.toString() ?? ""}
+              onChange={handleInputChange("day")}
+              onKeyDown={handleKeyDown("day")}
+              onFocus={(e) => {
+                if (window.innerWidth > 1024) {
+                  e.target.select();
+                }
+              }}
+              onBlur={handleBlur("day")}
+              className="w-7 border-none p-0 text-center outline-none"
+              placeholder="D"
+            />
+            <span className="-mx-px opacity-20">/</span>
+            <Input
+              ref={yearRef}
+              max={9999}
+              maxLength={4}
+              value={date?.year.toString() ?? ""}
+              onChange={handleInputChange("year")}
+              onKeyDown={handleKeyDown("year")}
+              onFocus={(e) => {
+                if (window.innerWidth > 1024) {
+                  e.target.select();
+                }
+              }}
+              onBlur={handleBlur("year")}
+              className="w-12 border-none p-0 text-center outline-none"
+              placeholder="YYYY"
+            />
+            {value && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-2 h-6 w-6 p-0 text-gray-500 hover:bg-gray-100"
+                onClick={() => onChange(undefined)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
