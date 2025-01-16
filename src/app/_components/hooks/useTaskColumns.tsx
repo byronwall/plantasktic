@@ -31,7 +31,7 @@ export function useTaskColumns() {
       value: "title",
       label: "Title",
       columnDef: {
-        accessorKey: "title",
+        accessorFn: (task) => task.title ?? undefined,
         header: "Title",
         cell: ({ row }) => <TaskField task={row.original} field="title" />,
       },
@@ -40,7 +40,7 @@ export function useTaskColumns() {
       value: "category",
       label: "Category",
       columnDef: {
-        accessorKey: "category",
+        accessorFn: (task) => task.category ?? undefined,
         header: "Category",
         cell: ({ row }) => <TaskField task={row.original} field="category" />,
       },
@@ -49,7 +49,7 @@ export function useTaskColumns() {
       value: "description",
       label: "Description",
       columnDef: {
-        accessorKey: "description",
+        accessorFn: (task) => task.description ?? undefined,
         header: "Description",
         cell: ({ row }) => (
           <TaskField task={row.original} field="description" />
@@ -60,7 +60,7 @@ export function useTaskColumns() {
       value: "comments",
       label: "Comments",
       columnDef: {
-        accessorKey: "comments",
+        accessorFn: (task) => task.comments ?? undefined,
         header: "Comments",
         cell: ({ row }) => <TaskField task={row.original} field="comments" />,
       },
@@ -69,7 +69,7 @@ export function useTaskColumns() {
       value: "due_date",
       label: "Due Date",
       columnDef: {
-        accessorKey: "due_date",
+        accessorFn: (task) => task.due_date ?? undefined,
         header: "Due Date",
         cell: ({ row }) => <TaskField task={row.original} field="due_date" />,
       },
@@ -78,7 +78,7 @@ export function useTaskColumns() {
       value: "start_date",
       label: "Start Date",
       columnDef: {
-        accessorKey: "start_date",
+        accessorFn: (task) => task.start_date ?? undefined,
         header: "Start Date",
         cell: ({ row }) => <TaskField task={row.original} field="start_date" />,
         Filter: ({ column }) => {
@@ -100,7 +100,7 @@ export function useTaskColumns() {
       value: "duration",
       label: "Duration",
       columnDef: {
-        accessorKey: "duration",
+        accessorFn: (task) => task.duration ?? undefined,
         header: "Duration",
         cell: ({ row }) => <TaskField task={row.original} field="duration" />,
       },
@@ -109,7 +109,7 @@ export function useTaskColumns() {
       value: "priority",
       label: "Priority",
       columnDef: {
-        accessorKey: "priority",
+        accessorFn: (task) => task.priority ?? undefined,
         header: "Priority",
         cell: ({ row }) => <TaskField task={row.original} field="priority" />,
       },
@@ -118,7 +118,7 @@ export function useTaskColumns() {
       value: "status",
       label: "Status",
       columnDef: {
-        accessorKey: "status",
+        accessorFn: (task) => task.status ?? undefined,
         header: "Status",
         cell: ({ row }) => <TaskField task={row.original} field="status" />,
       },
@@ -127,7 +127,7 @@ export function useTaskColumns() {
       value: "created_at",
       label: "Created At",
       columnDef: {
-        accessorKey: "created_at",
+        accessorFn: (task) => task.created_at ?? undefined,
         header: "Created At",
         cell: ({ row }) => <TaskField task={row.original} field="created_at" />,
       },
@@ -136,7 +136,7 @@ export function useTaskColumns() {
       value: "updated_at",
       label: "Updated At",
       columnDef: {
-        accessorKey: "updated_at",
+        accessorFn: (task) => task.updated_at ?? undefined,
         header: "Updated At",
         cell: ({ row }) => <TaskField task={row.original} field="updated_at" />,
       },

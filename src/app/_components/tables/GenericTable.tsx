@@ -33,15 +33,6 @@ import { DebouncedInput } from "../DebouncedInput";
 
 import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
 
-// declare module "@tanstack/table-core" {
-//   interface FilterFns {
-//     fuzzy: FilterFn<unknown>;
-//   }
-//   interface FilterMeta {
-//     itemRank: RankingInfo;
-//   }
-// }
-
 export type GenericTableProps<T> = {
   data: T[];
   columns: ColumnDef<T, string | number | Date>[];
@@ -70,7 +61,10 @@ export function GenericTable<T>({
 
   const table = useReactTable({
     data,
-    columns,
+    columns: columns.map((column) => ({
+      ...column,
+      sortUndefined: "last",
+    })),
     filterFns: {
       fuzzy: fuzzyFilter,
     },
@@ -96,6 +90,15 @@ export function GenericTable<T>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
   });
+
+  // log out the sortingFns for all columns
+  console.log(
+    "sortingFns",
+    table.getAllColumns().map((column) => ({
+      id: column.id,
+      sortingFn: column.getSortingFn().name,
+    })),
+  );
 
   const filteredRows = table.getRowModel().rows;
 
