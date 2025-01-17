@@ -73,9 +73,7 @@ export function TaskItem({
       </div>
 
       <TaskActions
-        taskId={task.task_id}
-        status={task.status}
-        projectId={task.projectId}
+        task={task}
         copiedTaskId={copiedTaskId}
         onCopy={(taskId) => copyToClipboard(taskId, task.title)}
         onDelete={handleDelete}

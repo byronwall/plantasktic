@@ -1,4 +1,4 @@
-import { Check, Copy, FolderInput, Trash2 } from "lucide-react";
+import { Check, Copy, Edit2, FolderInput, Trash2 } from "lucide-react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Button } from "~/components/ui/button";
@@ -8,13 +8,14 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
+import { useEditTaskStore } from "~/stores/useEditTaskStore";
 
 import { ProjectSelector } from "./ProjectSelector";
 
+import type { Task } from "./TaskList";
+
 type TaskActionsProps = {
-  taskId: number;
-  status: string;
-  projectId: string | null;
+  task: Task;
   copiedTaskId: number | null;
   onCopy: (taskId: number) => void;
   onDelete: (taskId: number, e: React.MouseEvent) => void;
@@ -23,17 +24,31 @@ type TaskActionsProps = {
 };
 
 export function TaskActions({
-  taskId,
-  status,
-  projectId,
+  task,
   copiedTaskId,
   onCopy,
   onDelete,
   onStatusChange,
   onMoveToProject,
 }: TaskActionsProps) {
+  const openEditDialog = useEditTaskStore((state) => state.open);
+
   return (
     <div className="flex items-center gap-2">
+      <SimpleTooltip content="Edit task">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditDialog(task);
+          }}
+          className="h-8 w-8"
+        >
+          <Edit2 className="h-4 w-4" />
+        </Button>
+      </SimpleTooltip>
+
       <SimpleTooltip content="Move to project">
         <Popover>
           <PopoverTrigger asChild>
@@ -45,9 +60,9 @@ export function TaskActions({
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-0" align="end">
             <ProjectSelector
-              currentProjectId={projectId}
+              currentProjectId={task.projectId}
               onProjectSelect={(projectId) =>
-                onMoveToProject(taskId, projectId)
+                onMoveToProject(task.task_id, projectId)
               }
             />
           </PopoverContent>
@@ -60,12 +75,12 @@ export function TaskActions({
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            onCopy(taskId);
+            onCopy(task.task_id);
           }}
           className="h-8 w-8 transition-opacity"
-          disabled={copiedTaskId === taskId}
+          disabled={copiedTaskId === task.task_id}
         >
-          {copiedTaskId === taskId ? (
+          {copiedTaskId === task.task_id ? (
             <Check className="h-4 w-4 text-green-500" />
           ) : (
             <Copy className="h-4 w-4" />
@@ -79,7 +94,7 @@ export function TaskActions({
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete(taskId, e);
+            onDelete(task.task_id, e);
           }}
           className="h-8 w-8 text-red-500 hover:text-red-700"
         >
@@ -90,8 +105,8 @@ export function TaskActions({
       <SimpleTooltip content="Toggle completion">
         <div>
           <Switch
-            checked={status === "completed"}
-            onCheckedChange={() => onStatusChange(taskId, status)}
+            checked={task.status === "completed"}
+            onCheckedChange={() => onStatusChange(task.task_id, task.status)}
           />
         </div>
       </SimpleTooltip>

@@ -15,6 +15,7 @@ import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api, type RouterOutputs } from "~/trpc/react";
 
+import { EditTaskDialog } from "./EditTaskDialog";
 import { TaskCardList } from "./TaskCardList";
 import { TaskGanttChart } from "./TaskGanttChart";
 import { TaskItemList } from "./TaskItemList";
@@ -218,6 +219,7 @@ export function TaskList({ projectName }: TaskListProps) {
       ) : viewMode === "matrix" ? (
         <TaskMatrixView tasks={tasks} />
       ) : null}
+      <EditTaskDialog />
     </div>
   );
 }
