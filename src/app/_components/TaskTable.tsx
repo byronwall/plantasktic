@@ -1,6 +1,9 @@
 "use client";
 
+import { type Row } from "@tanstack/react-table";
 import { useState } from "react";
+
+import { Checkbox } from "~/components/ui/checkbox";
 
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
@@ -13,7 +16,15 @@ import { GenericTable } from "./tables/GenericTable";
 
 import type { Task } from "@prisma/client";
 
-export function TaskTable({ tasks }: { tasks: Task[] }) {
+export function TaskTable({
+  tasks,
+  selectedTasks,
+  onToggleSelect,
+}: {
+  tasks: Task[];
+  selectedTasks: Set<number>;
+  onToggleSelect: (taskIds: number[]) => void;
+}) {
   const { AVAILABLE_COLUMNS } = useTaskColumns();
 
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
@@ -32,14 +43,32 @@ export function TaskTable({ tasks }: { tasks: Task[] }) {
     setSelectedColumns([...COLUMN_PRESETS[preset].columns]);
   };
 
-  const columns = selectedColumns.map(
-    (key) =>
-      AVAILABLE_COLUMNS.find((col) => col.value === key)?.columnDef ?? {
-        accessorKey: key,
-        header:
-          AVAILABLE_COLUMNS.find((col) => col.value === key)?.label ?? key,
-      },
-  );
+  const selectionColumn = {
+    id: "select",
+    cell: ({ row }: { row: Row<Task> }) => (
+      <Checkbox
+        checked={selectedTasks.has(row.original.task_id)}
+        onCheckedChange={(value) => {
+          row.toggleSelected(!!value);
+          onToggleSelect([row.original.task_id]);
+        }}
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  };
+
+  const columns = [
+    selectionColumn,
+    ...selectedColumns.map(
+      (key) =>
+        AVAILABLE_COLUMNS.find((col) => col.value === key)?.columnDef ?? {
+          accessorKey: key,
+          header:
+            AVAILABLE_COLUMNS.find((col) => col.value === key)?.label ?? key,
+        },
+    ),
+  ];
 
   return (
     <>

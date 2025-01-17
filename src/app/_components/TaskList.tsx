@@ -199,7 +199,11 @@ export function TaskList({ projectName }: TaskListProps) {
           showFieldNames={showFieldNames}
         />
       ) : viewMode === "table" ? (
-        <TaskTable tasks={tasks} />
+        <TaskTable
+          tasks={tasks}
+          selectedTasks={selectedTasks}
+          onToggleSelect={toggleTaskSelection}
+        />
       ) : viewMode === "card" ? (
         <TaskCardList
           tasks={tasks}
