@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { useMemo } from "react";
 
 import { ComboBox } from "../ComboBox";
 import { DateRangePicker } from "../DateRangePicker";
@@ -16,7 +16,7 @@ export function Filter<T>({
   table: Table<T>;
 }) {
   const allColValues = table
-    .getPreSortedRowModel()
+    .getPreFilteredRowModel()
     .flatRows.map((row) => row.getValue(column.id));
 
   const columnFilterValue = column.getFilterValue();
@@ -26,26 +26,32 @@ export function Filter<T>({
     (v) => typeof v === "number" || v === null || v === undefined,
   );
 
-  const isDateColumn = allColValues.every(
-    (v) => v instanceof Date || v === null || v === undefined,
+  const colHasDates = allColValues.some((v) => v instanceof Date);
+
+  const isStringColumn = allColValues.every(
+    (v) => typeof v === "string" || v === null || v === undefined,
   );
 
-  const sortedUniqueValues = React.useMemo(
+  const sortedUniqueValues = useMemo(
     () =>
-      !isNumberColumn
-        ? Array.from(
-            column.getFacetedUniqueValues().keys() as unknown as string[],
-          ).sort()
+      isStringColumn
+        ? Array.from(column.getFacetedUniqueValues().keys())
+            .filter((value): value is string => typeof value === "string")
+            .sort()
         : [],
-    [column.getFacetedUniqueValues(), isNumberColumn],
+    [column.getFacetedUniqueValues(), isStringColumn],
   );
 
+  const MAX_UNIQUE_VALUES_FOR_COMBO = 8;
+  const MAX_TEXT_LENGTH_FOR_COMBO = 12;
+
+  const areAllNull = allColValues.every((v) => v === null || v === undefined);
   // if all are null, set the filter to null
-  if (allColValues.every((v) => v === null)) {
+  if (areAllNull) {
     return null;
   }
 
-  if (isDateColumn) {
+  if (colHasDates) {
     const [filterMin, filterMax] = (columnFilterValue as [Date, Date]) ?? [];
 
     return (
@@ -53,15 +59,22 @@ export function Filter<T>({
         <DateRangePicker
           startDate={filterMin}
           endDate={filterMax}
-          onChange={(start, end) => column.setFilterValue([start, end])}
+          onChange={(start, end) => {
+            const newRange =
+              !start && !end ? undefined : [start ?? null, end ?? null];
+            column.setFilterValue(newRange);
+          }}
         />
       </div>
     );
   }
 
   if (isNumberColumn) {
-    const [filterMin, filterMax] =
-      (columnFilterValue as [number, number]) ?? [];
+    const [filterMin, filterMax] = (columnFilterValue as [number, number]) ?? [
+      null,
+      null,
+    ];
+
     const minPlaceholder = `Min ${minValue ? `(${Math.floor(minValue)})` : ""}`;
     const maxPlaceholder = `Max ${maxValue ? `(${Math.ceil(maxValue)})` : ""}`;
 
@@ -69,44 +82,94 @@ export function Filter<T>({
       <div>
         <div className="flex flex-col">
           <DebouncedInput
-            min={Number(minValue ?? "")}
-            max={Number(maxValue ?? "")}
-            value={filterMin ?? ""}
+            type="number"
+            min={minValue}
+            max={maxValue}
+            value={filterMin}
             onChange={(value) =>
-              column.setFilterValue((old: [number, number]) => [
-                value,
-                old?.[1],
-              ])
+              column.setFilterValue((old: [number, number]) => {
+                const num =
+                  value === undefined || value === "" || value === null
+                    ? undefined
+                    : Number(value);
+                // only if different
+                if (num === old?.[0]) {
+                  return old;
+                }
+                const newEnd = old?.[1] ?? null;
+
+                // if both are null, return null
+                if (num === null && newEnd === null) {
+                  return null;
+                }
+
+                return [num, newEnd];
+              })
             }
             placeholder={minPlaceholder}
             className="rounded border shadow"
           />
           <DebouncedInput
-            min={Number(minValue ?? "")}
-            max={Number(maxValue ?? "")}
-            value={filterMax ?? ""}
+            type="number"
+            min={minValue}
+            max={maxValue}
+            value={filterMax}
             onChange={(value) =>
-              column.setFilterValue((old: [number, number]) => [
-                old?.[0],
-                value,
-              ])
+              column.setFilterValue((old: [number, number]) => {
+                const num =
+                  value === undefined || value === "" || value === null
+                    ? undefined
+                    : Number(value);
+                // only if different
+                if (num === old?.[1]) {
+                  return old;
+                }
+                const newStart = old?.[0] ?? null;
+
+                // if both are null, return null
+                if (newStart === null && num === null) {
+                  return null;
+                }
+
+                return [newStart, num];
+              })
             }
             placeholder={maxPlaceholder}
             className="rounded border shadow"
           />
         </div>
-        <div className="h-1" />
       </div>
+    );
+  }
+
+  const shouldUseComboBox =
+    isStringColumn &&
+    sortedUniqueValues.length <= MAX_UNIQUE_VALUES_FOR_COMBO &&
+    sortedUniqueValues.every(
+      (value) => value.length <= MAX_TEXT_LENGTH_FOR_COMBO,
+    );
+
+  if (shouldUseComboBox) {
+    return (
+      <>
+        <ComboBox
+          onChange={(value) => column.setFilterValue(value)}
+          value={columnFilterValue as string}
+          options={sortedUniqueValues}
+          allowClear
+        />
+        <div className="h-1" />
+      </>
     );
   }
 
   return (
     <>
-      <ComboBox
+      <DebouncedInput
+        value={columnFilterValue ?? ""}
         onChange={(value) => column.setFilterValue(value)}
-        value={columnFilterValue as string}
-        options={sortedUniqueValues}
-        allowClear
+        placeholder="Filter..."
+        className="rounded border text-sm shadow"
       />
       <div className="h-1" />
     </>

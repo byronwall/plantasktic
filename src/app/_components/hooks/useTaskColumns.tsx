@@ -1,4 +1,3 @@
-import { DateRangePicker } from "../DateRangePicker";
 import { TaskField } from "../TaskField";
 
 import type { Task } from "@prisma/client";
@@ -100,6 +99,7 @@ export function useTaskColumns() {
             className="justify-center"
           />
         ),
+        filterFn: "inDateRange",
       },
     },
     {
@@ -115,19 +115,6 @@ export function useTaskColumns() {
             className="justify-center"
           />
         ),
-        Filter: ({ column }) => {
-          const [min, max] = (column.getFilterValue() as [
-            Date | undefined,
-            Date | undefined,
-          ]) ?? [undefined, undefined];
-          return (
-            <DateRangePicker
-              startDate={min}
-              endDate={max}
-              onChange={(start, end) => column.setFilterValue([start, end])}
-            />
-          );
-        },
       },
     },
     {
@@ -143,6 +130,7 @@ export function useTaskColumns() {
             className="justify-center"
           />
         ),
+        filterFn: "inNumberRange",
       },
     },
     {
@@ -158,6 +146,7 @@ export function useTaskColumns() {
             className="justify-center"
           />
         ),
+        filterFn: "inNumberRange",
       },
     },
     {

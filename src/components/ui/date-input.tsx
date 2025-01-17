@@ -265,12 +265,12 @@ const DateInput: React.FC<DateInputProps> = ({
           </span>
         ) : (
           <Button variant={"outline"} className={cn("w-9 p-0", className)}>
-            <CalendarIcon className="m-auto h-4 w-4 opacity-50" />
+            <CalendarIcon className="m-auto h-4 w-4 text-muted-foreground" />
           </Button>
         )}
       </PopoverTrigger>
       <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
-        <div className="p-3">
+        <div className="p-1">
           <Calendar
             key={value?.toISOString()}
             mode="single"

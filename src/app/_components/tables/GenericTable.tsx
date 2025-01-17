@@ -67,6 +67,26 @@ export function GenericTable<T>({
     })),
     filterFns: {
       fuzzy: fuzzyFilter,
+      inDateRange: (row, id, value) => {
+        console.log("inDateRange", row, id, value);
+        const rowValue = row.getValue(id);
+        if (rowValue === undefined || rowValue === null) {
+          return false;
+        }
+        const [start, end] = value as [Date | null, Date | null];
+        console.log("start", start);
+        console.log("end", end);
+        if (start === null && end === null) {
+          return true;
+        }
+        if (start === null) {
+          return rowValue <= end;
+        }
+        if (end === null) {
+          return rowValue >= start;
+        }
+        return rowValue >= start && rowValue <= end;
+      },
     },
     state: {
       columnFilters,
@@ -122,7 +142,7 @@ export function GenericTable<T>({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow
               key={headerGroup.id}
-              className="sticky top-9 z-10 bg-white hover:bg-background"
+              className="sticky top-9 bg-white hover:bg-background"
               style={{
                 boxShadow: "inset 0px -2px 0px rgb(156 163 175)",
               }}

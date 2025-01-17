@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import { Input } from "~/components/ui/input";
 
@@ -14,13 +14,13 @@ export function DebouncedInput({
   onChange: (value: string | number) => void;
   debounce?: number;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">) {
-  const [value, setValue] = React.useState(initialValue);
+  const [value, setValue] = useState(initialValue);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timeout = setTimeout(() => {
       onChange(value);
     }, debounce);
@@ -31,7 +31,7 @@ export function DebouncedInput({
   return (
     <Input
       {...props}
-      value={value}
+      value={value ?? undefined}
       onChange={(e) => setValue(e.target.value)}
     />
   );

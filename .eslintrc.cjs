@@ -74,6 +74,8 @@ const config = {
     "react/no-unescaped-entities": "warn",
     "@typescript-eslint/no-unsafe-call": "warn",
     "@typescript-eslint/prefer-nullish-coalescing": "warn",
+    // no console.log
+    "no-console": "warn",
   },
   settings: {
     "import/resolver": {
