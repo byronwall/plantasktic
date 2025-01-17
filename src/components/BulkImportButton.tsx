@@ -37,7 +37,10 @@ export function BulkImportButton({ projectId }: BulkImportButtonProps) {
 
     if (tasks.length > 0) {
       await bulkCreateTasksMutater.mutateAsync({
-        tasks,
+        tasks: tasks.map((title) => ({
+          title,
+          status: "open",
+        })),
         projectId,
       });
       setBulkText("");

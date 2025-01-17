@@ -88,14 +88,22 @@ export const taskRouter = createTRPCRouter({
     }),
 
   createTask: protectedProcedure
-    .input(z.object({ text: z.string(), projectId: z.string().optional() }))
+    .input(
+      z.object({
+        title: z.string(),
+        status: z.string(),
+        projectId: z.string().nullable(),
+        parentTaskId: z.number().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       await ctx.db.task.create({
         data: {
-          title: input.text,
-          status: "Open",
+          title: input.title,
+          status: input.status,
           userId: ctx.session.user.id,
           projectId: input.projectId,
+          parentTaskId: input.parentTaskId,
         },
       });
 
@@ -119,7 +127,7 @@ export const taskRouter = createTRPCRouter({
           ...(input.showCompleted ? {} : { status: { not: "completed" } }),
         },
         orderBy: {
-          created_at: "desc",
+          updated_at: "desc",
         },
       });
     }),
@@ -159,7 +167,12 @@ export const taskRouter = createTRPCRouter({
   bulkCreateTasks: protectedProcedure
     .input(
       z.object({
-        tasks: z.array(z.string()),
+        tasks: z.array(
+          z.object({
+            title: z.string(),
+            status: z.string(),
+          }),
+        ),
         projectId: z.string().optional(),
       }),
     )
@@ -167,9 +180,9 @@ export const taskRouter = createTRPCRouter({
       const userId = ctx.session.user.id;
 
       await ctx.db.task.createMany({
-        data: input.tasks.map((text) => ({
-          title: text,
-          status: "open",
+        data: input.tasks.map((task) => ({
+          title: task.title,
+          status: task.status,
           userId,
           projectId: input.projectId,
         })),

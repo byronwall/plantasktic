@@ -24,7 +24,8 @@ export function TaskInput() {
   const createTask = async () => {
     if (!isSearchMode && newTaskTitle.trim()) {
       await createTaskMutater.mutateAsync({
-        text: newTaskTitle,
+        title: newTaskTitle,
+        status: "open",
         projectId: currentProjectId ?? undefined,
       });
       setNewTaskTitle("");
