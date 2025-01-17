@@ -68,14 +68,12 @@ export function GenericTable<T>({
     filterFns: {
       fuzzy: fuzzyFilter,
       inDateRange: (row, id, value) => {
-        console.log("inDateRange", row, id, value);
         const rowValue = row.getValue(id);
         if (rowValue === undefined || rowValue === null) {
           return false;
         }
         const [start, end] = value as [Date | null, Date | null];
-        console.log("start", start);
-        console.log("end", end);
+
         if (start === null && end === null) {
           return true;
         }
@@ -148,9 +146,16 @@ export function GenericTable<T>({
               }}
             >
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} colSpan={header.colSpan}>
+                <TableHead
+                  key={header.id}
+                  colSpan={header.colSpan}
+                  className="align-bottom"
+                >
                   {header.isPlaceholder ? null : (
                     <div className="flex flex-col items-center gap-1 py-2">
+                      {header.column.getCanFilter() ? (
+                        <Filter column={header.column} table={table} />
+                      ) : null}
                       <div
                         className={cn("flex items-center gap-1", {
                           "cursor-pointer select-none":
@@ -167,9 +172,6 @@ export function GenericTable<T>({
                           desc: <ChevronDown />,
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
-                      {header.column.getCanFilter() ? (
-                        <Filter column={header.column} table={table} />
-                      ) : null}
                     </div>
                   )}
                 </TableHead>
