@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
-import { api } from "~/trpc/react";
 
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
@@ -20,22 +19,17 @@ interface TaskCardListProps {
   tasks: Task[];
   selectedTasks: Set<number>;
   onToggleSelect: (taskIds: number[]) => void;
-  onMoveToProject: (taskId: number, projectId: string | null) => void;
 }
 
 export function TaskCardList({
   tasks,
   selectedTasks,
   onToggleSelect,
-  onMoveToProject,
 }: TaskCardListProps) {
   const { AVAILABLE_COLUMNS } = useTaskColumns();
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.detailed.columns,
   ]);
-  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
-  const updateTask = api.task.updateTask.useMutation();
-  const deleteTaskMutation = api.task.deleteTask.useMutation();
 
   const handleColumnToggle = (columns: ColumnKey[]) => {
     // Ensure at least one column is selected
@@ -43,32 +37,6 @@ export function TaskCardList({
       columns = ["title" as const];
     }
     setSelectedColumns(columns);
-  };
-
-  const copyToClipboard = (taskId: number, title: string) => {
-    void navigator.clipboard.writeText(title);
-    setCopiedTaskId(taskId);
-    setTimeout(() => setCopiedTaskId(null), 2000);
-  };
-
-  const toggleTaskStatus = (taskId: number, status: string) => {
-    const newStatus = status === "completed" ? "open" : "completed";
-    void updateTask.mutateAsync({
-      taskId,
-      data: { status: newStatus },
-    });
-  };
-
-  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
-    const isMac = navigator.platform.toUpperCase().includes("MAC");
-    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
-
-    if (
-      skipConfirm ||
-      window.confirm("Are you sure you want to delete this task?")
-    ) {
-      await deleteTaskMutation.mutateAsync({ taskId });
-    }
   };
 
   return (
@@ -91,16 +59,7 @@ export function TaskCardList({
                 checked={selectedTasks.has(task.task_id)}
                 onCheckedChange={() => onToggleSelect([task.task_id])}
               />
-              <TaskActions
-                taskId={task.task_id}
-                status={task.status}
-                projectId={task.projectId}
-                copiedTaskId={copiedTaskId}
-                onCopy={(taskId) => copyToClipboard(taskId, task.title)}
-                onDelete={handleDelete}
-                onStatusChange={toggleTaskStatus}
-                onMoveToProject={onMoveToProject}
-              />
+              <TaskActions task={task} />
             </div>
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">

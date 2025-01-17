@@ -1,6 +1,6 @@
 "use client";
 
-import { type Row } from "@tanstack/react-table";
+import { type Row, type Table } from "@tanstack/react-table";
 import { MoreVertical } from "lucide-react";
 import { useState } from "react";
 
@@ -11,7 +11,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { api } from "~/trpc/react";
 
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
@@ -24,6 +23,7 @@ import { GenericTable } from "./tables/GenericTable";
 import { TaskActions } from "./TaskActions";
 
 import type { Task } from "@prisma/client";
+import type { TaskColumnDef } from "./hooks/useTaskColumns";
 
 export function TaskTable({
   tasks,
@@ -35,12 +35,6 @@ export function TaskTable({
   onToggleSelect: (taskIds: number[]) => void;
 }) {
   const { AVAILABLE_COLUMNS } = useTaskColumns();
-  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
-  const updateTask = api.task.updateTask.useMutation();
-  const deleteTaskMutation = api.task.deleteTask.useMutation();
-  const bulkMoveTasksToProjectMutation =
-    api.task.bulkMoveTasksToProject.useMutation();
-
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.basic.columns,
   ]);
@@ -57,93 +51,52 @@ export function TaskTable({
     setSelectedColumns([...COLUMN_PRESETS[preset].columns]);
   };
 
-  const copyToClipboard = (taskId: number, title: string) => {
-    void navigator.clipboard.writeText(title);
-    setCopiedTaskId(taskId);
-    setTimeout(() => setCopiedTaskId(null), 2000);
-  };
-
-  const toggleTaskStatus = (taskId: number, status: string) => {
-    const newStatus = status === "completed" ? "open" : "completed";
-    void updateTask.mutateAsync({
-      taskId,
-      data: { status: newStatus },
-    });
-  };
-
-  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
-    const isMac = navigator.platform.toUpperCase().includes("MAC");
-    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
-
-    if (
-      skipConfirm ||
-      window.confirm("Are you sure you want to delete this task?")
-    ) {
-      await deleteTaskMutation.mutateAsync({ taskId });
-    }
-  };
-
-  const handleMoveToProject = async (
-    taskId: number,
-    projectId: string | null,
-  ) => {
-    await bulkMoveTasksToProjectMutation.mutateAsync({
-      taskIds: [taskId],
-      projectId,
-    });
-  };
-
-  const selectionColumn = {
-    id: "select",
-    cell: ({ row }: { row: Row<Task> }) => (
-      <Checkbox
-        checked={selectedTasks.has(row.original.task_id)}
-        onCheckedChange={(value) => {
-          row.toggleSelected(!!value);
-          onToggleSelect([row.original.task_id]);
-        }}
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  };
-
-  const actionsColumn = {
-    id: "actions",
-    cell: ({ row }: { row: Row<Task> }) => (
-      <Popover>
-        <PopoverTrigger>
-          <Button variant="ghost" size="icon">
-            <MoreVertical />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent>
-          <TaskActions
-            task={row.original}
-            copiedTaskId={copiedTaskId}
-            onCopy={(taskId) => copyToClipboard(taskId, row.original.title)}
-            onDelete={handleDelete}
-            onStatusChange={toggleTaskStatus}
-            onMoveToProject={handleMoveToProject}
-          />
-        </PopoverContent>
-      </Popover>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  };
-
-  const columns = [
-    selectionColumn,
-    actionsColumn,
-    ...selectedColumns.map(
-      (key) =>
-        AVAILABLE_COLUMNS.find((col) => col.value === key)?.columnDef ?? {
-          accessorKey: key,
-          header:
-            AVAILABLE_COLUMNS.find((col) => col.value === key)?.label ?? key,
-        },
-    ),
+  const columns: TaskColumnDef[] = [
+    {
+      id: "select",
+      header: ({ table }: { table: Table<Task> }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }: { row: Row<Task> }) => (
+        <Checkbox
+          checked={selectedTasks.has(row.original.task_id)}
+          onCheckedChange={() => onToggleSelect([row.original.task_id])}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      id: "actions",
+      cell: ({ row }: { row: Row<Task> }) => {
+        return (
+          <Popover>
+            <PopoverTrigger>
+              <Button variant="ghost" size="icon">
+                <MoreVertical />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <TaskActions task={row.original} />
+            </PopoverContent>
+          </Popover>
+        );
+      },
+    },
+    ...selectedColumns.map((field) => {
+      const column = AVAILABLE_COLUMNS.find((col) => col.value === field);
+      return (
+        column?.columnDef ?? {
+          accessorKey: field,
+          header: column?.label ?? field,
+        }
+      );
+    }),
   ];
 
   return (

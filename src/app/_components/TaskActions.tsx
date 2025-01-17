@@ -1,4 +1,5 @@
 import { Check, Copy, Edit2, FolderInput, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Button } from "~/components/ui/button";
@@ -9,6 +10,7 @@ import {
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
+import { api } from "~/trpc/react";
 
 import { ProjectSelector } from "./ProjectSelector";
 
@@ -16,22 +18,51 @@ import type { Task } from "./TaskList";
 
 type TaskActionsProps = {
   task: Task;
-  copiedTaskId: number | null;
-  onCopy: (taskId: number) => void;
-  onDelete: (taskId: number, e: React.MouseEvent) => void;
-  onStatusChange: (taskId: number, status: string) => void;
-  onMoveToProject: (taskId: number, projectId: string | null) => void;
 };
 
-export function TaskActions({
-  task,
-  copiedTaskId,
-  onCopy,
-  onDelete,
-  onStatusChange,
-  onMoveToProject,
-}: TaskActionsProps) {
+export function TaskActions({ task }: TaskActionsProps) {
+  const [copiedTaskId, setCopiedTaskId] = useState<number | null>(null);
+  const updateTask = api.task.updateTask.useMutation();
+  const deleteTaskMutation = api.task.deleteTask.useMutation();
+  const bulkMoveTasksToProjectMutation =
+    api.task.bulkMoveTasksToProject.useMutation();
   const openEditDialog = useEditTaskStore((state) => state.open);
+
+  const copyToClipboard = (taskId: number, title: string) => {
+    void navigator.clipboard.writeText(title);
+    setCopiedTaskId(taskId);
+    setTimeout(() => setCopiedTaskId(null), 2000);
+  };
+
+  const toggleTaskStatus = (taskId: number, status: string) => {
+    const newStatus = status === "completed" ? "open" : "completed";
+    void updateTask.mutateAsync({
+      taskId,
+      data: { status: newStatus },
+    });
+  };
+
+  const handleDelete = async (taskId: number, e: React.MouseEvent) => {
+    const isMac = navigator.platform.toUpperCase().includes("MAC");
+    const skipConfirm = (isMac && e.metaKey) || (!isMac && e.ctrlKey);
+
+    if (
+      skipConfirm ||
+      window.confirm("Are you sure you want to delete this task?")
+    ) {
+      await deleteTaskMutation.mutateAsync({ taskId });
+    }
+  };
+
+  const handleMoveToProject = async (
+    taskId: number,
+    projectId: string | null,
+  ) => {
+    await bulkMoveTasksToProjectMutation.mutateAsync({
+      taskIds: [taskId],
+      projectId,
+    });
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -49,25 +80,23 @@ export function TaskActions({
         </Button>
       </SimpleTooltip>
 
-      <SimpleTooltip content="Move to project">
-        <Popover>
+      <Popover>
+        <SimpleTooltip content="Move to project">
           <PopoverTrigger asChild>
-            <SimpleTooltip content="Move to project">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <FolderInput className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <FolderInput className="h-4 w-4" />
+            </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0" align="end">
-            <ProjectSelector
-              currentProjectId={task.projectId}
-              onProjectSelect={(projectId) =>
-                onMoveToProject(task.task_id, projectId)
-              }
-            />
-          </PopoverContent>
-        </Popover>
-      </SimpleTooltip>
+        </SimpleTooltip>
+        <PopoverContent className="w-[200px] p-0" align="end">
+          <ProjectSelector
+            currentProjectId={task.projectId}
+            onProjectSelect={(projectId) =>
+              handleMoveToProject(task.task_id, projectId)
+            }
+          />
+        </PopoverContent>
+      </Popover>
 
       <SimpleTooltip content="Copy task">
         <Button
@@ -75,7 +104,7 @@ export function TaskActions({
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            onCopy(task.task_id);
+            copyToClipboard(task.task_id, task.title);
           }}
           className="h-8 w-8 transition-opacity"
           disabled={copiedTaskId === task.task_id}
@@ -94,7 +123,7 @@ export function TaskActions({
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete(task.task_id, e);
+            void handleDelete(task.task_id, e);
           }}
           className="h-8 w-8 text-red-500 hover:text-red-700"
         >
@@ -106,7 +135,7 @@ export function TaskActions({
         <div>
           <Switch
             checked={task.status === "completed"}
-            onCheckedChange={() => onStatusChange(task.task_id, task.status)}
+            onCheckedChange={() => toggleTaskStatus(task.task_id, task.status)}
           />
         </div>
       </SimpleTooltip>

@@ -14,13 +14,11 @@ export function TaskItemList({
   tasks,
   selectedTasks,
   onToggleSelect,
-  onMoveToProject,
   showFieldNames,
 }: {
   tasks: Task[];
   selectedTasks: Set<number>;
   onToggleSelect: (taskIds: number[]) => void;
-  onMoveToProject: (taskId: number, projectId: string | null) => void;
   showFieldNames: boolean;
 }) {
   const { AVAILABLE_COLUMNS } = useTaskColumns();
@@ -55,7 +53,6 @@ export function TaskItemList({
               isSelected={selectedTasks.has(task.task_id)}
               selectedColumns={selectedColumns}
               onToggleSelect={onToggleSelect}
-              onMoveToProject={onMoveToProject}
               showFieldNames={showFieldNames}
             />
           ))}

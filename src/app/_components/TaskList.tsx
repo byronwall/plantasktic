@@ -105,16 +105,6 @@ export function TaskList({ projectName }: TaskListProps) {
     setSelectedTasks(new Set());
   };
 
-  const handleMoveTaskToProject = async (
-    taskId: number,
-    projectId: string | null,
-  ) => {
-    await bulkMoveTasksToProjectMutation.mutateAsync({
-      taskIds: [taskId],
-      projectId,
-    });
-  };
-
   const handleBulkMoveToProject = async (projectId: string | null) => {
     await bulkMoveTasksToProjectMutation.mutateAsync({
       taskIds: Array.from(selectedTasks),
@@ -196,7 +186,6 @@ export function TaskList({ projectName }: TaskListProps) {
           tasks={tasks}
           selectedTasks={selectedTasks}
           onToggleSelect={toggleTaskSelection}
-          onMoveToProject={handleMoveTaskToProject}
           showFieldNames={showFieldNames}
         />
       ) : viewMode === "table" ? (
@@ -210,7 +199,6 @@ export function TaskList({ projectName }: TaskListProps) {
           tasks={tasks}
           selectedTasks={selectedTasks}
           onToggleSelect={toggleTaskSelection}
-          onMoveToProject={handleMoveTaskToProject}
         />
       ) : viewMode === "kanban" ? (
         <TaskKanbanView tasks={tasks} />
