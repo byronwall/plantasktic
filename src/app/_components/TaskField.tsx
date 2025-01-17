@@ -14,7 +14,7 @@ import {
   Text,
 } from "lucide-react";
 import * as React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Badge } from "~/components/ui/badge";
@@ -65,6 +65,16 @@ function NumberInputPopover({
 }: NumberInputPopoverProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = React.useState(value?.toString() ?? "");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+    }
+  }, [isEditing]);
 
   const handleEditKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -92,13 +102,13 @@ function NumberInputPopover({
     >
       {isEditing ? (
         <Input
+          ref={inputRef}
           type="number"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleEditKeyPress}
           onBlur={handleBlur}
           className="w-20"
-          autoFocus
           step="any"
         />
       ) : value !== null ? (
