@@ -19,8 +19,6 @@ export function Filter<T>({
     .getPreSortedRowModel()
     .flatRows.map((row) => row.getValue(column.id));
 
-  console.log("allColValues", allColValues);
-
   const columnFilterValue = column.getFilterValue();
   const [minValue, maxValue] = column.getFacetedMinMaxValues() ?? [];
 

@@ -29,7 +29,7 @@ export default async function RootLayout({
             {session ? (
               <SidebarProvider>
                 <AppSidebar />
-                <main className="relative min-h-screen w-full overflow-x-hidden p-1">
+                <main className="relative min-h-screen w-full p-1">
                   <div className="sticky top-0 z-50 border-b bg-background">
                     <TaskInput />
                   </div>

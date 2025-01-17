@@ -91,15 +91,6 @@ export function GenericTable<T>({
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
   });
 
-  // log out the sortingFns for all columns
-  console.log(
-    "sortingFns",
-    table.getAllColumns().map((column) => ({
-      id: column.id,
-      sortingFn: column.getSortingFn().name,
-    })),
-  );
-
   const filteredRows = table.getRowModel().rows;
 
   useEffect(() => {
@@ -126,14 +117,20 @@ export function GenericTable<T>({
         </div>
       )}
 
-      <Table>
+      <Table className="">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
+            <TableRow
+              key={headerGroup.id}
+              className="sticky top-9 z-10 bg-white hover:bg-background"
+              style={{
+                boxShadow: "inset 0px -2px 0px rgb(156 163 175)",
+              }}
+            >
               {headerGroup.headers.map((header) => (
                 <TableHead key={header.id} colSpan={header.colSpan}>
                   {header.isPlaceholder ? null : (
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex flex-col items-center gap-1 py-2">
                       <div
                         className={cn("flex items-center gap-1", {
                           "cursor-pointer select-none":
