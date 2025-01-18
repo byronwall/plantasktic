@@ -13,9 +13,12 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
+  const decodedWorkspace = decodeURIComponent(params.workspace);
+  const decodedProject = decodeURIComponent(params.project);
+
   const workspaces = await api.workspace.getAll();
   const workspace = workspaces.find(
-    (w: Workspace) => w.name === params.workspace,
+    (w: Workspace) => w.name === decodedWorkspace,
   );
 
   if (!workspace) {
@@ -24,7 +27,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const projects = await api.project.getAll();
   const project = projects.find(
-    (p: Project) => p.name === params.project && p.workspaceId === workspace.id,
+    (p: Project) => p.name === decodedProject && p.workspaceId === workspace.id,
   );
 
   if (!project) {
@@ -32,7 +35,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <p className="text-gray-500">Workspace: {workspace.name}</p>

@@ -42,7 +42,7 @@ export default async function RootLayout({
                         <TaskInput />
                       </div>
                     </div>
-                    <div className="mx-auto px-4 py-8">{children}</div>
+                    <div className="mx-auto p-2">{children}</div>
                   </main>
                 </SidebarProvider>
               </WorkspaceProjectProvider>

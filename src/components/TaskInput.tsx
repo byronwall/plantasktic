@@ -82,10 +82,13 @@ export function TaskInput() {
           isSearchMode ? "Search tasks..." : 'Press "/" to create a new task...'
         }
         className="flex-1 rounded-md border border-input bg-background px-3 py-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        disabled={!currentProjectId}
       />
       <Button
         onClick={() => void createTask()}
-        disabled={createTaskMutater.isPending || isSearchMode}
+        disabled={
+          createTaskMutater.isPending || isSearchMode || !currentProjectId
+        }
       >
         {createTaskMutater.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />

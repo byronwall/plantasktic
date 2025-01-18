@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { TaskList } from "~/app/_components/TaskList";
+import { CreateProjectButton } from "~/components/CreateProjectButton";
 import { api } from "~/trpc/server";
 
 import type { Workspace } from "@prisma/client";
@@ -22,8 +23,11 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="mb-6 text-2xl font-bold">{workspace.name}</h1>
+    <div className="container mx-auto">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{workspace.name}</h1>
+        <CreateProjectButton workspaceId={workspace.id} />
+      </div>
       <TaskList workspaceId={workspace.id} projectId={null} />
     </div>
   );

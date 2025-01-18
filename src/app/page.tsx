@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CreateWorkspaceButton } from "~/components/CreateWorkspaceButton";
 import { Button } from "~/components/ui/button";
 import { auth } from "~/server/auth";
 import { api, HydrateClient } from "~/trpc/server";
@@ -44,6 +45,7 @@ export default async function HomePage() {
                 </Button>
               </Link>
             ))}
+            <CreateWorkspaceButton />
           </div>
         </div>
         <div className="mb-8">

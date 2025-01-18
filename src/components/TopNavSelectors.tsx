@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { ProjectSelector } from "~/components/ProjectSelector";
 import { WorkspaceSelector } from "~/components/WorkspaceSelector";
@@ -11,14 +11,24 @@ export function TopNavSelectors() {
   const { data: workspaces } = api.workspace.getAll.useQuery();
   const { data: projects } = api.project.getAll.useQuery();
 
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname : "";
-  const pathParts = currentPath.split("/").filter(Boolean);
+  const currentPath = usePathname();
+
+  const pathParts = currentPath
+    .split("/")
+    .filter(Boolean)
+    .map((part) => decodeURIComponent(part));
 
   const currentWorkspace = workspaces?.find((w) => w.name === pathParts[0]);
   const currentProject = projects?.find(
     (p) => p.name === pathParts[1] && p.workspaceId === currentWorkspace?.id,
   );
+
+  console.log("currentPath", currentPath);
+  console.log("pathParts", pathParts);
+  console.log("currentWorkspace", currentWorkspace);
+  console.log("currentProject", currentProject);
+  console.log("workspaces", workspaces);
+  console.log("projects", projects);
 
   const handleWorkspaceChange = (workspaceId: string | null) => {
     if (!workspaceId) {

@@ -5,9 +5,13 @@ import { api } from "~/trpc/react";
 export function useCurrentProject() {
   const pathname = usePathname();
 
-  // Get current project from URL if we're on a project page
-  const currentProjectName = pathname.startsWith("/project/")
-    ? decodeURIComponent(pathname.split("/")[2] ?? "")
+  // Extract workspace and project from URL path
+  const pathParts = pathname.split("/").filter(Boolean);
+  const currentWorkspaceName = pathParts[0]
+    ? decodeURIComponent(pathParts[0])
+    : null;
+  const currentProjectName = pathParts[1]
+    ? decodeURIComponent(pathParts[1])
     : null;
 
   // Find the project ID from the name
@@ -17,6 +21,7 @@ export function useCurrentProject() {
     : null;
 
   return {
+    currentWorkspaceName,
     currentProjectName,
     currentProjectId,
     projects,
