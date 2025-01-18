@@ -20,12 +20,11 @@ export function TaskItem({
   showFieldNames: boolean;
   indentLevel?: number;
 }) {
-  // Calculate total columns: checkbox + create child + fields + actions
   const totalColumns = 2 + selectedColumns.length + 1;
 
   return (
     <div
-      className="col-span-full grid grid-cols-subgrid items-center gap-2 rounded-lg border px-2"
+      className="col-span-full grid grid-cols-subgrid items-center gap-2 rounded-lg border px-2 py-1"
       style={{
         gridColumnStart: `${1}`,
         gridColumnEnd: `${totalColumns + 1}`,

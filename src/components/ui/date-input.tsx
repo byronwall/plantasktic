@@ -337,7 +337,7 @@ const DateInput: React.FC<DateInputProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-2 h-6 w-6 p-0 text-gray-500 hover:bg-gray-100"
+                className="h-6 w-6 p-0 text-gray-500 hover:bg-gray-100"
                 onClick={() => onChange(undefined)}
               >
                 <X className="h-4 w-4" />

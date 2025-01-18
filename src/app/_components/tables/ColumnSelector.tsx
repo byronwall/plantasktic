@@ -11,7 +11,7 @@ import {
 export const COLUMN_PRESETS = {
   basic: {
     label: "Basic",
-    columns: ["title", "category"],
+    columns: ["title", "status", "priority", "due_date"],
   },
   projectManagement: {
     label: "Project Management",

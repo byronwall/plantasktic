@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, Loader2 } from "lucide-react";
+import { Loader2, Tag } from "lucide-react";
 
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 
 import { ComboBox } from "./ComboBox";
@@ -93,8 +94,11 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
           }}
         >
           <>
-            {currentCategory ?? "category..."}
-            <ChevronDown className="h-4 w-4" />
+            {currentCategory ?? (
+              <Button variant="icon" size="icon">
+                <Tag className="h-4 w-4" />
+              </Button>
+            )}
           </>
         </Badge>
       </ComboBox>

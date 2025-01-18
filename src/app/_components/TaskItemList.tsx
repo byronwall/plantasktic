@@ -57,7 +57,7 @@ function renderTaskHierarchy(
       isSelected={selectedTasks.has(task.task_id)}
       selectedColumns={selectedColumns}
       onToggleSelect={onToggleSelect}
-      showFieldNames={showFieldNames}
+      showFieldNames={false}
       indentLevel={level}
     />,
     ...(task.children
