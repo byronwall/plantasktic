@@ -26,7 +26,7 @@ export function TaskInput() {
       await createTaskMutater.mutateAsync({
         title: newTaskTitle,
         status: "open",
-        projectId: currentProjectId ?? undefined,
+        projectId: currentProjectId ?? null,
       });
       setNewTaskTitle("");
     }
