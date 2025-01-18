@@ -20,6 +20,7 @@ interface DateInputProps {
   onChange: (date: Date | undefined) => void;
   className?: string;
   minimal?: boolean;
+  iconClassName?: string;
 }
 
 interface DateParts {
@@ -33,6 +34,7 @@ const DateInput: React.FC<DateInputProps> = ({
   onChange,
   className,
   minimal = false,
+  iconClassName,
 }) => {
   const [date, setDate] = React.useState<DateParts | undefined>(() => {
     if (!value) {
@@ -264,7 +266,7 @@ const DateInput: React.FC<DateInputProps> = ({
             {new UTCDate(value).toLocaleDateString()}
           </span>
         ) : (
-          <Button variant={"outline"} className={cn("w-9 p-0", className)}>
+          <Button variant={"outline"} className={cn("w-9 p-0", iconClassName)}>
             <CalendarIcon className="m-auto h-4 w-4 text-muted-foreground" />
           </Button>
         )}

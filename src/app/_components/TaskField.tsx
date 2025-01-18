@@ -114,7 +114,7 @@ function NumberInputPopover({
       ) : value !== null ? (
         <span className="hover:bg-muted">{value}</span>
       ) : (
-        <Button variant="secondary" size="sm" className="text-muted-foreground">
+        <Button variant="icon" size="icon">
           {icon}
         </Button>
       )}
@@ -178,6 +178,7 @@ export function TaskField({
               });
             }}
             minimal
+            iconClassName="h-4 w-4"
           />
         );
       case "duration":
