@@ -121,6 +121,18 @@ export function TaskItemList({
             grid: "subgrid",
           }}
         >
+          <div className="col-span-full grid grid-cols-subgrid bg-white text-center text-sm font-semibold">
+            <div></div>
+            <div></div>
+            {selectedColumns.map((column) => (
+              <div key={column}>
+                {AVAILABLE_COLUMNS.find((col) => col.value === column)?.label ??
+                  column}
+              </div>
+            ))}
+            <div>Actions</div>
+          </div>
+
           {renderTaskHierarchy(
             organizedTasks,
             selectedTasks,
