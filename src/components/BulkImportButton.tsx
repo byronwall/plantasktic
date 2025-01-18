@@ -52,7 +52,6 @@ export function BulkImportButton({ projectId }: BulkImportButtonProps) {
       <PopoverTrigger asChild>
         <Button variant="outline">
           <Upload className="mr-2 h-4 w-4" />
-          Bulk Import
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px]" align="end">

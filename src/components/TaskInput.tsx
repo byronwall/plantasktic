@@ -71,33 +71,29 @@ export function TaskInput() {
   }, [searchQuery, setSearchQuery]);
 
   return (
-    <>
-      <div className="flex items-center gap-2">
-        <Input
-          id="new-task-input"
-          autoComplete="off"
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={
-            isSearchMode
-              ? "Search tasks..."
-              : 'Press "/" to create a new task...'
-          }
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <Button
-          onClick={() => void createTask()}
-          disabled={createTaskMutater.isPending || isSearchMode}
-        >
-          {createTaskMutater.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-        </Button>
-        <BulkImportButton projectId={currentProjectId ?? undefined} />
-      </div>
-    </>
+    <div className="flex flex-1 items-center gap-2">
+      <Input
+        id="new-task-input"
+        autoComplete="off"
+        value={newTaskTitle}
+        onChange={(e) => setNewTaskTitle(e.target.value)}
+        onKeyDown={handleKeyPress}
+        placeholder={
+          isSearchMode ? "Search tasks..." : 'Press "/" to create a new task...'
+        }
+        className="flex-1 rounded-md border border-input bg-background px-3 py-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      />
+      <Button
+        onClick={() => void createTask()}
+        disabled={createTaskMutater.isPending || isSearchMode}
+      >
+        {createTaskMutater.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Plus className="h-4 w-4" />
+        )}
+      </Button>
+      <BulkImportButton projectId={currentProjectId ?? undefined} />
+    </div>
   );
 }
