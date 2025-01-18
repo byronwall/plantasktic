@@ -30,7 +30,7 @@ export default async function RootLayout({
               <SidebarProvider>
                 <AppSidebar />
                 <main className="relative min-h-screen w-full p-1">
-                  <div className="sticky top-0 z-50 border-b bg-background">
+                  <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
                     <TaskInput />
                   </div>
                   <div className="mx-auto px-4 py-8">{children}</div>
