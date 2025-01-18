@@ -22,12 +22,14 @@ interface ProjectSelectorProps {
   value: string | null;
   onChange: (value: string | null) => void;
   workspaceId: string | null;
+  disabled?: boolean;
 }
 
 export function ProjectSelector({
   value,
   onChange,
   workspaceId,
+  disabled = false,
 }: ProjectSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -52,6 +54,7 @@ export function ProjectSelector({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between truncate"
+          disabled={disabled}
         >
           {selectedProject?.name ?? "Select project..."}
           <ChevronDown

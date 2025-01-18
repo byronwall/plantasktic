@@ -1,34 +1,25 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { ProjectSelector } from "~/components/ProjectSelector";
 import { WorkspaceSelector } from "~/components/WorkspaceSelector";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 export function TopNavSelectors() {
   const router = useRouter();
   const { data: workspaces } = api.workspace.getAll.useQuery();
-  const { data: projects } = api.project.getAll.useQuery();
+  const { currentWorkspaceName, currentProjectName } = useCurrentProject();
 
-  const currentPath = usePathname();
-
-  const pathParts = currentPath
-    .split("/")
-    .filter(Boolean)
-    .map((part) => decodeURIComponent(part));
-
-  const currentWorkspace = workspaces?.find((w) => w.name === pathParts[0]);
-  const currentProject = projects?.find(
-    (p) => p.name === pathParts[1] && p.workspaceId === currentWorkspace?.id,
+  const currentWorkspace = workspaces?.find(
+    (w) => w.name === currentWorkspaceName,
   );
-
-  console.log("currentPath", currentPath);
-  console.log("pathParts", pathParts);
-  console.log("currentWorkspace", currentWorkspace);
-  console.log("currentProject", currentProject);
-  console.log("workspaces", workspaces);
-  console.log("projects", projects);
+  const { data: projects } = api.project.getAll.useQuery();
+  const currentProject = projects?.find(
+    (p) =>
+      p.name === currentProjectName && p.workspaceId === currentWorkspace?.id,
+  );
 
   const handleWorkspaceChange = (workspaceId: string | null) => {
     if (!workspaceId) {
@@ -67,6 +58,7 @@ export function TopNavSelectors() {
         value={currentProject?.id ?? null}
         onChange={handleProjectChange}
         workspaceId={currentWorkspace?.id ?? null}
+        disabled={!currentWorkspace}
       />
     </>
   );

@@ -24,7 +24,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   return (
     <div className="container mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center">
         <h1 className="text-2xl font-bold">{workspace.name}</h1>
         <CreateProjectButton workspaceId={workspace.id} />
       </div>
