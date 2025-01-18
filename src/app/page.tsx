@@ -9,9 +9,14 @@ import type { Task, Workspace } from "@prisma/client";
 
 export default async function HomePage() {
   const workspaces = await api.workspace.getAll();
-  const dueTasks = await api.task.getTasks({
-    showCompleted: false,
-  });
+  const dueTasks = (
+    await api.task.getTasks({
+      showCompleted: false,
+    })
+  )
+    .filter((task) => task.due_date !== null)
+    .sort((a, b) => a.due_date!.getTime() - b.due_date!.getTime())
+    .slice(0, 10);
 
   const session = await auth();
 
@@ -38,9 +43,12 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {workspaces.map((workspace: Workspace) => (
               <Link key={workspace.id} href={`/${workspace.name}`}>
-                <Button variant="outline" className="w-full justify-start p-4">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start p-6 text-lg"
+                >
                   <div>
-                    <h3 className="text-lg font-semibold">{workspace.name}</h3>
+                    <h3 className="text-xl font-semibold">{workspace.name}</h3>
                   </div>
                 </Button>
               </Link>
@@ -59,6 +67,11 @@ export default async function HomePage() {
                 </p>
               </div>
             ))}
+            {dueTasks.length === 0 && (
+              <p className="text-muted-foreground">
+                No tasks with due dates found.
+              </p>
+            )}
           </div>
         </div>
       </div>
