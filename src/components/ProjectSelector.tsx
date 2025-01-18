@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from "lucide-react";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -15,12 +15,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 interface ProjectSelectorProps {
   value: string | null;
-  onChange: Dispatch<SetStateAction<string | null>>;
+  onChange: (value: string | null) => void;
   workspaceId: string | null;
 }
 
@@ -32,7 +32,9 @@ export function ProjectSelector({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { projects } = useCurrentProject();
+  const { data: _projects } = api.project.getAll.useQuery();
+
+  const projects = _projects ?? [];
 
   const filteredProjects = projects
     .filter((project) => !workspaceId || project.workspaceId === workspaceId)

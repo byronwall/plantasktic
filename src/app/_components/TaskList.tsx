@@ -12,7 +12,6 @@ import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
 import { Button } from "~/components/ui/button";
-import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 import { EditTaskDialog } from "./EditTaskDialog";
@@ -25,28 +24,25 @@ import { TaskMatrixView } from "./TaskMatrixView";
 import { TaskTable } from "./TaskTable";
 
 type TaskListProps = {
-  projectName?: string;
+  workspaceId: string | null;
+  projectId: string | null;
 };
 
 type ViewMode = "list" | "table" | "kanban" | "gantt" | "matrix" | "card";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
-export function TaskList({ projectName }: TaskListProps) {
+export function TaskList({ workspaceId, projectId }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showFieldNames, setShowFieldNames] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const { searchQuery } = useSearch();
 
-  const { projects } = useCurrentProject();
-  const projectId = projectName
-    ? projects.find((p) => p.name === projectName)?.id
-    : undefined;
-
   const { data: rawTasks } = api.task.getTasks.useQuery({
     showCompleted,
-    projectId,
+    projectId: projectId ?? undefined,
+    workspaceId: workspaceId ?? undefined,
   });
 
   const searchResults = rawTasks?.filter((task) =>

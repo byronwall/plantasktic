@@ -1,3 +1,4 @@
+import { type Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -115,17 +116,27 @@ export const taskRouter = createTRPCRouter({
       z.object({
         showCompleted: z.boolean(),
         projectId: z.string().optional(),
+        workspaceId: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
+      const whereClause: Prisma.TaskWhereInput = {
+        userId,
+        ...(input.showCompleted ? {} : { status: { not: "completed" } }),
+      };
+
+      if (input.projectId) {
+        whereClause.projectId = input.projectId;
+      } else if (input.workspaceId) {
+        whereClause.project = {
+          workspaceId: input.workspaceId,
+        };
+      }
+
       return await ctx.db.task.findMany({
-        where: {
-          userId,
-          projectId: input.projectId,
-          ...(input.showCompleted ? {} : { status: { not: "completed" } }),
-        },
+        where: whereClause,
         orderBy: {
           updated_at: "desc",
         },

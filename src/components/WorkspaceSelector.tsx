@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from "lucide-react";
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -20,7 +20,7 @@ import { api } from "~/trpc/react";
 
 interface WorkspaceSelectorProps {
   value: string | null;
-  onChange: Dispatch<SetStateAction<string | null>>;
+  onChange: (value: string | null) => void;
 }
 
 export function WorkspaceSelector({ value, onChange }: WorkspaceSelectorProps) {
@@ -38,8 +38,6 @@ export function WorkspaceSelector({ value, onChange }: WorkspaceSelectorProps) {
   const filteredWorkspaces = workspaces.filter((workspace) =>
     workspace.name.toLowerCase().includes(search.toLowerCase()),
   );
-
-  console.log(filteredWorkspaces);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
