@@ -30,7 +30,10 @@ export function CreateProjectButton({ workspaceId }: CreateProjectButtonProps) {
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} className="justify-start p-4">
+      <Button
+        onClick={() => setIsOpen(true)}
+        className="h-full justify-start p-4 text-lg"
+      >
         <Plus className="mr-2 h-4 w-4" />
         Create Project
       </Button>
