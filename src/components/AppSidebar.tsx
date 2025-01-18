@@ -15,9 +15,22 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
+  const { data: workspaces = [] } = api.workspace.getAll.useQuery();
+  const { currentWorkspaceName, currentProjectName } = useCurrentProject();
+  const { data: projects = [] } = api.project.getAll.useQuery();
+
+  const currentWorkspace = workspaces.find(
+    (w) => w.name === currentWorkspaceName,
+  );
+
+  const workspaceProjects = projects.filter(
+    (p) => p.workspaceId === currentWorkspace?.id,
+  );
 
   return (
     <Sidebar>
@@ -33,6 +46,7 @@ export function AppSidebar() {
         {session?.user ? (
           <>
             <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
@@ -43,6 +57,50 @@ export function AppSidebar() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {workspaces.map((workspace) => (
+                    <SidebarMenuItem key={workspace.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={workspace.name === currentWorkspaceName}
+                      >
+                        <Link href={`/${workspace.name}`}>
+                          {workspace.name}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {currentWorkspace && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Projects</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {workspaceProjects.map((project) => (
+                      <SidebarMenuItem key={project.id}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={project.name === currentProjectName}
+                        >
+                          <Link
+                            href={`/${currentWorkspace.name}/${project.name}`}
+                          >
+                            {project.name}
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
           </>
         ) : (
           <SidebarGroup className="mt-4">
