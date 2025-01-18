@@ -45,7 +45,7 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
   return (
     <div
       onClick={startEditing}
-      className="max-w-96 flex-1 shrink [overflow-wrap:anywhere]"
+      className="max-w-2xl shrink flex-grow-[6] basis-[600px] [overflow-wrap:anywhere]"
     >
       {isEditing ? (
         <Textarea

@@ -99,8 +99,10 @@ export function TaskItemList({
 
   const organizedTasks = organizeTaskHierarchy(tasks);
 
+  const totalColumns = 2 + selectedColumns.length + 1;
+
   return (
-    <>
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end">
         <ColumnSelector
           availableColumns={AVAILABLE_COLUMNS}
@@ -109,8 +111,16 @@ export function TaskItemList({
           onPresetClick={handlePresetClick}
         />
       </div>
-      <div className="flex w-fit max-w-full flex-col gap-4">
-        <div className="flex flex-col gap-2">
+      <div className="w-full overflow-x-auto">
+        <div
+          className="gap-1"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `auto repeat(${totalColumns - 1}, auto)`,
+            gridAutoColumns: "auto",
+            grid: "subgrid",
+          }}
+        >
           {renderTaskHierarchy(
             organizedTasks,
             selectedTasks,
@@ -120,6 +130,6 @@ export function TaskItemList({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

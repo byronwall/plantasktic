@@ -290,7 +290,7 @@ export function TaskField({
   ) : null;
 
   return (
-    <div className={cn(className, "flex flex-1 items-center gap-0.5")}>
+    <div className={cn(className, "flex items-center gap-0.5")}>
       {label}
 
       {renderField()}
