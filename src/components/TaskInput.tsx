@@ -84,7 +84,7 @@ export function TaskInput() {
               ? "Search tasks..."
               : 'Press "/" to create a new task...'
           }
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button
           onClick={() => void createTask()}
