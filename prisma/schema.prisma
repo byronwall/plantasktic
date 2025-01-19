@@ -166,8 +166,8 @@ model Goal {
     userId String
     user   User   @relation(fields: [userId], references: [id])
 
-    workspaceId String?
-    workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+    workspaceId String
+    workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
     // Child relations
     progress GoalProgress[]

@@ -9,11 +9,20 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
-export default function GoalsPage() {
+export default function WorkspaceGoalsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const { data: goals } = api.goal.getAll.useQuery({});
+  const { currentWorkspaceName } = useCurrentProject();
+  const { data: workspaces } = api.workspace.getAll.useQuery();
+  const currentWorkspace = workspaces?.find(
+    (w) => w.name === currentWorkspaceName,
+  );
+
+  const { data: goals } = api.goal.getAll.useQuery({
+    workspaceId: currentWorkspace?.id,
+  });
 
   return (
     <div className="container mx-auto p-4">
@@ -46,6 +55,7 @@ export default function GoalsPage() {
       <CreateGoalDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
+        workspaceId={currentWorkspace?.id ?? ""}
         onGoalCreated={() => {
           setIsCreateOpen(false);
         }}

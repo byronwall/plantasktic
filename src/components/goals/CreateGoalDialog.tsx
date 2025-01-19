@@ -22,7 +22,6 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 
-
 import { DateInput } from "../ui/date-input";
 
 const createGoalSchema = z.object({
@@ -42,12 +41,14 @@ interface CreateGoalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onGoalCreated: () => void;
+  workspaceId: string;
 }
 
 export function CreateGoalDialog({
   open,
   onOpenChange,
   onGoalCreated,
+  workspaceId,
 }: CreateGoalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createGoal = api.goal.create.useMutation({
@@ -71,7 +72,10 @@ export function CreateGoalDialog({
   const onSubmit = async (data: CreateGoalSchema) => {
     setIsSubmitting(true);
     try {
-      await createGoal.mutateAsync(data);
+      await createGoal.mutateAsync({
+        ...data,
+        workspaceId,
+      });
     } finally {
       setIsSubmitting(false);
     }

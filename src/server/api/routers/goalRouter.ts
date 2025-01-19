@@ -43,7 +43,7 @@ export const goalRouter = createTRPCRouter({
         targetValue: z.number().optional(),
         metricUnit: z.string().optional(),
         projectId: z.string().optional(),
-        workspaceId: z.string().optional(),
+        workspaceId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
