@@ -1,4 +1,10 @@
-import { type Goal } from "@prisma/client";
+import {
+  type Goal,
+  type GoalComment,
+  type GoalProgress,
+  type User,
+} from "@prisma/client";
+import { Edit } from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
@@ -13,14 +19,27 @@ import {
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
 
+import { EditGoalDialog } from "./EditGoalDialog";
+import { GoalCommentsDialog } from "./GoalComments";
+import { GoalProgressDialog } from "./GoalProgress";
+
 interface GoalListProps {
-  goals: Goal[];
+  goals: (Goal & {
+    progress: GoalProgress[];
+    comments: (GoalComment & { user: User })[];
+  })[];
 }
 
 export function GoalList({ goals }: GoalListProps) {
-  const updateGoal = api.goal.update.useMutation();
+  const utils = api.useUtils();
+  const updateGoal = api.goal.update.useMutation({
+    onSuccess: () => {
+      void utils.goal.getAll.invalidate();
+    },
+  });
 
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
 
   const calculateProgress = (goal: Goal) => {
     if (goal.targetValue && goal.currentValue) {
@@ -53,14 +72,14 @@ export function GoalList({ goals }: GoalListProps) {
     <div className="space-y-4">
       {goals.map((goal) => (
         <Card key={goal.id} className="overflow-hidden">
-          <CardHeader
-            className="cursor-pointer"
-            onClick={() =>
-              setExpandedGoalId(goal.id === expandedGoalId ? null : goal.id)
-            }
-          >
-            <div className="flex items-center justify-between">
-              <div>
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() =>
+                  setExpandedGoalId(goal.id === expandedGoalId ? null : goal.id)
+                }
+              >
                 <CardTitle>{goal.title}</CardTitle>
                 <CardDescription>
                   {goal.category && (
@@ -75,21 +94,32 @@ export function GoalList({ goals }: GoalListProps) {
                   )}
                 </CardDescription>
               </div>
-              <Badge
-                variant={goal.status === "completed" ? "default" : "secondary"}
-              >
-                {goal.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditingGoalId(goal.id)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Badge
+                  variant={
+                    goal.status === "completed" ? "default" : "secondary"
+                  }
+                >
+                  {goal.status}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
 
-          {expandedGoalId === goal.id && (
-            <CardContent>
+          <CardContent>
+            <div className="space-y-4">
               {goal.description && (
-                <p className="mb-4 text-sm text-gray-600">{goal.description}</p>
+                <p className="text-sm text-gray-600">{goal.description}</p>
               )}
 
-              <div className="mb-4 grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {goal.startDate && (
                   <div>
                     <span className="font-medium">Start Date:</span>{" "}
@@ -117,7 +147,18 @@ export function GoalList({ goals }: GoalListProps) {
                 </div>
               )}
 
-              <div className="mt-4 flex justify-end space-x-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <GoalProgressDialog
+                    goal={goal}
+                    onProgressAdded={() => void utils.goal.getAll.invalidate()}
+                  />
+                  <GoalCommentsDialog
+                    goal={goal}
+                    onCommentAdded={() => void utils.goal.getAll.invalidate()}
+                  />
+                </div>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -132,7 +173,110 @@ export function GoalList({ goals }: GoalListProps) {
                   Mark as {goal.status === "completed" ? "Active" : "Complete"}
                 </Button>
               </div>
-            </CardContent>
+
+              {expandedGoalId === goal.id && (
+                <div className="mt-4 space-y-4">
+                  {goal.progress.length > 0 && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium">
+                        Recent Progress
+                      </h4>
+                      <div className="space-y-2">
+                        {goal.progress
+                          .sort(
+                            (a, b) =>
+                              new Date(b.date).getTime() -
+                              new Date(a.date).getTime(),
+                          )
+                          .slice(0, 3)
+                          .map((p) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center justify-between rounded-lg border p-2 text-sm"
+                            >
+                              <div>
+                                <span className="font-medium">
+                                  {p.value} {goal.metricUnit}
+                                </span>
+                                {p.notes && (
+                                  <p className="mt-1 text-muted-foreground">
+                                    {p.notes}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-muted-foreground">
+                                {new Date(p.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {goal.comments.length > 0 && (
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium">
+                        Recent Comments
+                      </h4>
+                      <div className="space-y-2">
+                        {goal.comments
+                          .sort(
+                            (a, b) =>
+                              new Date(b.created_at).getTime() -
+                              new Date(a.created_at).getTime(),
+                          )
+                          .slice(0, 3)
+                          .map((comment) => (
+                            <div
+                              key={comment.id}
+                              className="rounded-lg border p-3 text-sm"
+                            >
+                              <div className="mb-2 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {comment.user.image && (
+                                    <img
+                                      src={comment.user.image}
+                                      alt={comment.user.name ?? ""}
+                                      className="h-6 w-6 rounded-full"
+                                    />
+                                  )}
+                                  <span className="font-medium">
+                                    {comment.user.name ?? "Anonymous"}
+                                  </span>
+                                </div>
+                                <span className="text-muted-foreground">
+                                  {new Date(
+                                    comment.created_at,
+                                  ).toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="whitespace-pre-wrap">
+                                {comment.content}
+                              </p>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+
+          {editingGoalId === goal.id && (
+            <EditGoalDialog
+              goal={goal}
+              open={true}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setEditingGoalId(null);
+                }
+              }}
+              onGoalUpdated={() => {
+                void utils.goal.getAll.invalidate();
+                setEditingGoalId(null);
+              }}
+            />
           )}
         </Card>
       ))}

@@ -8,9 +8,8 @@ import { GoalMetrics } from "~/components/goals/GoalMetrics";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { api } from "~/trpc/react";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { api } from "~/trpc/react";
 
 export default function GoalsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
