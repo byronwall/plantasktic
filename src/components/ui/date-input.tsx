@@ -300,8 +300,11 @@ const DateInput: React.FC<DateInputProps> = ({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
-        <div className="flex">
+      <PopoverContent
+        className="z-10 w-auto border bg-white p-0"
+        align="center"
+      >
+        <div className="flex border border-black p-1 shadow-lg">
           <div className="border-r p-1">
             <div className="mb-3 flex items-center justify-center gap-1 rounded-lg border px-1">
               <Input
