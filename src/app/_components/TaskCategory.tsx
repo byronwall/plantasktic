@@ -85,24 +85,22 @@ export function TaskCategory({ taskId, currentCategory }: TaskCategoryProps) {
         searchPlaceholder="Search categories..."
         emptyText="No categories found"
       >
-        <>
-          {currentCategory ? (
-            <Badge
-              variant="outline"
-              className="flex cursor-pointer items-center justify-between gap-2 text-base hover:bg-muted"
-              style={{
-                backgroundColor,
-                color: textColor,
-              }}
-            >
-              {currentCategory}
-            </Badge>
-          ) : (
-            <Button variant="icon" size="icon">
-              <Tag className="h-4 w-4" />
-            </Button>
-          )}
-        </>
+        {currentCategory ? (
+          <Badge
+            variant="outline"
+            className="flex cursor-pointer items-center justify-between gap-2 text-base hover:bg-muted"
+            style={{
+              backgroundColor,
+              color: textColor,
+            }}
+          >
+            {currentCategory}
+          </Badge>
+        ) : (
+          <Button variant="icon" size="icon">
+            <Tag className="h-4 w-4" />
+          </Button>
+        )}
       </ComboBox>
       {updateCategoryMutation.isPending && (
         <Loader2 className="h-4 w-4 animate-spin" />
