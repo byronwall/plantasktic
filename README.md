@@ -1,29 +1,51 @@
-# Create T3 App
+# Tasks
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A modern, hierarchical task management system built for teams that need power and simplicity. Organize your work with intelligent task relationships, real-time updates, and powerful filtering - all in a clean, intuitive interface.
 
-## What's next? How do I make an app with this?
+## Why Tasks?
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+Tasks combines the power of hierarchical task management with the simplicity of modern web design. Whether you're managing personal projects or coordinating large team initiatives, Tasks provides the structure and flexibility you need. Built with real-time collaboration in mind, it helps teams stay organized and focused on what matters most.
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+### Key Features
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- **Smart Task Hierarchies**: Create parent-child relationships between tasks to break down complex projects into manageable pieces. Easily nest tasks to any depth while maintaining a clear view of the overall structure.
 
-## Learn More
+- **Workspaces & Projects**: Keep work organized with dedicated workspaces for different teams or areas. Within each workspace, create focused projects to group related tasks together.
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- **Rich Task Details**: Each task can include:
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+  - Due dates with smart deadline tracking
+  - Priority levels
+  - Status updates
+  - Detailed descriptions
+  - Sub-tasks and dependencies
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+- **Powerful Filtering**: Find exactly what you need with advanced filtering options:
 
-## How do I deploy this?
+  - Filter by status, priority, or due date
+  - Focus on specific projects or workspaces
+  - View tasks assigned to specific team members
+  - Toggle between different view modes
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- **Clean, Modern Interface**: A thoughtfully designed UI that puts your tasks front and center. No clutter, just clear organization and intuitive controls.
+
+### Technology Stack
+
+Built with modern web technologies for performance and reliability:
+
+- Next.js 14 with App Router for fast, server-side rendered pages
+- tRPC for type-safe API communication
+- Prisma for robust database management
+- NextAuth.js for secure authentication
+- Tailwind CSS for beautiful, responsive design
+
+### Getting Started
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Configure your environment variables
+4. Run the development server: `npm run dev`
+
+### License
+
+Undecided. I might want to make money on this thing.
