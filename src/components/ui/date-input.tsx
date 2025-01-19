@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@radix-ui/react-popover";
+import { addDays, endOfMonth, endOfWeek } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 
@@ -21,6 +22,7 @@ interface DateInputProps {
   className?: string;
   minimal?: boolean;
   iconClassName?: string;
+  showQuickButtons?: boolean;
 }
 
 interface DateParts {
@@ -35,6 +37,7 @@ const DateInput: React.FC<DateInputProps> = ({
   className,
   minimal = false,
   iconClassName,
+  showQuickButtons = true,
 }) => {
   const [date, setDate] = React.useState<DateParts | undefined>(() => {
     if (!value) {
@@ -258,6 +261,32 @@ const DateInput: React.FC<DateInputProps> = ({
       }
     };
 
+  const handleQuickSelect = (
+    type: "today" | "tomorrow" | "endWeek" | "endMonth",
+  ) => {
+    const today = new UTCDate();
+    let newDate: Date;
+
+    switch (type) {
+      case "today":
+        newDate = today;
+        break;
+      case "tomorrow":
+        newDate = addDays(today, 1);
+        break;
+      case "endWeek":
+        newDate = endOfWeek(today);
+        break;
+      case "endMonth":
+        newDate = endOfMonth(today);
+        break;
+      default:
+        return;
+    }
+
+    onChange(newDate);
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -273,6 +302,42 @@ const DateInput: React.FC<DateInputProps> = ({
       </PopoverTrigger>
       <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
         <div className="p-1">
+          {showQuickButtons && (
+            <div className="mb-2 grid grid-cols-2 gap-1 px-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickSelect("today")}
+                className="h-8"
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickSelect("tomorrow")}
+                className="h-8"
+              >
+                Tomorrow
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickSelect("endWeek")}
+                className="h-8"
+              >
+                End of Week
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleQuickSelect("endMonth")}
+                className="h-8"
+              >
+                End of Month
+              </Button>
+            </div>
+          )}
           <Calendar
             key={value?.toISOString()}
             mode="single"
