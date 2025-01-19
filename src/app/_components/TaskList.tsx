@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BarChart3,
   GanttChart,
   Grid2X2,
   KanbanSquare,
@@ -21,6 +22,7 @@ import { TaskItemList } from "./TaskItemList";
 import { TaskKanbanView } from "./TaskKanbanView";
 import { TaskListHeader } from "./TaskListHeader";
 import { TaskMatrixView } from "./TaskMatrixView";
+import { TaskSummaryView } from "./TaskSummaryView";
 import { TaskTable } from "./TaskTable";
 
 type TaskListProps = {
@@ -28,7 +30,14 @@ type TaskListProps = {
   projectId: string | null;
 };
 
-type ViewMode = "list" | "table" | "kanban" | "gantt" | "matrix" | "card";
+type ViewMode =
+  | "list"
+  | "table"
+  | "kanban"
+  | "gantt"
+  | "matrix"
+  | "card"
+  | "summary";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
@@ -113,6 +122,12 @@ export function TaskList({ workspaceId, projectId }: TaskListProps) {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "summary" ? "default" : "outline"}
+            onClick={() => setViewMode("summary")}
+          >
+            <BarChart3 className="h-4 w-4" /> Summary
+          </Button>
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             onClick={() => setViewMode("list")}
@@ -202,6 +217,8 @@ export function TaskList({ workspaceId, projectId }: TaskListProps) {
         <TaskGanttChart tasks={tasks} />
       ) : viewMode === "matrix" ? (
         <TaskMatrixView tasks={tasks} />
+      ) : viewMode === "summary" ? (
+        <TaskSummaryView tasks={tasks} />
       ) : null}
       <EditTaskDialog />
     </div>
