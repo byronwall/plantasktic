@@ -1,4 +1,4 @@
-import { Check, Copy, Edit2, FolderInput, Trash2 } from "lucide-react";
+import { Check, Clipboard, Edit2, FolderInput, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
@@ -112,7 +112,7 @@ export function TaskActions({ task }: TaskActionsProps) {
           {copiedTaskId === task.task_id ? (
             <Check className="h-4 w-4 text-green-500" />
           ) : (
-            <Copy className="h-4 w-4" />
+            <Clipboard className="h-4 w-4" />
           )}
         </Button>
       </SimpleTooltip>
