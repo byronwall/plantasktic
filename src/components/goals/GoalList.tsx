@@ -1,3 +1,4 @@
+import { type Goal } from "@prisma/client";
 import { useState } from "react";
 
 import { Badge } from "~/components/ui/badge";
@@ -12,30 +13,12 @@ import {
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
 
-interface Goal {
-  id: string;
-  title: string;
-  description?: string;
-  category?: string;
-  priority?: string;
-  status: string;
-  startDate?: Date;
-  dueDate?: Date;
-  targetValue?: number;
-  currentValue?: number;
-  metricUnit?: string;
-  progress?: { value: number; date: Date }[];
-}
-
 interface GoalListProps {
   goals: Goal[];
-  onGoalUpdate: () => void;
 }
 
-export function GoalList({ goals, onGoalUpdate }: GoalListProps) {
-  const updateGoal = api.goal.update.useMutation({
-    onSuccess: onGoalUpdate,
-  });
+export function GoalList({ goals }: GoalListProps) {
+  const updateGoal = api.goal.update.useMutation();
 
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 

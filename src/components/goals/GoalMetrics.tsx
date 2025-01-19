@@ -1,3 +1,5 @@
+import { type Goal } from "@prisma/client";
+
 import {
   Card,
   CardContent,
@@ -6,18 +8,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
-
-interface Goal {
-  id: string;
-  title: string;
-  status: string;
-  priority?: string;
-  targetValue?: number;
-  currentValue?: number;
-  metricUnit?: string;
-  startDate?: Date;
-  dueDate?: Date;
-}
 
 interface GoalMetricsProps {
   goals: Goal[];
@@ -46,7 +36,7 @@ export function GoalMetrics({ goals }: GoalMetricsProps) {
     }
 
     const totalProgress = goalsWithProgress.reduce((sum, goal) => {
-      if (!goal.targetValue || goal.currentValue === undefined) {
+      if (!goal.targetValue || goal.currentValue === null) {
         return sum;
       }
       return sum + (goal.currentValue / goal.targetValue) * 100;
