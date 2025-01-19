@@ -301,115 +301,119 @@ const DateInput: React.FC<DateInputProps> = ({
         )}
       </PopoverTrigger>
       <PopoverContent className="z-10 w-auto border bg-white p-0" align="start">
-        <div className="p-1">
-          {showQuickButtons && (
-            <div className="mb-2 grid grid-cols-2 gap-1 px-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickSelect("today")}
-                className="h-8"
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickSelect("tomorrow")}
-                className="h-8"
-              >
-                Tomorrow
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickSelect("endWeek")}
-                className="h-8"
-              >
-                End of Week
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickSelect("endMonth")}
-                className="h-8"
-              >
-                End of Month
-              </Button>
+        <div className="flex">
+          <div className="border-r p-1">
+            <div className="mb-3 flex items-center justify-center gap-1 rounded-lg border px-1">
+              <Input
+                ref={monthRef}
+                max={12}
+                maxLength={2}
+                value={date?.month.toString() ?? ""}
+                onChange={handleInputChange("month")}
+                onKeyDown={handleKeyDown("month")}
+                onFocus={(e) => {
+                  if (window.innerWidth > 1024) {
+                    e.target.select();
+                  }
+                }}
+                onBlur={handleBlur("month")}
+                className="w-6 border-none p-0 text-center outline-none"
+                placeholder="M"
+              />
+              <span className="-mx-px opacity-20">/</span>
+              <Input
+                ref={dayRef}
+                max={31}
+                maxLength={2}
+                value={date?.day.toString() ?? ""}
+                onChange={handleInputChange("day")}
+                onKeyDown={handleKeyDown("day")}
+                onFocus={(e) => {
+                  if (window.innerWidth > 1024) {
+                    e.target.select();
+                  }
+                }}
+                onBlur={handleBlur("day")}
+                className="w-7 border-none p-0 text-center outline-none"
+                placeholder="D"
+              />
+              <span className="-mx-px opacity-20">/</span>
+              <Input
+                ref={yearRef}
+                max={9999}
+                maxLength={4}
+                value={date?.year.toString() ?? ""}
+                onChange={handleInputChange("year")}
+                onKeyDown={handleKeyDown("year")}
+                onFocus={(e) => {
+                  if (window.innerWidth > 1024) {
+                    e.target.select();
+                  }
+                }}
+                onBlur={handleBlur("year")}
+                className="w-12 border-none p-0 text-center outline-none"
+                placeholder="YYYY"
+              />
+              {value && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-gray-500 hover:bg-gray-100"
+                  onClick={() => onChange(undefined)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-          )}
-          <Calendar
-            key={value?.toISOString()}
-            mode="single"
-            selected={value}
-            defaultMonth={value}
-            onSelect={(date) => {
-              onChange(date);
-            }}
-            disabled={(date) => date < new UTCDate("1900-01-01")}
-            initialFocus
-          />
-          <div className="mb-3 flex items-center justify-center gap-1 rounded-lg border px-1">
-            <Input
-              ref={monthRef}
-              max={12}
-              maxLength={2}
-              value={date?.month.toString() ?? ""}
-              onChange={handleInputChange("month")}
-              onKeyDown={handleKeyDown("month")}
-              onFocus={(e) => {
-                if (window.innerWidth > 1024) {
-                  e.target.select();
-                }
-              }}
-              onBlur={handleBlur("month")}
-              className="w-6 border-none p-0 text-center outline-none"
-              placeholder="M"
-            />
-            <span className="-mx-px opacity-20">/</span>
-            <Input
-              ref={dayRef}
-              max={31}
-              maxLength={2}
-              value={date?.day.toString() ?? ""}
-              onChange={handleInputChange("day")}
-              onKeyDown={handleKeyDown("day")}
-              onFocus={(e) => {
-                if (window.innerWidth > 1024) {
-                  e.target.select();
-                }
-              }}
-              onBlur={handleBlur("day")}
-              className="w-7 border-none p-0 text-center outline-none"
-              placeholder="D"
-            />
-            <span className="-mx-px opacity-20">/</span>
-            <Input
-              ref={yearRef}
-              max={9999}
-              maxLength={4}
-              value={date?.year.toString() ?? ""}
-              onChange={handleInputChange("year")}
-              onKeyDown={handleKeyDown("year")}
-              onFocus={(e) => {
-                if (window.innerWidth > 1024) {
-                  e.target.select();
-                }
-              }}
-              onBlur={handleBlur("year")}
-              className="w-12 border-none p-0 text-center outline-none"
-              placeholder="YYYY"
-            />
-            {value && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-gray-500 hover:bg-gray-100"
-                onClick={() => onChange(undefined)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            {showQuickButtons && (
+              <div className="grid grid-cols-1 gap-1 px-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickSelect("today")}
+                  className="h-8"
+                >
+                  Today
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickSelect("tomorrow")}
+                  className="h-8"
+                >
+                  Tomorrow
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickSelect("endWeek")}
+                  className="h-8"
+                >
+                  End of Week
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickSelect("endMonth")}
+                  className="h-8"
+                >
+                  End of Month
+                </Button>
+              </div>
             )}
+          </div>
+          <div className="p-1">
+            <Calendar
+              key={value?.toISOString()}
+              mode="single"
+              selected={value}
+              defaultMonth={value}
+              onSelect={(date) => {
+                onChange(date);
+              }}
+              disabled={(date) => date < new UTCDate("1900-01-01")}
+              initialFocus
+            />
           </div>
         </div>
       </PopoverContent>
