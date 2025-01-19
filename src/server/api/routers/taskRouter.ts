@@ -280,4 +280,30 @@ export const taskRouter = createTRPCRouter({
         },
       });
     }),
+
+  duplicateTask: protectedProcedure
+    .input(z.object({ taskId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // First get the existing task
+      const existingTask = await ctx.db.task.findFirst({
+        where: {
+          task_id: input.taskId,
+          userId: ctx.session.user.id,
+        },
+      });
+
+      if (!existingTask) {
+        throw new Error("Task not found");
+      }
+
+      // Create a new task with the same data
+      // set the task_id to undefined to avoid conflict
+      return await ctx.db.task.create({
+        data: {
+          ...existingTask,
+          title: `Copy: ${existingTask.title}`,
+          task_id: undefined,
+        },
+      });
+    }),
 });

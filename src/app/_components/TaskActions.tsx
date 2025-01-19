@@ -1,4 +1,11 @@
-import { Check, Clipboard, Edit2, FolderInput, Trash2 } from "lucide-react";
+import {
+  Check,
+  Clipboard,
+  Copy,
+  Edit2,
+  FolderInput,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
@@ -26,6 +33,7 @@ export function TaskActions({ task }: TaskActionsProps) {
   const deleteTaskMutation = api.task.deleteTask.useMutation();
   const bulkMoveTasksToProjectMutation =
     api.task.bulkMoveTasksToProject.useMutation();
+  const duplicateTaskMutation = api.task.duplicateTask.useMutation();
   const openEditDialog = useEditTaskStore((state) => state.open);
 
   const copyToClipboard = (taskId: number, title: string) => {
@@ -62,6 +70,10 @@ export function TaskActions({ task }: TaskActionsProps) {
       taskIds: [taskId],
       projectId,
     });
+  };
+
+  const handleDuplicate = async (taskId: number) => {
+    await duplicateTaskMutation.mutateAsync({ taskId });
   };
 
   return (
@@ -114,6 +126,20 @@ export function TaskActions({ task }: TaskActionsProps) {
           ) : (
             <Clipboard className="h-4 w-4" />
           )}
+        </Button>
+      </SimpleTooltip>
+
+      <SimpleTooltip content="Duplicate task">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            void handleDuplicate(task.task_id);
+          }}
+          className="h-8 w-8"
+        >
+          <Copy className="h-4 w-4" />
         </Button>
       </SimpleTooltip>
 
