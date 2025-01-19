@@ -69,9 +69,9 @@ model Session {
 }
 
 model User {
-    id            String      @id @default(cuid())
+    id            String        @id @default(cuid())
     name          String?
-    email         String?     @unique
+    email         String?       @unique
     emailVerified DateTime?
     image         String?
     gh_username   String?
@@ -80,6 +80,8 @@ model User {
     projects      Project[]
     workspaces    Workspace[]
     Task          Task[]
+    goals         Goal[]
+    goalComments  GoalComment[]
 }
 
 model VerificationToken {
@@ -138,6 +140,71 @@ model Workspace {
     userId      String
     user        User      @relation(fields: [userId], references: [id])
     projects    Project[]
+    goals       Goal[]
 
+    @@index([userId])
+}
+
+model Goal {
+    id          String    @id @default(cuid())
+    title       String
+    description String?
+    category    String?
+    priority    String?
+    status      String    @default("active")
+    startDate   DateTime?
+    dueDate     DateTime?
+    created_at  DateTime  @default(now())
+    updated_at  DateTime  @updatedAt
+
+    // Metrics and targets
+    targetValue  Float?
+    currentValue Float?
+    metricUnit   String?
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+
+    workspaceId String?
+    workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+
+    // Child relations
+    progress GoalProgress[]
+    comments GoalComment[]
+
+    @@index([userId])
+    @@index([workspaceId])
+}
+
+model GoalProgress {
+    id    String   @id @default(cuid())
+    value Float
+    date  DateTime @default(now())
+    notes String?
+
+    goalId String
+    goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    @@index([goalId])
+}
+
+model GoalComment {
+    id      String @id @default(cuid())
+    content String
+
+    goalId String
+    goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    @@index([goalId])
     @@index([userId])
 }
