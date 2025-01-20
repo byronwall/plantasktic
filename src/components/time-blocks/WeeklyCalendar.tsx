@@ -5,8 +5,6 @@ import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
@@ -14,6 +12,7 @@ import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
 import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 
 import { DateInput } from "../ui/date-input";
+import { Input } from "../ui/input";
 
 import type { TimeBlock } from "@prisma/client";
 
@@ -221,75 +220,75 @@ export function WeeklyCalendar() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between rounded-lg border bg-card p-4">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handlePreviousWeek}>
-            ←
-          </Button>
-          <DateInput value={selectedDate} onChange={handleDateChange} />
-          <Button variant="outline" onClick={handleNextWeek}>
-            →
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Time Blocks</h1>
+          <p className="text-muted-foreground">
+            Schedule and organize your tasks with time blocks
+          </p>
         </div>
         <div className="flex items-center gap-4">
-          <Button
-            onClick={() => {
-              const now = new Date();
-              now.setMinutes(0, 0, 0);
-              setNewBlockStart(now);
-              setNewBlockEnd(new Date(now.getTime() + 60 * 60 * 1000));
-              setNewBlockDay(now.getDay());
-              setIsDialogOpen(true);
-            }}
-          >
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePreviousWeek}>
+              Previous
+            </Button>
+            <DateInput value={selectedDate} onChange={handleDateChange} />
+            <Button variant="outline" size="sm" onClick={handleNextWeek}>
+              Next
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Start</span>
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                value={startHour}
+                onChange={(e) => setStartHour(Number(e.target.value))}
+                className="w-20"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">End</span>
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                value={endHour}
+                onChange={(e) => setEndHour(Number(e.target.value))}
+                className="w-20"
+              />
+            </div>
+          </div>
+
+          <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New Block
+            Create Block
           </Button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Start Hour:</span>
-            <Input
-              type="number"
-              min={0}
-              max={23}
-              value={startHour}
-              onChange={(e) => setStartHour(Number(e.target.value))}
-              className="w-20"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">End Hour:</span>
-            <Input
-              type="number"
-              min={0}
-              max={23}
-              value={endHour}
-              onChange={(e) => setEndHour(Number(e.target.value))}
-              className="w-20"
-            />
-          </div>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
-        {/* Header with days */}
-        <div className="grid grid-cols-[auto_repeat(7,1fr)] border-b">
-          <div className="w-16 border-r p-2" /> {/* Time column header */}
-          {DAYS.map((dayOffset) => {
-            const date = addDays(weekStart, dayOffset);
-            return (
-              <div
-                key={dayOffset}
-                className="border-r p-2 text-center font-medium last:border-r-0"
-              >
-                {format(date, "EEE MMM d")}
-              </div>
-            );
-          })}
-        </div>
+      <div className="flex flex-col gap-4">
+        <div className="rounded-lg border bg-card">
+          {/* Header with days */}
+          <div className="grid grid-cols-[auto_repeat(7,1fr)] border-b">
+            <div className="w-16 border-r p-2" /> {/* Time column header */}
+            {DAYS.map((dayOffset) => {
+              const date = addDays(weekStart, dayOffset);
+              return (
+                <div
+                  key={dayOffset}
+                  className="border-r p-2 text-center font-medium last:border-r-0"
+                >
+                  {format(date, "EEE MMM d")}
+                </div>
+              );
+            })}
+          </div>
 
-        {/* Scrollable time grid */}
-        <ScrollArea className="h-[600px]">
           <div className="grid grid-cols-[auto_repeat(7,1fr)]">
             {/* Time labels */}
             <div className="space-y-[1px]">
@@ -328,7 +327,7 @@ export function WeeklyCalendar() {
               {renderDragPreview()}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {currentWorkspaceId && newBlockStart && newBlockEnd && (
