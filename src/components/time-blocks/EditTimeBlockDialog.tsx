@@ -2,14 +2,8 @@ import { format } from "date-fns";
 import { Check, Plus, Trash, X } from "lucide-react";
 import { useState } from "react";
 
+import { ComboBox } from "~/app/_components/ComboBox";
 import { Button } from "~/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "~/components/ui/command";
 import { DateInput } from "~/components/ui/date-input";
 import {
   Dialog,
@@ -124,8 +118,8 @@ export function EditTimeBlockDialog({
     setSearchQuery("");
   };
 
-  const handleTaskUnassign = (taskId: number) => {
-    unassignTask.mutate({
+  const handleTaskUnassign = async (taskId: number) => {
+    await unassignTask.mutateAsync({
       timeBlockId: timeBlock.id,
       taskId,
     });
@@ -210,36 +204,47 @@ export function EditTimeBlockDialog({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="p-0" side="right" align="start">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search tasks..."
-                        value={searchQuery}
-                        onValueChange={setSearchQuery}
-                      />
-                      <CommandEmpty>No tasks found.</CommandEmpty>
-                      <CommandGroup>
-                        <ScrollArea className="h-[200px]">
-                          {searchResults?.map((task) => (
-                            <CommandItem
-                              key={task.task_id}
-                              value={task.title}
-                              onSelect={() => handleTaskSelect(task)}
+                    <ComboBox
+                      options={(searchResults ?? []).map((task) => task.title)}
+                      value={searchQuery}
+                      onChange={(value) => {
+                        const task = searchResults?.find(
+                          (t) => t.title === value,
+                        );
+                        if (task) {
+                          handleTaskSelect(task);
+                        }
+                      }}
+                      placeholder="Search tasks..."
+                      searchPlaceholder="Search tasks..."
+                      emptyText="No tasks found."
+                      onCreateNew={(value) => setSearchQuery(value)}
+                    >
+                      <div className="flex w-full flex-col gap-2">
+                        {assignedTasks?.map((task) => (
+                          <div
+                            key={task.task_id}
+                            className="flex items-center justify-between rounded-md border px-2 py-1"
+                          >
+                            <span>{task.title}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTaskUnassign(task.task_id)}
                             >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${
-                                  assignedTasks?.some(
-                                    (t) => t.task_id === task.task_id,
-                                  )
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                                }`}
-                              />
-                              {task.title}
-                            </CommandItem>
-                          ))}
-                        </ScrollArea>
-                      </CommandGroup>
-                    </Command>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between"
+                        >
+                          {searchQuery || "Search tasks..."}
+                        </Button>
+                      </div>
+                    </ComboBox>
                   </PopoverContent>
                 </Popover>
               </div>
