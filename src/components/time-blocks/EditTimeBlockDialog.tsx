@@ -60,8 +60,6 @@ export function EditTimeBlockDialog({
   const [isTaskSearchOpen, setIsTaskSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const utils = api.useContext();
-
   // Query for assigned tasks
   const { data: assignedTasks } = api.timeBlock.getAssignedTasks.useQuery({
     timeBlockId: timeBlock.id,
@@ -78,35 +76,13 @@ export function EditTimeBlockDialog({
     },
   );
 
-  const updateTimeBlock = api.timeBlock.update.useMutation({
-    onSuccess: () => {
-      utils.timeBlock.getWeeklyBlocks.invalidate();
-      onClose();
-    },
-  });
+  const updateTimeBlock = api.timeBlock.update.useMutation();
 
-  const deleteTimeBlock = api.timeBlock.delete.useMutation({
-    onSuccess: () => {
-      utils.timeBlock.getWeeklyBlocks.invalidate();
-      onClose();
-    },
-  });
+  const deleteTimeBlock = api.timeBlock.delete.useMutation();
 
-  const assignTask = api.timeBlock.assignTask.useMutation({
-    onSuccess: () => {
-      utils.timeBlock.getAssignedTasks.invalidate({
-        timeBlockId: timeBlock.id,
-      });
-    },
-  });
+  const assignTask = api.timeBlock.assignTask.useMutation();
 
-  const unassignTask = api.timeBlock.unassignTask.useMutation({
-    onSuccess: () => {
-      utils.timeBlock.getAssignedTasks.invalidate({
-        timeBlockId: timeBlock.id,
-      });
-    },
-  });
+  const unassignTask = api.timeBlock.unassignTask.useMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -16,7 +16,6 @@ import { Input } from "../ui/input";
 
 import type { TimeBlock } from "@prisma/client";
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const DAYS = Array.from({ length: 7 }, (_, i) => i);
 
 const DEFAULT_START_HOUR = 6;
