@@ -15,8 +15,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { cn } from "~/lib/utils";
-import { api } from "~/trpc/react";
 
 interface ProjectSelectorProps {
   value: string | null;
@@ -34,9 +34,7 @@ export function ProjectSelector({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: _projects } = api.project.getAll.useQuery();
-
-  const projects = _projects ?? [];
+  const { projects } = useCurrentProject();
 
   const filteredProjects = projects
     .filter((project) => !workspaceId || project.workspaceId === workspaceId)

@@ -5,28 +5,18 @@ import { useRouter } from "next/navigation";
 import { ProjectSelector } from "~/components/ProjectSelector";
 import { WorkspaceSelector } from "~/components/WorkspaceSelector";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
-import { api } from "~/trpc/react";
 
 export function TopNavSelectors() {
   const router = useRouter();
-  const { data: workspaces } = api.workspace.getAll.useQuery();
-  const { currentWorkspaceName, currentProjectName } = useCurrentProject();
-
-  const currentWorkspace = workspaces?.find(
-    (w) => w.name === currentWorkspaceName,
-  );
-  const { data: projects } = api.project.getAll.useQuery();
-  const currentProject = projects?.find(
-    (p) =>
-      p.name === currentProjectName && p.workspaceId === currentWorkspace?.id,
-  );
+  const { currentWorkspace, currentProject, workspaces, projects } =
+    useCurrentProject();
 
   const handleWorkspaceChange = (workspaceId: string | null) => {
     if (!workspaceId) {
       router.push("/");
       return;
     }
-    const workspace = workspaces?.find((w) => w.id === workspaceId);
+    const workspace = workspaces.find((w) => w.id === workspaceId);
     if (workspace) {
       router.push(`/${workspace.name}`);
     }
@@ -42,7 +32,7 @@ export function TopNavSelectors() {
       return;
     }
 
-    const project = projects?.find((p) => p.id === projectId);
+    const project = projects.find((p) => p.id === projectId);
     if (project) {
       router.push(`/${currentWorkspace.name}/${project.name}`);
     }

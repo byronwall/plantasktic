@@ -16,21 +16,16 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
-import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const { data: workspaces = [] } = api.workspace.getAll.useQuery();
-  const { currentWorkspaceName, currentProjectName } = useCurrentProject();
-  const { data: projects = [] } = api.project.getAll.useQuery();
-
-  const currentWorkspace = workspaces.find(
-    (w) => w.name === currentWorkspaceName,
-  );
-
-  const workspaceProjects = projects.filter(
-    (p) => p.workspaceId === currentWorkspace?.id,
-  );
+  const {
+    currentWorkspace,
+    currentWorkspaceName,
+    currentProjectName,
+    workspaces,
+    workspaceProjects,
+  } = useCurrentProject();
 
   return (
     <Sidebar>
