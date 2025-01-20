@@ -103,6 +103,11 @@ export function WeeklyCalendar() {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Check if we clicked on a time block
+    if ((e.target as HTMLElement).closest('[data-time-block="true"]')) {
+      return;
+    }
+
     const time = getTimeFromMouseEvent(e);
     if (!time) {
       return;
@@ -180,6 +185,7 @@ export function WeeklyCalendar() {
       <div
         key={block.id}
         style={style}
+        data-time-block="true"
         onClick={(e) => {
           e.stopPropagation();
           setSelectedTimeBlock(block);
