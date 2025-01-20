@@ -51,11 +51,6 @@ export const timeBlockRouter = createTRPCRouter({
       return ctx.db.timeBlock.create({
         data: {
           ...input,
-          workspace: {
-            connect: {
-              id: input.workspaceId,
-            },
-          },
         },
       });
     }),
