@@ -7,11 +7,7 @@ export const metadata: Metadata = {
   description: "Manage your time blocks and task schedules",
 };
 
-export default function TimeBlocksPage({
-  params,
-}: {
-  params: { workspace: string };
-}) {
+export default function TimeBlocksPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-6">
@@ -20,7 +16,7 @@ export default function TimeBlocksPage({
           Schedule and organize your tasks with time blocks
         </p>
       </div>
-      <WeeklyCalendar workspaceId={params.workspace} />
+      <WeeklyCalendar />
     </div>
   );
 }

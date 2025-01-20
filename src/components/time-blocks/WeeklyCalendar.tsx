@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 import { DateInput } from "../ui/date-input";
@@ -16,11 +17,25 @@ const DAYS = Array.from({ length: 7 }, (_, i) => i);
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 20;
 
-export function WeeklyCalendar({ workspaceId }: { workspaceId: string }) {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+export function WeeklyCalendar() {
+  const { currentWorkspaceId } = useCurrentProject();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startHour, setStartHour] = useState(DEFAULT_START_HOUR);
   const [endHour, setEndHour] = useState(DEFAULT_END_HOUR);
   const weekStart = startOfWeek(selectedDate);
+
+  // Fetch time blocks for the current week
+  const { data: timeBlocks, isLoading } =
+    api.timeBlock.getWeeklyBlocks.useQuery({
+      workspaceId: currentWorkspaceId,
+      weekStart,
+    });
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
 
   const displayedHours = Array.from(
     { length: endHour - startHour + 1 },
@@ -35,13 +50,6 @@ export function WeeklyCalendar({ workspaceId }: { workspaceId: string }) {
     setSelectedDate((prev) => addWeeks(prev, 1));
   };
 
-  // Fetch time blocks for the current week
-  const { data: timeBlocks, isLoading } =
-    api.timeBlock.getWeeklyBlocks.useQuery({
-      workspaceId,
-      weekStart,
-    });
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between rounded-lg border bg-card p-4">
@@ -49,7 +57,7 @@ export function WeeklyCalendar({ workspaceId }: { workspaceId: string }) {
           <Button variant="outline" onClick={handlePreviousWeek}>
             ←
           </Button>
-          <DateInput value={selectedDate} onChange={setSelectedDate} />
+          <DateInput value={selectedDate} onChange={handleDateChange} />
           <Button variant="outline" onClick={handleNextWeek}>
             →
           </Button>

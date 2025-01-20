@@ -7,11 +7,15 @@ export const timeBlockRouter = createTRPCRouter({
   getWeeklyBlocks: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string(),
+        workspaceId: z.string().nullish(),
         weekStart: z.date(),
       }),
     )
     .query(async ({ ctx, input }) => {
+      if (!input.workspaceId) {
+        return [];
+      }
+
       const weekEnd = endOfWeek(input.weekStart);
 
       return ctx.db.timeBlock.findMany({
