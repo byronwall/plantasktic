@@ -36,6 +36,29 @@ export const timeBlockRouter = createTRPCRouter({
       });
     }),
 
+  getAssignedTasks: protectedProcedure
+    .input(
+      z.object({
+        timeBlockId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const timeBlock = await ctx.db.timeBlock.findUnique({
+        where: { id: input.timeBlockId },
+        include: {
+          taskAssignments: {
+            include: {
+              task: true,
+            },
+          },
+        },
+      });
+
+      return (
+        timeBlock?.taskAssignments.map((assignment) => assignment.task) ?? []
+      );
+    }),
+
   create: protectedProcedure
     .input(
       z.object({
@@ -106,7 +129,7 @@ export const timeBlockRouter = createTRPCRouter({
       });
     }),
 
-  removeTask: protectedProcedure
+  unassignTask: protectedProcedure
     .input(
       z.object({
         timeBlockId: z.string(),

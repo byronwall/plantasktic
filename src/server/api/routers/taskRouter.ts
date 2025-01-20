@@ -306,4 +306,30 @@ export const taskRouter = createTRPCRouter({
         },
       });
     }),
+
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        workspaceId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.task.findMany({
+        where: {
+          project: {
+            workspaceId: input.workspaceId,
+          },
+          title: {
+            contains: input.query,
+            mode: "insensitive",
+          },
+          status: { not: "completed" },
+        },
+        orderBy: {
+          updated_at: "desc",
+        },
+        take: 10,
+      });
+    }),
 });

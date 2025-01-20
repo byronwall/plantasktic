@@ -11,6 +11,7 @@ import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
+import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 
 import { DateInput } from "../ui/date-input";
 
@@ -56,6 +57,10 @@ export function WeeklyCalendar() {
       workspaceId: currentWorkspaceId,
       weekStart,
     });
+
+  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
+    null,
+  );
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -168,10 +173,18 @@ export function WeeklyCalendar() {
       overflow: "hidden",
       whiteSpace: "nowrap" as const,
       textOverflow: "ellipsis",
+      cursor: "pointer",
     };
 
     return (
-      <div key={block.id} style={style}>
+      <div
+        key={block.id}
+        style={style}
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedTimeBlock(block);
+        }}
+      >
         {block.title || "Untitled Block"}
       </div>
     );
@@ -324,6 +337,14 @@ export function WeeklyCalendar() {
           endTime={newBlockEnd}
           dayOfWeek={newBlockDay}
           position={dialogPosition}
+        />
+      )}
+
+      {selectedTimeBlock && (
+        <EditTimeBlockDialog
+          isOpen={!!selectedTimeBlock}
+          onClose={() => setSelectedTimeBlock(null)}
+          timeBlock={selectedTimeBlock}
         />
       )}
     </div>
