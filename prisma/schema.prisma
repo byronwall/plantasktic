@@ -35,6 +35,7 @@ model Task {
 
     dependencies   Task_Dependencies[] @relation(name: "dependencies")
     dependentTasks Task_Dependencies[] @relation("TaskDependencies")
+    TimeBlockTask  TimeBlockTask[]
 
     @@index([parentTaskId])
     @@index([projectId])
@@ -132,15 +133,18 @@ model Project {
 }
 
 model Workspace {
-    id          String    @id @default(cuid())
+    id          String   @id @default(cuid())
     name        String
     description String?
-    created_at  DateTime  @default(now())
-    updated_at  DateTime  @updatedAt
-    userId      String
-    user        User      @relation(fields: [userId], references: [id])
-    projects    Project[]
-    goals       Goal[]
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+
+    projects  Project[]
+    goals     Goal[]
+    TimeBlock TimeBlock[]
 
     @@index([userId])
 }
@@ -207,4 +211,40 @@ model GoalComment {
 
     @@index([goalId])
     @@index([userId])
+}
+
+model TimeBlock {
+    id         String   @id @default(cuid())
+    title      String?
+    startTime  DateTime
+    endTime    DateTime
+    dayOfWeek  Int // 0-6 for Sunday-Saturday
+    color      String? // For visual customization
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    // Relations
+    workspaceId String
+    workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+    // Task assignments
+    taskAssignments TimeBlockTask[]
+
+    @@index([workspaceId])
+}
+
+model TimeBlockTask {
+    id          String @id @default(cuid())
+    timeBlockId String
+    taskId      Int
+
+    created_at DateTime @default(now())
+
+    // Relations
+    timeBlock TimeBlock @relation(fields: [timeBlockId], references: [id], onDelete: Cascade)
+    task      Task      @relation(fields: [taskId], references: [task_id], onDelete: Cascade)
+
+    @@unique([timeBlockId, taskId])
+    @@index([timeBlockId])
+    @@index([taskId])
 }

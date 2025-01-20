@@ -55,13 +55,22 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   {currentWorkspace && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <Link href={`/${currentWorkspace.name}/goals`}>
-                          Goals
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <Link href={`/${currentWorkspace.name}/goals`}>
+                            Goals
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <Link href={`/${currentWorkspace.name}/time-blocks`}>
+                            Time Blocks
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
                   )}
                 </SidebarMenu>
               </SidebarGroupContent>
