@@ -181,7 +181,7 @@ function TimeBlock({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - rect.top;
+    const offsetY = e.clientY - (rect.top + window.scrollY);
 
     // Check if clicking on resize handles
     if (offsetY < 8) {
@@ -202,7 +202,7 @@ function TimeBlock({
         onSelect();
       }}
       onMouseDown={handleMouseDown}
-      className={cn("group relative")}
+      className={cn("group relative select-none")}
     >
       <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
       <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
@@ -356,9 +356,15 @@ export function WeeklyCalendar() {
       }
       case "drag_existing": {
         const { blockId, startOffset } = dragState;
+        const adjustedY = e.pageY - startOffset.y;
+        const adjustedTime = getTimeFromGridPosition(e.pageX, adjustedY);
+        if (!adjustedTime) {
+          return;
+        }
+
         setDragState({
           ...dragState,
-          currentPosition: { x: e.pageX, y: e.pageY },
+          currentPosition: { x: e.pageX, y: adjustedY },
         });
         break;
       }
@@ -401,16 +407,14 @@ export function WeeklyCalendar() {
         break;
       }
       case "drag_existing": {
-        const { blockId, currentPosition } = dragState;
+        const { blockId, startOffset, currentPosition } = dragState;
         const block = timeBlocks.find((b) => b.id === blockId);
         if (!block) {
           break;
         }
 
-        const time = getTimeFromGridPosition(
-          currentPosition.x,
-          currentPosition.y,
-        );
+        const adjustedY = currentPosition.y;
+        const time = getTimeFromGridPosition(currentPosition.x, adjustedY);
         if (!time) {
           break;
         }
@@ -522,7 +526,74 @@ export function WeeklyCalendar() {
         };
         break;
       }
-      // For other states, we don't need a preview as the block itself will move
+      case "drag_existing": {
+        const { blockId, currentPosition } = dragState;
+        const block = timeBlocks?.find((b) => b.id === blockId);
+        if (!block) {
+          return null;
+        }
+
+        const time = getTimeFromGridPosition(
+          currentPosition.x,
+          currentPosition.y,
+        );
+        if (!time) {
+          return null;
+        }
+
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+        const duration =
+          (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
+
+        style = {
+          ...style,
+          left: `${(time.day * 100) / 7}%`,
+          top: `${(time.hour - startHour + time.minute / 60) * 64}px`,
+          height: `${duration * 64}px`,
+          width: `${100 / 7}%`,
+        };
+        break;
+      }
+      case "resize_block_top":
+      case "resize_block_bottom": {
+        const { blockId, startTime, endTime, currentPosition } = dragState;
+        const block = timeBlocks?.find((b) => b.id === blockId);
+        if (!block) {
+          return null;
+        }
+
+        const time = getTimeFromGridPosition(
+          currentPosition.x,
+          currentPosition.y,
+        );
+        if (!time) {
+          return null;
+        }
+
+        const dayOffset = new Date(block.startTime).getDay();
+        const newTime = new Date(weekStart);
+        newTime.setDate(newTime.getDate() + time.day);
+        newTime.setHours(time.hour, time.minute, 0, 0);
+
+        const previewStart =
+          dragState.type === "resize_block_top" ? newTime : startTime;
+        const previewEnd =
+          dragState.type === "resize_block_bottom" ? newTime : endTime;
+        const duration =
+          (previewEnd.getTime() - previewStart.getTime()) / (1000 * 60 * 60);
+        const startHourOffset =
+          previewStart.getHours() + previewStart.getMinutes() / 60 - startHour;
+
+        style = {
+          ...style,
+          left: `${(dayOffset * 100) / 7}%`,
+          top: `${startHourOffset * 64}px`,
+          height: `${duration * 64}px`,
+          width: `${100 / 7}%`,
+        };
+        break;
+      }
     }
 
     return <div style={style} />;
@@ -583,7 +654,7 @@ export function WeeklyCalendar() {
       <div className="flex flex-col gap-4">
         <div className="rounded-lg border bg-card">
           {/* Header with days */}
-          <div className="grid grid-cols-[auto_repeat(7,1fr)] border-b">
+          <div className="grid select-none grid-cols-[auto_repeat(7,1fr)] border-b">
             <div className="w-16 border-r p-2" /> {/* Time column header */}
             {DAYS.map((dayOffset) => {
               const date = addDays(weekStart, dayOffset);
@@ -600,7 +671,7 @@ export function WeeklyCalendar() {
 
           <div className="grid grid-cols-[auto_repeat(7,1fr)]">
             {/* Time labels */}
-            <div className="space-y-[1px]">
+            <div className="select-none space-y-[1px]">
               {displayedHours.map((hour) => (
                 <div key={hour} className="h-16 border-r p-2 text-sm">
                   {format(new Date().setHours(hour, 0), "h a")}
@@ -611,7 +682,7 @@ export function WeeklyCalendar() {
             {/* Time slots for each day */}
             <div
               ref={gridRef}
-              className="relative col-span-7"
+              className="relative col-span-7 select-none"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
