@@ -246,7 +246,7 @@ export function WeeklyCalendar() {
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging && dragState) {
+    if (dragState) {
       const time = getTimeFromGridPosition(e.clientX, e.clientY);
       if (!time || !gridRef.current) {
         return;
@@ -259,6 +259,7 @@ export function WeeklyCalendar() {
         initialBlockStart,
         initialBlockEnd,
       } = dragState;
+
       const rect = gridRef.current.getBoundingClientRect();
       const hourHeight = 64;
 
@@ -286,20 +287,19 @@ export function WeeklyCalendar() {
         return;
       }
 
-      // Update preview
-      const previewBlock: TimeBlockWithPreview = {
-        ...block,
-        startTime: newStartTime,
-        endTime: newEndTime,
-        id: "preview-" + block.id,
-        isPreview: true,
-      };
-
-      const blocks = timeBlocks?.filter((b) => b.id !== block.id) ?? [];
-      blocks.push(previewBlock);
-
-      // Re-render with preview
-      renderTimeBlock(previewBlock);
+      // Update the dragState with the new times
+      setDragState((prev) =>
+        prev
+          ? {
+              ...prev,
+              block: {
+                ...prev.block,
+                startTime: newStartTime,
+                endTime: newEndTime,
+              },
+            }
+          : null,
+      );
     } else if (isDragging) {
       const time = getTimeFromGridPosition(e.clientX, e.clientY);
       if (!time) {
@@ -371,8 +371,7 @@ export function WeeklyCalendar() {
     let type: DragType = "move";
     if (isTopEdge) {
       type = "resize-top";
-    }
-    if (isBottomEdge) {
+    } else if (isBottomEdge) {
       type = "resize-bottom";
     }
 
