@@ -333,7 +333,9 @@ export function WeeklyCalendar() {
     const dayWidth = rect.width / 7;
     const hourHeight = 64; // matches the h-16 class
 
-    const day = Math.max(0, Math.min(6, Math.floor(relativeX / dayWidth)));
+    // Add 0.5 * dayWidth to center the drag point within the column
+    const adjustedX = relativeX;
+    const day = Math.max(0, Math.min(6, Math.floor(adjustedX / dayWidth)));
     const rawHour = relativeY / hourHeight + startHour;
     const hour = Math.max(startHour, Math.min(endHour, Math.floor(rawHour)));
     const minute = Math.floor((rawHour % 1) * 60);
@@ -369,6 +371,7 @@ export function WeeklyCalendar() {
     }
 
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
+
     if (!time) {
       return;
     }
@@ -392,7 +395,7 @@ export function WeeklyCalendar() {
 
         // Get the time from the adjusted position
         const adjustedTime = getTimeFromGridPosition(
-          e.pageX - startOffset.x,
+          e.pageX,
           e.pageY - startOffset.y,
         );
         if (!adjustedTime) {
@@ -402,7 +405,7 @@ export function WeeklyCalendar() {
         setDragState({
           ...dragState,
           currentPosition: {
-            x: e.pageX - startOffset.x,
+            x: e.pageX,
             y: e.pageY - startOffset.y,
           },
         });
