@@ -414,15 +414,25 @@ export function WeeklyCalendar() {
         const { startTime, currentTime } = dragState;
 
         const startDate = addDays(weekStart, startTime.day);
-        startDate.setHours(Math.min(startTime.hour, currentTime.hour), 0, 0, 0);
-
-        const endDate = addDays(weekStart, currentTime.day);
-        endDate.setHours(
-          Math.max(startTime.hour, currentTime.hour) + 1,
+        startDate.setHours(
+          Math.min(Math.max(startTime.hour, startHour), endHour),
           0,
           0,
           0,
         );
+
+        const endDate = addDays(weekStart, currentTime.day);
+        endDate.setHours(
+          Math.min(Math.max(currentTime.hour + 1, startHour), endHour),
+          0,
+          0,
+          0,
+        );
+
+        // Ensure end time is after start time and within bounds
+        if (endDate.getTime() <= startDate.getTime()) {
+          endDate.setTime(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
+        }
 
         setNewBlockStart(startDate);
         setNewBlockEnd(endDate);
@@ -453,10 +463,17 @@ export function WeeklyCalendar() {
 
         const newStart = new Date(weekStart);
         newStart.setDate(newStart.getDate() + time.day);
-        newStart.setHours(time.hour, time.minute, 0, 0);
+        newStart.setHours(Math.max(time.hour, startHour), time.minute, 0, 0);
 
         const newEnd = new Date(newStart.getTime());
         newEnd.setTime(newStart.getTime() + duration * 60 * 60 * 1000);
+
+        // If the end time would exceed the endHour, adjust both start and end times
+        if (newEnd.getHours() > endHour) {
+          const hoursToAdjust = newEnd.getHours() - endHour;
+          newStart.setHours(newStart.getHours() - hoursToAdjust);
+          newEnd.setHours(endHour);
+        }
 
         updateTimeBlockMutation.mutate({
           id: blockId,
@@ -487,7 +504,12 @@ export function WeeklyCalendar() {
         const dayOffset = new Date(block.startTime).getDay();
         const newTime = new Date(weekStart);
         newTime.setDate(newTime.getDate() + dayOffset);
-        newTime.setHours(time.hour, time.minute, 0, 0);
+        newTime.setHours(
+          Math.min(Math.max(time.hour, startHour), endHour),
+          time.minute,
+          0,
+          0,
+        );
 
         // Only update the edge being dragged and ensure end time is after start time
         const newStart =
@@ -495,7 +517,12 @@ export function WeeklyCalendar() {
         const newEnd =
           dragState.type === "resize_block_bottom" ? newTime : endTime;
 
-        if (newEnd.getTime() <= newStart.getTime()) {
+        // Ensure the block stays within bounds and has minimum duration
+        if (
+          newEnd.getTime() <= newStart.getTime() ||
+          newStart.getHours() < startHour ||
+          newEnd.getHours() > endHour
+        ) {
           break;
         }
 
@@ -556,9 +583,15 @@ export function WeeklyCalendar() {
       case "drag_new": {
         const { startTime, currentTime } = dragState;
         const startHourOffset =
-          Math.min(startTime.hour, currentTime.hour) - startHour;
+          Math.min(
+            Math.max(Math.min(startTime.hour, currentTime.hour), startHour),
+            endHour,
+          ) - startHour;
         const endHourOffset =
-          Math.max(startTime.hour, currentTime.hour) - startHour;
+          Math.min(
+            Math.max(Math.max(startTime.hour, currentTime.hour), startHour),
+            endHour,
+          ) - startHour;
         const dayOffset = startTime.day;
 
         style = {
@@ -590,10 +623,16 @@ export function WeeklyCalendar() {
         const duration =
           (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
 
+        // Ensure the preview stays within bounds
+        const previewHour = Math.min(
+          Math.max(time.hour, startHour),
+          endHour - duration,
+        );
+
         style = {
           ...style,
           left: `${(time.day * 100) / 7}%`,
-          top: `${(time.hour - startHour + time.minute / 60) * 64}px`,
+          top: `${(previewHour - startHour + time.minute / 60) * 64}px`,
           height: `${duration * 64}px`,
           width: `${100 / 7}%`,
           backgroundColor: block.color || "#3b82f6",
@@ -619,7 +658,12 @@ export function WeeklyCalendar() {
         const dayOffset = new Date(block.startTime).getDay();
         const newTime = new Date(weekStart);
         newTime.setDate(newTime.getDate() + dayOffset);
-        newTime.setHours(time.hour, time.minute, 0, 0);
+        newTime.setHours(
+          Math.min(Math.max(time.hour, startHour), endHour),
+          time.minute,
+          0,
+          0,
+        );
 
         // Only modify the edge being dragged
         const previewStart =
@@ -627,8 +671,12 @@ export function WeeklyCalendar() {
         const previewEnd =
           dragState.type === "resize_block_bottom" ? newTime : endTime;
 
-        // Ensure end time is always after start time
-        if (previewEnd.getTime() <= previewStart.getTime()) {
+        // Ensure end time is always after start time and within bounds
+        if (
+          previewEnd.getTime() <= previewStart.getTime() ||
+          previewStart.getHours() < startHour ||
+          previewEnd.getHours() > endHour
+        ) {
           return null;
         }
 
