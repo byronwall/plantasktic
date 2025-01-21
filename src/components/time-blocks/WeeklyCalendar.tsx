@@ -119,7 +119,6 @@ const getOverlappingGroups = (
 
 type TimeBlockProps = {
   block: TimeBlockWithPosition;
-  onSelect: () => void;
   onDragStart: (blockId: string, offset: { x: number; y: number }) => void;
   onResizeStart: (
     blockId: string,
@@ -132,7 +131,7 @@ type TimeBlockProps = {
 
 function TimeBlock({
   block,
-  onSelect,
+
   onDragStart,
   onResizeStart,
   isPreview = false,
@@ -205,13 +204,6 @@ function TimeBlock({
     <div
       style={style}
       data-time-block="true"
-      onClick={(e) => {
-        if (isPreview) {
-          return;
-        }
-        e.stopPropagation();
-        onSelect();
-      }}
       onMouseDown={handleMouseDown}
       className={cn("group relative select-none")}
     >
@@ -238,6 +230,8 @@ type DragState =
       blockId: string;
       startOffset: { x: number; y: number };
       currentPosition: { x: number; y: number };
+      startPosition: { x: number; y: number };
+      totalMovement: number;
     }
   | {
       type: "resize_block_top";
@@ -385,13 +379,17 @@ export function WeeklyCalendar() {
         break;
       }
       case "drag_existing": {
-        const { blockId, startOffset } = dragState;
+        const { blockId, startOffset, startPosition, totalMovement } =
+          dragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           return;
         }
 
-        // Calculate adjusted position relative to the grid
+        // Calculate movement since last position
+        const dx = e.pageX - (startPosition.x || e.pageX);
+        const dy = e.pageY - (startPosition.y || e.pageY);
+        const newMovement = totalMovement + Math.sqrt(dx * dx + dy * dy);
 
         // Get the time from the adjusted position
         const adjustedTime = getTimeFromGridPosition(
@@ -408,6 +406,8 @@ export function WeeklyCalendar() {
             x: e.pageX,
             y: e.pageY - startOffset.y,
           },
+          startPosition: { x: e.pageX, y: e.pageY },
+          totalMovement: newMovement,
         });
         break;
       }
@@ -426,6 +426,8 @@ export function WeeklyCalendar() {
     if (!gridRef.current || !timeBlocks) {
       return;
     }
+
+    console.log("dragState", dragState.type);
 
     switch (dragState.type) {
       case "drag_new": {
@@ -460,10 +462,17 @@ export function WeeklyCalendar() {
         break;
       }
       case "drag_existing": {
-        const { blockId, currentPosition } = dragState;
+        const { blockId, currentPosition, totalMovement } = dragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           return null;
+        }
+
+        // If total movement is less than threshold, show edit dialog instead of moving
+        const MOVEMENT_THRESHOLD = 5; // pixels
+        if (totalMovement < MOVEMENT_THRESHOLD) {
+          setSelectedTimeBlock(block);
+          break;
         }
 
         const time = getTimeFromGridPosition(
@@ -566,6 +575,8 @@ export function WeeklyCalendar() {
       blockId,
       startOffset: offset,
       currentPosition: { x: 0, y: 0 },
+      startPosition: { x: 0, y: 0 },
+      totalMovement: 0,
     });
   };
 
@@ -725,7 +736,6 @@ export function WeeklyCalendar() {
     return (
       <TimeBlock
         block={previewBlock}
-        onSelect={() => undefined}
         onDragStart={() => undefined}
         onResizeStart={() => undefined}
         isPreview={true}
@@ -845,7 +855,6 @@ export function WeeklyCalendar() {
                     <TimeBlock
                       key={block.id}
                       block={block}
-                      onSelect={() => setSelectedTimeBlock(block)}
                       onDragStart={handleBlockDragStart}
                       onResizeStart={handleBlockResizeStart}
                     />
