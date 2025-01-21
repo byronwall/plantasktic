@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type Active,
   DndContext,
   type DragEndEvent,
   DragOverlay,
@@ -218,6 +219,12 @@ function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
   );
 }
 
+interface DragEventWithNode extends Active {
+  nodeRef: {
+    current: HTMLElement | null;
+  };
+}
+
 export function WeeklyCalendar() {
   const { currentWorkspaceId } = useCurrentProject();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -311,13 +318,23 @@ export function WeeklyCalendar() {
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveId(active.id as string);
+
+    // Store the initial click offset
+    if (event.activatorEvent instanceof MouseEvent) {
+      const element = (active as unknown as DragEventWithNode).nodeRef?.current;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const offsetY = event.activatorEvent.clientY - rect.top;
+        element.dataset.dragOffsetY = offsetY.toString();
+      }
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active } = event;
     setActiveId(null);
 
-    if (!over || !timeBlocks) {
+    if (!timeBlocks) {
       return;
     }
 
@@ -327,12 +344,19 @@ export function WeeklyCalendar() {
     }
 
     // Cast the event to get access to coordinates
-    const coords = {
-      x: (event.activatorEvent as MouseEvent).clientX,
-      y: (event.activatorEvent as MouseEvent).clientY,
+    const mouseEvent = event.activatorEvent as MouseEvent;
+    const element = (active as DragEventWithNode).nodeRef?.current;
+    const offsetY = element?.dataset.dragOffsetY
+      ? parseFloat(element.dataset.dragOffsetY)
+      : 0;
+
+    // Adjust the position based on the initial click offset
+    const adjustedCoords = {
+      x: mouseEvent.clientX,
+      y: mouseEvent.clientY - offsetY,
     };
 
-    const time = getTimeFromGridPosition(coords.x, coords.y);
+    const time = getTimeFromGridPosition(adjustedCoords.x, adjustedCoords.y);
     if (!time) {
       return;
     }
@@ -348,12 +372,20 @@ export function WeeklyCalendar() {
     const newEnd = new Date(newStart);
     newEnd.setMinutes(newStart.getMinutes() + duration);
 
-    updateTimeBlockMutation.mutate({
-      id: activeBlock.id,
-      startTime: newStart,
-      endTime: newEnd,
-      dayOfWeek: time.day,
-    });
+    // Only update if the times have actually changed
+    if (
+      newStart.getTime() !== blockStart.getTime() ||
+      newEnd.getTime() !== blockEnd.getTime()
+    ) {
+      updateTimeBlockMutation.mutate({
+        id: activeBlock.id,
+        startTime: newStart,
+        endTime: newEnd,
+        dayOfWeek: time.day,
+        ...(activeBlock.title && { title: activeBlock.title }),
+        ...(activeBlock.color && { color: activeBlock.color }),
+      });
+    }
   };
 
   const handleCreateBlockMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
