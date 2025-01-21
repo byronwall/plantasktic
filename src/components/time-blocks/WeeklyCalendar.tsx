@@ -21,6 +21,73 @@ const DAYS = Array.from({ length: 7 }, (_, i) => i);
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 20;
 
+type TimeBlockWithPosition = TimeBlock & {
+  index?: number;
+  totalOverlaps?: number;
+};
+
+const doBlocksOverlap = (block1: TimeBlock, block2: TimeBlock) => {
+  const start1 = new Date(block1.startTime);
+  const end1 = new Date(block1.endTime);
+  const start2 = new Date(block2.startTime);
+  const end2 = new Date(block2.endTime);
+
+  return start1 < end2 && start2 < end1;
+};
+
+const getOverlappingGroups = (
+  blocks: TimeBlock[],
+): TimeBlockWithPosition[][] => {
+  const groups: TimeBlockWithPosition[][] = [];
+
+  // Sort blocks by start time
+  const sortedBlocks = [...blocks].sort(
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+  );
+
+  for (const block of sortedBlocks) {
+    let addedToGroup = false;
+
+    // Try to add to an existing group
+    for (const group of groups) {
+      if (
+        group.some((existingBlock) => doBlocksOverlap(existingBlock, block))
+      ) {
+        if (group.length < 3) {
+          // Add the new block and update all blocks in the group
+          const newTotalOverlaps = group.length + 1;
+          // Update existing blocks in the group
+          group.forEach((existingBlock, idx) => {
+            existingBlock.totalOverlaps = newTotalOverlaps;
+            existingBlock.index = idx;
+          });
+          // Add new block
+          group.push({
+            ...block,
+            index: group.length,
+            totalOverlaps: newTotalOverlaps,
+          });
+        } else {
+          group.push({
+            ...block,
+            index: group.length,
+            totalOverlaps: group.length + 1,
+          });
+        }
+        addedToGroup = true;
+        break;
+      }
+    }
+
+    // If not added to any group, create a new one
+    if (!addedToGroup) {
+      groups.push([{ ...block, index: 0, totalOverlaps: 1 }]);
+    }
+  }
+
+  return groups;
+};
+
 export function WeeklyCalendar() {
   const { currentWorkspaceId } = useCurrentProject();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -154,7 +221,7 @@ export function WeeklyCalendar() {
     setDragEnd(null);
   };
 
-  const renderTimeBlock = (block: TimeBlock) => {
+  const renderTimeBlock = (block: TimeBlockWithPosition) => {
     const blockStart = new Date(block.startTime);
     const blockEnd = new Date(block.endTime);
 
@@ -162,12 +229,24 @@ export function WeeklyCalendar() {
     const startHourOffset = blockStart.getHours() - startHour;
     const duration = blockEnd.getHours() - blockStart.getHours();
 
+    // Calculate width and offset based on overlaps
+    const baseWidth = 100 / 7; // Width for one day
+    const width =
+      block.totalOverlaps && block.totalOverlaps > 1
+        ? baseWidth / Math.min(block.totalOverlaps, 3)
+        : baseWidth;
+
+    const leftOffset =
+      block.totalOverlaps && block.totalOverlaps <= 3 && block.index
+        ? dayOffset * baseWidth + width * (block.index || 0)
+        : dayOffset * baseWidth;
+
     const style = {
       position: "absolute" as const,
-      left: `${(dayOffset * 100) / 7}%`,
+      left: `${leftOffset}%`,
       top: `${startHourOffset * 64}px`,
       height: `${duration * 64}px`,
-      width: `${100 / 7}%`,
+      width: `${width}%`,
       backgroundColor: block.color || "#3b82f6",
       opacity: 0.8,
       borderRadius: "0.375rem",
@@ -177,6 +256,10 @@ export function WeeklyCalendar() {
       whiteSpace: "nowrap" as const,
       textOverflow: "ellipsis",
       cursor: "pointer",
+      zIndex:
+        block.totalOverlaps && block.totalOverlaps > 3
+          ? (block.index || 0) + 1
+          : 1,
     };
 
     return (
@@ -322,7 +405,8 @@ export function WeeklyCalendar() {
                   ))}
                 </div>
               ))}
-              {timeBlocks?.map(renderTimeBlock)}
+              {timeBlocks &&
+                getOverlappingGroups(timeBlocks).flat().map(renderTimeBlock)}
               {renderDragPreview()}
             </div>
           </div>
