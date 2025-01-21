@@ -2,7 +2,7 @@
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 import { Plus } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
@@ -14,12 +14,58 @@ import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
 
-import type { TimeBlock } from "@prisma/client";
+import type { TimeBlock as PrismaTimeBlock } from "@prisma/client";
 
 const DAYS = Array.from({ length: 7 }, (_, i) => i);
 
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 20;
+
+type Task = {
+  task_id: number;
+  title: string;
+  description: string | null;
+  comments: string | null;
+  category: string | null;
+  due_date: Date | null;
+  start_date: Date | null;
+  duration: number | null;
+  priority: string | null;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+  parentTaskId: number | null;
+  projectId: string | null;
+  userId: string | null;
+};
+
+type TimeBlockTask = {
+  id: string;
+  timeBlockId: string;
+  taskId: number;
+  created_at: Date;
+  task: {
+    task_id: number;
+    title: string;
+    description: string | null;
+    comments: string | null;
+    category: string | null;
+    due_date: Date | null;
+    start_date: Date | null;
+    duration: number | null;
+    priority: string | null;
+    status: string;
+    created_at: Date;
+    updated_at: Date;
+    parentTaskId: number | null;
+    projectId: string | null;
+    userId: string | null;
+  };
+};
+
+type TimeBlock = PrismaTimeBlock & {
+  taskAssignments: TimeBlockTask[];
+};
 
 type TimeBlockWithPosition = TimeBlock & {
   index?: number;
@@ -88,6 +134,20 @@ const getOverlappingGroups = (
   return groups;
 };
 
+type DragType = "move" | "resize-top" | "resize-bottom" | null;
+
+type DragState = {
+  type: DragType;
+  block: TimeBlockWithPosition;
+  initialMousePos: { x: number; y: number };
+  initialBlockStart: Date;
+  initialBlockEnd: Date;
+} | null;
+
+type TimeBlockWithPreview = TimeBlockWithPosition & {
+  isPreview?: boolean;
+};
+
 export function WeeklyCalendar() {
   const { currentWorkspaceId } = useCurrentProject();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -127,6 +187,22 @@ export function WeeklyCalendar() {
     null,
   );
 
+  const [dragState, setDragState] = useState<DragState>(null);
+
+  // Add mutation
+  const updateTimeBlockMutation = api.timeBlock.update.useMutation();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dragState) {
+        setDragState(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [dragState]);
+
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
@@ -146,34 +222,176 @@ export function WeeklyCalendar() {
     setSelectedDate((prev) => addWeeks(prev, 1));
   };
 
-  const getTimeFromMouseEvent = (e: React.MouseEvent) => {
+  const getTimeFromGridPosition = (x: number, y: number) => {
     if (!gridRef.current) {
       return null;
     }
 
     const rect = gridRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const relativeX = x - rect.left;
+    const relativeY = y - rect.top;
 
     const dayWidth = rect.width / 7;
     const hourHeight = 64; // matches the h-16 class
 
-    const day = Math.floor(x / dayWidth);
-    const hour = Math.floor(y / hourHeight) + startHour;
+    const day = Math.floor(relativeX / dayWidth);
+    const hour = Math.floor(relativeY / hourHeight) + startHour;
+    const minute = Math.floor((relativeY % hourHeight) / (hourHeight / 60));
 
     return {
       day: Math.max(0, Math.min(6, day)),
       hour: Math.max(startHour, Math.min(endHour, hour)),
+      minute: Math.max(0, Math.min(59, minute)),
     };
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging && dragState) {
+      const time = getTimeFromGridPosition(e.clientX, e.clientY);
+      if (!time || !gridRef.current) {
+        return;
+      }
+
+      const {
+        block,
+        type,
+        initialMousePos,
+        initialBlockStart,
+        initialBlockEnd,
+      } = dragState;
+      const rect = gridRef.current.getBoundingClientRect();
+      const hourHeight = 64;
+
+      const deltaY =
+        Math.round((e.clientY - initialMousePos.y) / hourHeight) * 60; // in minutes
+      const deltaX =
+        Math.floor((e.clientX - initialMousePos.x) / (rect.width / 7)) *
+        24 *
+        60; // in minutes
+
+      const newStartTime = new Date(initialBlockStart);
+      const newEndTime = new Date(initialBlockEnd);
+
+      if (type === "move") {
+        newStartTime.setMinutes(newStartTime.getMinutes() + deltaY + deltaX);
+        newEndTime.setMinutes(newEndTime.getMinutes() + deltaY + deltaX);
+      } else if (type === "resize-top") {
+        newStartTime.setMinutes(newStartTime.getMinutes() + deltaY);
+      } else if (type === "resize-bottom") {
+        newEndTime.setMinutes(newEndTime.getMinutes() + deltaY);
+      }
+
+      // Ensure start time is before end time
+      if (newStartTime >= newEndTime) {
+        return;
+      }
+
+      // Update preview
+      const previewBlock: TimeBlockWithPreview = {
+        ...block,
+        startTime: newStartTime,
+        endTime: newEndTime,
+        id: "preview-" + block.id,
+        isPreview: true,
+      };
+
+      const blocks = timeBlocks?.filter((b) => b.id !== block.id) ?? [];
+      blocks.push(previewBlock);
+
+      // Re-render with preview
+      renderTimeBlock(previewBlock);
+    } else if (isDragging) {
+      const time = getTimeFromGridPosition(e.clientX, e.clientY);
+      if (!time) {
+        return;
+      }
+      setDragEnd(time);
+    }
+  };
+
+  const handleCreateBlockMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging && dragStart && dragEnd && currentWorkspaceId) {
+      setIsDragging(false);
+
+      const startDate = addDays(weekStart, dragStart.day);
+      startDate.setHours(dragStart.hour, 0, 0, 0);
+
+      const endDate = addDays(weekStart, dragEnd.day);
+      endDate.setHours(dragEnd.hour + 1, 0, 0, 0);
+
+      setNewBlockStart(startDate);
+      setNewBlockEnd(endDate);
+      setNewBlockDay(dragStart.day);
+
+      // Position dialog near the mouse
+      setDialogPosition({ x: e.clientX, y: e.clientY });
+      setIsDialogOpen(true);
+
+      setDragStart(null);
+      setDragEnd(null);
+    }
+  };
+
+  const handleBlockMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragState) {
+      const { block } = dragState;
+      const time = getTimeFromGridPosition(e.clientX, e.clientY);
+
+      if (time) {
+        updateTimeBlockMutation.mutate({
+          id: block.id,
+          startTime: block.startTime,
+          endTime: block.endTime,
+          dayOfWeek: time.day,
+        });
+      }
+
+      setDragState(null);
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragState) {
+      handleBlockMouseUp(e);
+    } else {
+      handleCreateBlockMouseUp(e);
+    }
+  };
+
+  const handleBlockMouseDown = (
+    e: React.MouseEvent<HTMLDivElement>,
+    block: TimeBlockWithPosition,
+  ) => {
+    e.stopPropagation();
+    const target = e.target as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const isTopEdge = e.clientY - rect.top < 8;
+    const isBottomEdge = rect.bottom - e.clientY < 8;
+
+    let type: DragType = "move";
+    if (isTopEdge) {
+      type = "resize-top";
+    }
+    if (isBottomEdge) {
+      type = "resize-bottom";
+    }
+
+    setDragState({
+      type,
+      block,
+      initialMousePos: { x: e.clientX, y: e.clientY },
+      initialBlockStart: new Date(block.startTime),
+      initialBlockEnd: new Date(block.endTime),
+    });
+  };
+
+  const handleCreateBlockMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Check if we clicked on a time block
     if ((e.target as HTMLElement).closest('[data-time-block="true"]')) {
       return;
     }
 
-    const time = getTimeFromMouseEvent(e);
+    const time = getTimeFromGridPosition(e.clientX, e.clientY);
     if (!time) {
       return;
     }
@@ -183,51 +401,15 @@ export function WeeklyCalendar() {
     setDragEnd(time);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) {
-      return;
-    }
-
-    const time = getTimeFromMouseEvent(e);
-    if (!time) {
-      return;
-    }
-
-    setDragEnd(time);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart || !dragEnd || !currentWorkspaceId) {
-      return;
-    }
-
-    setIsDragging(false);
-
-    const startDate = addDays(weekStart, dragStart.day);
-    startDate.setHours(dragStart.hour, 0, 0, 0);
-
-    const endDate = addDays(weekStart, dragEnd.day);
-    endDate.setHours(dragEnd.hour + 1, 0, 0, 0);
-
-    setNewBlockStart(startDate);
-    setNewBlockEnd(endDate);
-    setNewBlockDay(dragStart.day);
-
-    // Position dialog near the mouse
-    setDialogPosition({ x: e.clientX, y: e.clientY });
-    setIsDialogOpen(true);
-
-    setDragStart(null);
-    setDragEnd(null);
-  };
-
-  const renderTimeBlock = (block: TimeBlockWithPosition) => {
+  const renderTimeBlock = (block: TimeBlockWithPreview) => {
     const blockStart = new Date(block.startTime);
     const blockEnd = new Date(block.endTime);
 
     const dayOffset = blockStart.getDay();
     const startHourOffset = blockStart.getHours() - startHour;
-    const duration = blockEnd.getHours() - blockStart.getHours();
+    const startMinuteOffset = blockStart.getMinutes() / 60;
+    const duration =
+      (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
 
     // Calculate width and offset based on overlaps
     const baseWidth = 100 / 7; // Width for one day
@@ -244,20 +426,21 @@ export function WeeklyCalendar() {
     const style = {
       position: "absolute" as const,
       left: `${leftOffset}%`,
-      top: `${startHourOffset * 64}px`,
+      top: `${(startHourOffset + startMinuteOffset) * 64}px`,
       height: `${duration * 64}px`,
       width: `${width}%`,
       backgroundColor: block.color || "#3b82f6",
-      opacity: 0.8,
+      opacity: block.isPreview ? 0.5 : 0.8,
       borderRadius: "0.375rem",
       padding: "0.5rem",
       color: "white",
       overflow: "hidden",
       whiteSpace: "nowrap" as const,
       textOverflow: "ellipsis",
-      cursor: "pointer",
-      zIndex:
-        block.totalOverlaps && block.totalOverlaps > 3
+      cursor: block.isPreview ? "grabbing" : "grab",
+      zIndex: block.isPreview
+        ? 1000
+        : block.totalOverlaps && block.totalOverlaps > 3
           ? (block.index || 0) + 1
           : 1,
     };
@@ -267,38 +450,45 @@ export function WeeklyCalendar() {
         key={block.id}
         style={style}
         data-time-block="true"
+        onMouseDown={(e) => !block.isPreview && handleBlockMouseDown(e, block)}
         onClick={(e) => {
-          e.stopPropagation();
-          setSelectedTimeBlock(block);
+          if (!block.isPreview) {
+            e.stopPropagation();
+            setSelectedTimeBlock(block);
+          }
         }}
+        className="group relative"
       >
+        <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
+        <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
         {block.title || "Untitled Block"}
       </div>
     );
   };
 
   const renderDragPreview = () => {
-    if (!isDragging || !dragStart || !dragEnd) {
-      return null;
+    if (isDragging && dragStart && dragEnd) {
+      const startHourOffset =
+        Math.min(dragStart.hour, dragEnd.hour) - startHour;
+      const endHourOffset = Math.max(dragStart.hour, dragEnd.hour) - startHour;
+      const dayOffset = dragStart.day;
+
+      const style = {
+        position: "absolute" as const,
+        left: `${(dayOffset * 100) / 7}%`,
+        top: `${startHourOffset * 64}px`,
+        height: `${(endHourOffset - startHourOffset + 1) * 64}px`,
+        width: `${100 / 7}%`,
+        backgroundColor: "#3b82f6",
+        opacity: 0.4,
+        borderRadius: "0.375rem",
+        pointerEvents: "none" as const,
+      };
+
+      return <div style={style} />;
     }
 
-    const startHourOffset = Math.min(dragStart.hour, dragEnd.hour) - startHour;
-    const endHourOffset = Math.max(dragStart.hour, dragEnd.hour) - startHour;
-    const dayOffset = dragStart.day;
-
-    const style = {
-      position: "absolute" as const,
-      left: `${(dayOffset * 100) / 7}%`,
-      top: `${startHourOffset * 64}px`,
-      height: `${(endHourOffset - startHourOffset + 1) * 64}px`,
-      width: `${100 / 7}%`,
-      backgroundColor: "#3b82f6",
-      opacity: 0.4,
-      borderRadius: "0.375rem",
-      pointerEvents: "none" as const,
-    };
-
-    return <div style={style} />;
+    return null;
   };
 
   return (
@@ -385,10 +575,13 @@ export function WeeklyCalendar() {
             <div
               ref={gridRef}
               className="relative col-span-7"
-              onMouseDown={handleMouseDown}
+              onMouseDown={handleCreateBlockMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              onMouseLeave={() => setIsDragging(false)}
+              onMouseLeave={() => {
+                setIsDragging(false);
+                setDragState(null);
+              }}
             >
               {DAYS.map((dayOffset) => (
                 <div
@@ -406,7 +599,9 @@ export function WeeklyCalendar() {
                 </div>
               ))}
               {timeBlocks &&
-                getOverlappingGroups(timeBlocks).flat().map(renderTimeBlock)}
+                getOverlappingGroups(timeBlocks)
+                  .flat()
+                  .map((block) => renderTimeBlock(block))}
               {renderDragPreview()}
             </div>
           </div>
