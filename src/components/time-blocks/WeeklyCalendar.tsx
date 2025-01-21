@@ -1,17 +1,5 @@
 "use client";
 
-import {
-  DndContext,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useDraggable,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
@@ -129,16 +117,24 @@ const getOverlappingGroups = (
   return groups;
 };
 
-type DraggableTimeBlockProps = {
+type TimeBlockProps = {
   block: TimeBlockWithPosition;
   onSelect: () => void;
+  onDragStart: (blockId: string, offset: { x: number; y: number }) => void;
+  onResizeStart: (
+    blockId: string,
+    edge: "top" | "bottom",
+    startTime: Date,
+    endTime: Date,
+  ) => void;
 };
 
-function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: block.id,
-  });
-
+function TimeBlock({
+  block,
+  onSelect,
+  onDragStart,
+  onResizeStart,
+}: TimeBlockProps) {
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
 
@@ -174,25 +170,39 @@ function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
     whiteSpace: "nowrap" as const,
     textOverflow: "ellipsis",
     cursor: "grab",
-    transform: CSS.Transform.toString(transform),
     zIndex:
       block.totalOverlaps && block.totalOverlaps > 3
         ? (block.index || 0) + 1
         : 1,
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    // Check if clicking on resize handles
+    if (offsetY < 8) {
+      onResizeStart(block.id, "top", blockStart, blockEnd);
+    } else if (offsetY > rect.height - 8) {
+      onResizeStart(block.id, "bottom", blockStart, blockEnd);
+    } else {
+      onDragStart(block.id, { x: offsetX, y: offsetY });
+    }
+  };
+
   return (
     <div
-      ref={setNodeRef}
       style={style}
       data-time-block="true"
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
       }}
+      onMouseDown={handleMouseDown}
       className={cn("group relative")}
-      {...attributes}
-      {...listeners}
     >
       <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
       <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
@@ -200,6 +210,34 @@ function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
     </div>
   );
 }
+
+type DragState =
+  | { type: "idle" }
+  | {
+      type: "drag_new";
+      startTime: { hour: number; day: number };
+      currentTime: { hour: number; day: number };
+    }
+  | {
+      type: "drag_existing";
+      blockId: string;
+      startOffset: { x: number; y: number };
+      currentPosition: { x: number; y: number };
+    }
+  | {
+      type: "resize_block_top";
+      blockId: string;
+      startTime: Date;
+      endTime: Date;
+      currentPosition: { x: number; y: number };
+    }
+  | {
+      type: "resize_block_bottom";
+      blockId: string;
+      startTime: Date;
+      endTime: Date;
+      currentPosition: { x: number; y: number };
+    };
 
 export function WeeklyCalendar() {
   const { currentWorkspaceId } = useCurrentProject();
@@ -220,20 +258,12 @@ export function WeeklyCalendar() {
   const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
   const [newBlockDay, setNewBlockDay] = useState<number>(0);
 
-  // DndKit state
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{
-    hour: number;
-    day: number;
-  } | null>(null);
-  const [dragEnd, setDragEnd] = useState<{ hour: number; day: number } | null>(
-    null,
-  );
+  // State machine for drag operations
+  const [dragState, setDragState] = useState<DragState>({ type: "idle" });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor),
+  // Remove DndKit state and sensors
+  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
+    null,
   );
 
   // Fetch time blocks for the current week
@@ -241,10 +271,6 @@ export function WeeklyCalendar() {
     workspaceId: currentWorkspaceId,
     weekStart,
   });
-
-  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
-    null,
-  );
 
   // Add mutation
   const updateTimeBlockMutation = api.timeBlock.update.useMutation();
@@ -292,161 +318,214 @@ export function WeeklyCalendar() {
     };
   };
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    setActiveId(active.id as string);
-
-    if (event.activatorEvent instanceof PointerEvent) {
-      const element = event.activatorEvent.target as HTMLElement;
-      const timeBlockElement = element.closest('[data-time-block="true"]');
-      if (timeBlockElement) {
-        const rect = timeBlockElement.getBoundingClientRect();
-        dragOffsetYRef.current = event.activatorEvent.clientY - rect.top;
-
-        console.log("XXX dragOffsetYRef.current", dragOffsetYRef.current);
-      }
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active } = event;
-    setActiveId(null);
-
-    if (!timeBlocks || !gridRef.current) {
-      return;
-    }
-
-    const activeBlock = timeBlocks.find((block) => block.id === active.id);
-    if (!activeBlock) {
-      return;
-    }
-
-    // Get the last recorded coordinates from the drag event
-    const lastEvent = event.activatorEvent as PointerEvent;
-    const gridRect = gridRef.current.getBoundingClientRect();
-
-    // Calculate position relative to the grid
-    const relativeX = lastEvent.clientX - gridRect.left;
-    const relativeY = lastEvent.clientY - gridRect.top - dragOffsetYRef.current;
-
-    const dayWidth = gridRect.width / 7;
-    const hourHeight = 64;
-
-    const day = Math.floor(relativeX / dayWidth);
-    const hour = Math.floor(relativeY / hourHeight) + startHour;
-    const minute = Math.floor((relativeY % hourHeight) / (hourHeight / 60));
-
-    // Clamp values to valid ranges
-    const clampedDay = Math.max(0, Math.min(6, day));
-    const clampedHour = Math.max(startHour, Math.min(endHour, hour));
-    const clampedMinute = Math.max(0, Math.min(59, minute));
-
-    // Calculate new times maintaining the original duration
-    const blockStart = new Date(activeBlock.startTime);
-    const blockEnd = new Date(activeBlock.endTime);
-    const duration = blockEnd.getTime() - blockStart.getTime();
-
-    const newStart = new Date(weekStart);
-    newStart.setDate(newStart.getDate() + clampedDay);
-    newStart.setHours(clampedHour, clampedMinute, 0, 0);
-
-    const newEnd = new Date(newStart.getTime() + duration);
-
-    // Only update if the times have actually changed
-    if (
-      newStart.getTime() !== blockStart.getTime() ||
-      newEnd.getTime() !== blockEnd.getTime()
-    ) {
-      updateTimeBlockMutation.mutate({
-        id: activeBlock.id,
-        startTime: newStart,
-        endTime: newEnd,
-        dayOfWeek: clampedDay,
-        ...(activeBlock.title && { title: activeBlock.title }),
-        ...(activeBlock.color && { color: activeBlock.color }),
-      });
-    }
-  };
-
-  const handleCreateBlockMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // Check if we clicked on a time block
     if ((e.target as HTMLElement).closest('[data-time-block="true"]')) {
       return;
     }
 
-    if (activeId) {
-      // We are dragging a time block, so we don't want to create a new one
-      return;
-    }
-
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
-
     if (!time) {
       return;
     }
 
-    setIsDragging(true);
-    setDragStart(time);
-    setDragEnd(time);
+    setDragState({
+      type: "drag_new",
+      startTime: { hour: time.hour, day: time.day },
+      currentTime: { hour: time.hour, day: time.day },
+    });
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging) {
-      const time = getTimeFromGridPosition(e.pageX, e.pageY);
+    if (!gridRef.current) {
+      return;
+    }
 
-      if (!time) {
-        return;
+    const time = getTimeFromGridPosition(e.pageX, e.pageY);
+    if (!time) {
+      return;
+    }
+
+    switch (dragState.type) {
+      case "drag_new": {
+        setDragState({
+          ...dragState,
+          currentTime: { hour: time.hour, day: time.day },
+        });
+        break;
       }
-      setDragEnd(time);
+      case "drag_existing": {
+        const { blockId, startOffset } = dragState;
+        setDragState({
+          ...dragState,
+          currentPosition: { x: e.pageX, y: e.pageY },
+        });
+        break;
+      }
+      case "resize_block_top":
+      case "resize_block_bottom": {
+        setDragState({
+          ...dragState,
+          currentPosition: { x: e.pageX, y: e.pageY },
+        });
+        break;
+      }
     }
   };
 
-  const handleCreateBlockMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging && dragStart && dragEnd && currentWorkspaceId) {
-      setIsDragging(false);
-
-      const startDate = addDays(weekStart, dragStart.day);
-      startDate.setHours(dragStart.hour, 0, 0, 0);
-
-      const endDate = addDays(weekStart, dragEnd.day);
-      endDate.setHours(dragEnd.hour + 1, 0, 0, 0);
-
-      setNewBlockStart(startDate);
-      setNewBlockEnd(endDate);
-      setNewBlockDay(dragStart.day);
-
-      // Position dialog near the mouse
-      setDialogPosition({ x: e.pageX, y: e.pageY });
-      setIsDialogOpen(true);
-
-      setDragStart(null);
-      setDragEnd(null);
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!gridRef.current || !timeBlocks) {
+      return;
     }
+
+    switch (dragState.type) {
+      case "drag_new": {
+        const { startTime, currentTime } = dragState;
+
+        const startDate = addDays(weekStart, startTime.day);
+        startDate.setHours(Math.min(startTime.hour, currentTime.hour), 0, 0, 0);
+
+        const endDate = addDays(weekStart, currentTime.day);
+        endDate.setHours(
+          Math.max(startTime.hour, currentTime.hour) + 1,
+          0,
+          0,
+          0,
+        );
+
+        setNewBlockStart(startDate);
+        setNewBlockEnd(endDate);
+        setNewBlockDay(startTime.day);
+        setDialogPosition({ x: e.pageX, y: e.pageY });
+        setIsDialogOpen(true);
+        break;
+      }
+      case "drag_existing": {
+        const { blockId, currentPosition } = dragState;
+        const block = timeBlocks.find((b) => b.id === blockId);
+        if (!block) {
+          break;
+        }
+
+        const time = getTimeFromGridPosition(
+          currentPosition.x,
+          currentPosition.y,
+        );
+        if (!time) {
+          break;
+        }
+
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+        const duration = blockEnd.getTime() - blockStart.getTime();
+
+        const newStart = new Date(weekStart);
+        newStart.setDate(newStart.getDate() + time.day);
+        newStart.setHours(time.hour, time.minute, 0, 0);
+
+        const newEnd = new Date(newStart.getTime() + duration);
+
+        updateTimeBlockMutation.mutate({
+          id: blockId,
+          startTime: newStart,
+          endTime: newEnd,
+          dayOfWeek: time.day,
+          ...(block.title && { title: block.title }),
+          ...(block.color && { color: block.color }),
+        });
+        break;
+      }
+      case "resize_block_top":
+      case "resize_block_bottom": {
+        const { blockId, startTime, endTime, currentPosition } = dragState;
+        const time = getTimeFromGridPosition(
+          currentPosition.x,
+          currentPosition.y,
+        );
+        if (!time) {
+          break;
+        }
+
+        const newTime = new Date(weekStart);
+        newTime.setDate(newTime.getDate() + time.day);
+        newTime.setHours(time.hour, time.minute, 0, 0);
+
+        updateTimeBlockMutation.mutate({
+          id: blockId,
+          startTime:
+            dragState.type === "resize_block_top" ? newTime : startTime,
+          endTime: dragState.type === "resize_block_bottom" ? newTime : endTime,
+          dayOfWeek: time.day,
+        });
+        break;
+      }
+    }
+
+    setDragState({ type: "idle" });
+  };
+
+  const handleBlockDragStart = (
+    blockId: string,
+    offset: { x: number; y: number },
+  ) => {
+    setDragState({
+      type: "drag_existing",
+      blockId,
+      startOffset: offset,
+      currentPosition: { x: 0, y: 0 },
+    });
+  };
+
+  const handleBlockResizeStart = (
+    blockId: string,
+    edge: "top" | "bottom",
+    startTime: Date,
+    endTime: Date,
+  ) => {
+    setDragState({
+      type: edge === "top" ? "resize_block_top" : "resize_block_bottom",
+      blockId,
+      startTime,
+      endTime,
+      currentPosition: { x: 0, y: 0 },
+    });
   };
 
   const renderDragPreview = () => {
-    if (isDragging && dragStart && dragEnd) {
-      const startHourOffset =
-        Math.min(dragStart.hour, dragEnd.hour) - startHour;
-      const endHourOffset = Math.max(dragStart.hour, dragEnd.hour) - startHour;
-      const dayOffset = dragStart.day;
-
-      const style = {
-        position: "absolute" as const,
-        left: `${(dayOffset * 100) / 7}%`,
-        top: `${startHourOffset * 64}px`,
-        height: `${(endHourOffset - startHourOffset + 1) * 64}px`,
-        width: `${100 / 7}%`,
-        backgroundColor: "#3b82f6",
-        opacity: 0.4,
-        borderRadius: "0.375rem",
-        pointerEvents: "none" as const,
-      };
-
-      return <div style={style} />;
+    if (dragState.type === "idle") {
+      return null;
     }
 
-    return null;
+    let style: React.CSSProperties = {
+      position: "absolute",
+      backgroundColor: "#3b82f6",
+      opacity: 0.4,
+      borderRadius: "0.375rem",
+      pointerEvents: "none",
+    };
+
+    switch (dragState.type) {
+      case "drag_new": {
+        const { startTime, currentTime } = dragState;
+        const startHourOffset =
+          Math.min(startTime.hour, currentTime.hour) - startHour;
+        const endHourOffset =
+          Math.max(startTime.hour, currentTime.hour) - startHour;
+        const dayOffset = startTime.day;
+
+        style = {
+          ...style,
+          left: `${(dayOffset * 100) / 7}%`,
+          top: `${startHourOffset * 64}px`,
+          height: `${(endHourOffset - startHourOffset + 1) * 64}px`,
+          width: `${100 / 7}%`,
+        };
+        break;
+      }
+      // For other states, we don't need a preview as the block itself will move
+    }
+
+    return <div style={style} />;
   };
 
   return (
@@ -530,59 +609,43 @@ export function WeeklyCalendar() {
             </div>
 
             {/* Time slots for each day */}
-            <DndContext
-              sensors={sensors}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
+            <div
+              ref={gridRef}
+              className="relative col-span-7"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={() => setDragState({ type: "idle" })}
             >
-              <div
-                ref={gridRef}
-                className="relative col-span-7"
-                onMouseDown={handleCreateBlockMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleCreateBlockMouseUp}
-                onMouseLeave={() => {
-                  setIsDragging(false);
-                }}
-              >
-                {DAYS.map((dayOffset) => (
-                  <div
-                    key={dayOffset}
-                    className="absolute border-r"
-                    style={{
-                      left: `${(dayOffset * 100) / 7}%`,
-                      width: `${100 / 7}%`,
-                      height: "100%",
-                    }}
-                  >
-                    {displayedHours.map((hour) => (
-                      <div key={hour} className="h-16 border-b" />
-                    ))}
-                  </div>
-                ))}
-                {timeBlocks &&
-                  getOverlappingGroups(timeBlocks)
-                    .flat()
-                    .filter((block) => block.id !== activeId)
-                    .map((block) => (
-                      <DraggableTimeBlock
-                        key={block.id}
-                        block={block}
-                        onSelect={() => setSelectedTimeBlock(block)}
-                      />
-                    ))}
-                {renderDragPreview()}
-              </div>
-
-              <DragOverlay>
-                {activeId && timeBlocks && (
-                  <DraggableTimeBlock
-                    block={timeBlocks.find((block) => block.id === activeId)!}
-                    onSelect={() => void 0}
-                  />
-                )}
-              </DragOverlay>
-            </DndContext>
+              {DAYS.map((dayOffset) => (
+                <div
+                  key={dayOffset}
+                  className="absolute border-r"
+                  style={{
+                    left: `${(dayOffset * 100) / 7}%`,
+                    width: `${100 / 7}%`,
+                    height: "100%",
+                  }}
+                >
+                  {displayedHours.map((hour) => (
+                    <div key={hour} className="h-16 border-b" />
+                  ))}
+                </div>
+              ))}
+              {timeBlocks &&
+                getOverlappingGroups(timeBlocks)
+                  .flat()
+                  .map((block) => (
+                    <TimeBlock
+                      key={block.id}
+                      block={block}
+                      onSelect={() => setSelectedTimeBlock(block)}
+                      onDragStart={handleBlockDragStart}
+                      onResizeStart={handleBlockResizeStart}
+                    />
+                  ))}
+              {renderDragPreview()}
+            </div>
           </div>
         </div>
       </div>
