@@ -18,6 +18,7 @@ import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
@@ -189,7 +190,7 @@ function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
         e.stopPropagation();
         onSelect();
       }}
-      className="group relative"
+      className={cn("group relative")}
       {...attributes}
       {...listeners}
     >
@@ -295,17 +296,14 @@ export function WeeklyCalendar() {
     const { active } = event;
     setActiveId(active.id as string);
 
-    // Store the initial click offset
-    if (
-      event.activatorEvent instanceof PointerEvent &&
-      event.activatorEvent.target instanceof HTMLElement
-    ) {
-      const element = event.activatorEvent.target;
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        const offsetY = event.activatorEvent.pageY - rect.top;
+    if (event.activatorEvent instanceof PointerEvent) {
+      const element = event.activatorEvent.target as HTMLElement;
+      const timeBlockElement = element.closest('[data-time-block="true"]');
+      if (timeBlockElement) {
+        const rect = timeBlockElement.getBoundingClientRect();
+        dragOffsetYRef.current = event.activatorEvent.clientY - rect.top;
 
-        dragOffsetYRef.current = offsetY;
+        console.log("XXX dragOffsetYRef.current", dragOffsetYRef.current);
       }
     }
   };
@@ -314,7 +312,7 @@ export function WeeklyCalendar() {
     const { active } = event;
     setActiveId(null);
 
-    if (!timeBlocks) {
+    if (!timeBlocks || !gridRef.current) {
       return;
     }
 
@@ -323,31 +321,36 @@ export function WeeklyCalendar() {
       return;
     }
 
-    // Cast the event to get access to coordinates
-    const mouseEvent = event.activatorEvent as MouseEvent;
-    const offsetY = dragOffsetYRef.current;
+    // Get the last recorded coordinates from the drag event
+    const lastEvent = event.activatorEvent as PointerEvent;
+    const gridRect = gridRef.current.getBoundingClientRect();
 
-    // Adjust the position based on the initial click offset
-    const adjustedCoords = {
-      x: mouseEvent.pageX,
-      y: mouseEvent.pageY - offsetY,
-    };
+    // Calculate position relative to the grid
+    const relativeX = lastEvent.clientX - gridRect.left;
+    const relativeY = lastEvent.clientY - gridRect.top - dragOffsetYRef.current;
 
-    const time = getTimeFromGridPosition(adjustedCoords.x, adjustedCoords.y);
-    if (!time) {
-      return;
-    }
+    const dayWidth = gridRect.width / 7;
+    const hourHeight = 64;
 
+    const day = Math.floor(relativeX / dayWidth);
+    const hour = Math.floor(relativeY / hourHeight) + startHour;
+    const minute = Math.floor((relativeY % hourHeight) / (hourHeight / 60));
+
+    // Clamp values to valid ranges
+    const clampedDay = Math.max(0, Math.min(6, day));
+    const clampedHour = Math.max(startHour, Math.min(endHour, hour));
+    const clampedMinute = Math.max(0, Math.min(59, minute));
+
+    // Calculate new times maintaining the original duration
     const blockStart = new Date(activeBlock.startTime);
     const blockEnd = new Date(activeBlock.endTime);
-    const duration = (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60);
+    const duration = blockEnd.getTime() - blockStart.getTime();
 
     const newStart = new Date(weekStart);
-    newStart.setDate(newStart.getDate() + time.day);
-    newStart.setHours(time.hour, time.minute, 0, 0);
+    newStart.setDate(newStart.getDate() + clampedDay);
+    newStart.setHours(clampedHour, clampedMinute, 0, 0);
 
-    const newEnd = new Date(newStart);
-    newEnd.setMinutes(newStart.getMinutes() + duration);
+    const newEnd = new Date(newStart.getTime() + duration);
 
     // Only update if the times have actually changed
     if (
@@ -358,7 +361,7 @@ export function WeeklyCalendar() {
         id: activeBlock.id,
         startTime: newStart,
         endTime: newEnd,
-        dayOfWeek: time.day,
+        dayOfWeek: clampedDay,
         ...(activeBlock.title && { title: activeBlock.title }),
         ...(activeBlock.color && { color: activeBlock.color }),
       });
@@ -371,13 +374,13 @@ export function WeeklyCalendar() {
       return;
     }
 
+    if (activeId) {
+      // We are dragging a time block, so we don't want to create a new one
+      return;
+    }
+
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
-    console.log("mouse down", {
-      x: e.pageX,
-      y: e.pageY,
-      scrollY: window.scrollY,
-      time,
-    });
+
     if (!time) {
       return;
     }
@@ -390,6 +393,7 @@ export function WeeklyCalendar() {
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging) {
       const time = getTimeFromGridPosition(e.pageX, e.pageY);
+
       if (!time) {
         return;
       }
@@ -559,6 +563,7 @@ export function WeeklyCalendar() {
                 {timeBlocks &&
                   getOverlappingGroups(timeBlocks)
                     .flat()
+                    .filter((block) => block.id !== activeId)
                     .map((block) => (
                       <DraggableTimeBlock
                         key={block.id}
