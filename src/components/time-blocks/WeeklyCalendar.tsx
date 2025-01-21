@@ -127,6 +127,7 @@ type TimeBlockProps = {
     startTime: Date,
     endTime: Date,
   ) => void;
+  isPreview?: boolean;
 };
 
 function TimeBlock({
@@ -134,6 +135,7 @@ function TimeBlock({
   onSelect,
   onDragStart,
   onResizeStart,
+  isPreview = false,
 }: TimeBlockProps) {
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
@@ -162,21 +164,27 @@ function TimeBlock({
     height: `${duration * 64}px`,
     width: `${width}%`,
     backgroundColor: block.color || "#3b82f6",
-    opacity: 0.8,
+    opacity: isPreview ? 0.4 : 0.8,
     borderRadius: "0.375rem",
     padding: "0.5rem",
     color: "white",
     overflow: "hidden",
     whiteSpace: "nowrap" as const,
     textOverflow: "ellipsis",
-    cursor: "grab",
+    cursor: isPreview ? "default" : "grab",
     zIndex:
       block.totalOverlaps && block.totalOverlaps > 3
         ? (block.index || 0) + 1
         : 1,
+    pointerEvents: (isPreview
+      ? "none"
+      : "auto") as React.CSSProperties["pointerEvents"],
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isPreview) {
+      return;
+    }
     e.stopPropagation();
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -198,14 +206,21 @@ function TimeBlock({
       style={style}
       data-time-block="true"
       onClick={(e) => {
+        if (isPreview) {
+          return;
+        }
         e.stopPropagation();
         onSelect();
       }}
       onMouseDown={handleMouseDown}
       className={cn("group relative select-none")}
     >
-      <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
-      <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
+      {!isPreview && (
+        <>
+          <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
+          <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
+        </>
+      )}
       {block.title || "Untitled Block"}
     </div>
   );
@@ -571,35 +586,38 @@ export function WeeklyCalendar() {
       return null;
     }
 
-    let style: React.CSSProperties = {
-      position: "absolute",
-      backgroundColor: "#3b82f6",
-      opacity: 0.4,
-      borderRadius: "0.375rem",
-      pointerEvents: "none",
-    };
+    let previewBlock: TimeBlockWithPosition | null = null;
 
     switch (dragState.type) {
       case "drag_new": {
         const { startTime, currentTime } = dragState;
-        const startHourOffset =
-          Math.min(
-            Math.max(Math.min(startTime.hour, currentTime.hour), startHour),
-            endHour,
-          ) - startHour;
-        const endHourOffset =
-          Math.min(
-            Math.max(Math.max(startTime.hour, currentTime.hour), startHour),
-            endHour,
-          ) - startHour;
-        const dayOffset = startTime.day;
+        const previewStartHour = Math.min(
+          Math.max(Math.min(startTime.hour, currentTime.hour), startHour),
+          endHour,
+        );
+        const previewEndHour = Math.min(
+          Math.max(Math.max(startTime.hour, currentTime.hour) + 1, startHour),
+          endHour,
+        );
 
-        style = {
-          ...style,
-          left: `${(dayOffset * 100) / 7}%`,
-          top: `${startHourOffset * 64}px`,
-          height: `${(endHourOffset - startHourOffset + 1) * 64}px`,
-          width: `${100 / 7}%`,
+        const startDate = addDays(weekStart, startTime.day);
+        startDate.setHours(previewStartHour, 0, 0, 0);
+
+        const endDate = addDays(weekStart, startTime.day);
+        endDate.setHours(previewEndHour, 0, 0, 0);
+
+        const now = new Date();
+        previewBlock = {
+          id: "preview",
+          startTime: startDate,
+          endTime: endDate,
+          title: "New Block",
+          workspaceId: currentWorkspaceId || "",
+          dayOfWeek: startTime.day,
+          color: null,
+          created_at: now,
+          updated_at: now,
+          taskAssignments: [],
         };
         break;
       }
@@ -623,19 +641,29 @@ export function WeeklyCalendar() {
         const duration =
           (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
 
-        // Ensure the preview stays within bounds
-        const previewHour = Math.min(
+        const previewStart = new Date(weekStart);
+        previewStart.setDate(previewStart.getDate() + time.day);
+        previewStart.setHours(
           Math.max(time.hour, startHour),
-          endHour - duration,
+          time.minute,
+          0,
+          0,
         );
 
-        style = {
-          ...style,
-          left: `${(time.day * 100) / 7}%`,
-          top: `${(previewHour - startHour + time.minute / 60) * 64}px`,
-          height: `${duration * 64}px`,
-          width: `${100 / 7}%`,
-          backgroundColor: block.color || "#3b82f6",
+        const previewEnd = new Date(previewStart.getTime());
+        previewEnd.setTime(previewStart.getTime() + duration * 60 * 60 * 1000);
+
+        if (previewEnd.getHours() > endHour) {
+          const hoursToAdjust = previewEnd.getHours() - endHour;
+          previewStart.setHours(previewStart.getHours() - hoursToAdjust);
+          previewEnd.setHours(endHour);
+        }
+
+        previewBlock = {
+          ...block,
+          startTime: previewStart,
+          endTime: previewEnd,
+          dayOfWeek: time.day,
         };
         break;
       }
@@ -665,13 +693,11 @@ export function WeeklyCalendar() {
           0,
         );
 
-        // Only modify the edge being dragged
         const previewStart =
           dragState.type === "resize_block_top" ? newTime : startTime;
         const previewEnd =
           dragState.type === "resize_block_bottom" ? newTime : endTime;
 
-        // Ensure end time is always after start time and within bounds
         if (
           previewEnd.getTime() <= previewStart.getTime() ||
           previewStart.getHours() < startHour ||
@@ -680,24 +706,28 @@ export function WeeklyCalendar() {
           return null;
         }
 
-        const duration =
-          (previewEnd.getTime() - previewStart.getTime()) / (1000 * 60 * 60);
-        const startHourOffset =
-          previewStart.getHours() + previewStart.getMinutes() / 60 - startHour;
-
-        style = {
-          ...style,
-          left: `${(dayOffset * 100) / 7}%`,
-          top: `${startHourOffset * 64}px`,
-          height: `${Math.max(1, duration) * 64}px`,
-          width: `${100 / 7}%`,
-          backgroundColor: block.color || "#3b82f6",
+        previewBlock = {
+          ...block,
+          startTime: previewStart,
+          endTime: previewEnd,
         };
         break;
       }
     }
 
-    return <div style={style} />;
+    if (!previewBlock) {
+      return null;
+    }
+
+    return (
+      <TimeBlock
+        block={previewBlock}
+        onSelect={() => undefined}
+        onDragStart={() => undefined}
+        onResizeStart={() => undefined}
+        isPreview={true}
+      />
+    );
   };
 
   return (
@@ -782,6 +812,7 @@ export function WeeklyCalendar() {
 
             {/* Time slots for each day */}
             <div
+              id="main-grid"
               ref={gridRef}
               className="relative col-span-7 select-none"
               onMouseDown={handleMouseDown}
