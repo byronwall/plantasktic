@@ -181,7 +181,7 @@ function TimeBlock({
 
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
-    const offsetY = e.clientY - (rect.top + window.scrollY);
+    const offsetY = e.clientY - rect.top;
 
     // Check if clicking on resize handles
     if (offsetY < 8) {
@@ -246,7 +246,6 @@ export function WeeklyCalendar() {
   const [endHour, setEndHour] = useState(DEFAULT_END_HOUR);
   const weekStart = startOfWeek(selectedDate);
   const gridRef = useRef<HTMLDivElement>(null);
-  const dragOffsetYRef = useRef<number>(0);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -354,7 +353,6 @@ export function WeeklyCalendar() {
       return;
     }
 
-    const rect = gridRef.current.getBoundingClientRect();
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
     if (!time) {
       return;
@@ -376,8 +374,6 @@ export function WeeklyCalendar() {
         }
 
         // Calculate adjusted position relative to the grid
-        const adjustedX = e.pageX - rect.left - startOffset.x;
-        const adjustedY = e.pageY - rect.top - startOffset.y;
 
         // Get the time from the adjusted position
         const adjustedTime = getTimeFromGridPosition(
@@ -475,6 +471,11 @@ export function WeeklyCalendar() {
       case "resize_block_top":
       case "resize_block_bottom": {
         const { blockId, startTime, endTime, currentPosition } = dragState;
+        const block = timeBlocks?.find((b) => b.id === blockId);
+        if (!block) {
+          break;
+        }
+
         const time = getTimeFromGridPosition(
           currentPosition.x,
           currentPosition.y,
@@ -483,16 +484,26 @@ export function WeeklyCalendar() {
           break;
         }
 
+        const dayOffset = new Date(block.startTime).getDay();
         const newTime = new Date(weekStart);
-        newTime.setDate(newTime.getDate() + time.day);
+        newTime.setDate(newTime.getDate() + dayOffset);
         newTime.setHours(time.hour, time.minute, 0, 0);
+
+        // Only update the edge being dragged and ensure end time is after start time
+        const newStart =
+          dragState.type === "resize_block_top" ? newTime : startTime;
+        const newEnd =
+          dragState.type === "resize_block_bottom" ? newTime : endTime;
+
+        if (newEnd.getTime() <= newStart.getTime()) {
+          break;
+        }
 
         updateTimeBlockMutation.mutate({
           id: blockId,
-          startTime:
-            dragState.type === "resize_block_top" ? newTime : startTime,
-          endTime: dragState.type === "resize_block_bottom" ? newTime : endTime,
-          dayOfWeek: time.day,
+          startTime: newStart,
+          endTime: newEnd,
+          dayOfWeek: dayOffset,
         });
         break;
       }
@@ -607,13 +618,20 @@ export function WeeklyCalendar() {
 
         const dayOffset = new Date(block.startTime).getDay();
         const newTime = new Date(weekStart);
-        newTime.setDate(newTime.getDate() + time.day);
+        newTime.setDate(newTime.getDate() + dayOffset);
         newTime.setHours(time.hour, time.minute, 0, 0);
 
+        // Only modify the edge being dragged
         const previewStart =
           dragState.type === "resize_block_top" ? newTime : startTime;
         const previewEnd =
           dragState.type === "resize_block_bottom" ? newTime : endTime;
+
+        // Ensure end time is always after start time
+        if (previewEnd.getTime() <= previewStart.getTime()) {
+          return null;
+        }
+
         const duration =
           (previewEnd.getTime() - previewStart.getTime()) / (1000 * 60 * 60);
         const startHourOffset =
@@ -625,6 +643,7 @@ export function WeeklyCalendar() {
           top: `${startHourOffset * 64}px`,
           height: `${Math.max(1, duration) * 64}px`,
           width: `${100 / 7}%`,
+          backgroundColor: block.color || "#3b82f6",
         };
         break;
       }
