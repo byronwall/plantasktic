@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type Active,
   DndContext,
   type DragEndEvent,
   DragOverlay,
@@ -33,24 +32,6 @@ const DAYS = Array.from({ length: 7 }, (_, i) => i);
 
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 20;
-
-type Task = {
-  task_id: number;
-  title: string;
-  description: string | null;
-  comments: string | null;
-  category: string | null;
-  due_date: Date | null;
-  start_date: Date | null;
-  duration: number | null;
-  priority: string | null;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
-  parentTaskId: number | null;
-  projectId: string | null;
-  userId: string | null;
-};
 
 type TimeBlockTask = {
   id: string;
@@ -219,12 +200,6 @@ function DraggableTimeBlock({ block, onSelect }: DraggableTimeBlockProps) {
   );
 }
 
-interface DragEventWithNode extends Active {
-  nodeRef: {
-    current: HTMLElement | null;
-  };
-}
-
 export function WeeklyCalendar() {
   const { currentWorkspaceId } = useCurrentProject();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -232,6 +207,7 @@ export function WeeklyCalendar() {
   const [endHour, setEndHour] = useState(DEFAULT_END_HOUR);
   const weekStart = startOfWeek(selectedDate);
   const gridRef = useRef<HTMLDivElement>(null);
+  const dragOffsetYRef = useRef<number>(0);
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -260,11 +236,10 @@ export function WeeklyCalendar() {
   );
 
   // Fetch time blocks for the current week
-  const { data: timeBlocks, isLoading } =
-    api.timeBlock.getWeeklyBlocks.useQuery({
-      workspaceId: currentWorkspaceId,
-      weekStart,
-    });
+  const { data: timeBlocks } = api.timeBlock.getWeeklyBlocks.useQuery({
+    workspaceId: currentWorkspaceId,
+    weekStart,
+  });
 
   const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
     null,
@@ -298,8 +273,9 @@ export function WeeklyCalendar() {
     }
 
     const rect = gridRef.current.getBoundingClientRect();
-    const relativeX = x - rect.left;
-    const relativeY = y - rect.top;
+    // Convert page coordinates to relative coordinates by subtracting the grid's position
+    const relativeX = x - (rect.left + window.scrollX);
+    const relativeY = y - (rect.top + window.scrollY);
 
     const dayWidth = rect.width / 7;
     const hourHeight = 64; // matches the h-16 class
@@ -320,12 +296,16 @@ export function WeeklyCalendar() {
     setActiveId(active.id as string);
 
     // Store the initial click offset
-    if (event.activatorEvent instanceof MouseEvent) {
-      const element = (active as unknown as DragEventWithNode).nodeRef?.current;
+    if (
+      event.activatorEvent instanceof PointerEvent &&
+      event.activatorEvent.target instanceof HTMLElement
+    ) {
+      const element = event.activatorEvent.target;
       if (element) {
         const rect = element.getBoundingClientRect();
-        const offsetY = event.activatorEvent.clientY - rect.top;
-        element.dataset.dragOffsetY = offsetY.toString();
+        const offsetY = event.activatorEvent.pageY - rect.top;
+
+        dragOffsetYRef.current = offsetY;
       }
     }
   };
@@ -345,15 +325,12 @@ export function WeeklyCalendar() {
 
     // Cast the event to get access to coordinates
     const mouseEvent = event.activatorEvent as MouseEvent;
-    const element = (active as DragEventWithNode).nodeRef?.current;
-    const offsetY = element?.dataset.dragOffsetY
-      ? parseFloat(element.dataset.dragOffsetY)
-      : 0;
+    const offsetY = dragOffsetYRef.current;
 
     // Adjust the position based on the initial click offset
     const adjustedCoords = {
-      x: mouseEvent.clientX,
-      y: mouseEvent.clientY - offsetY,
+      x: mouseEvent.pageX,
+      y: mouseEvent.pageY - offsetY,
     };
 
     const time = getTimeFromGridPosition(adjustedCoords.x, adjustedCoords.y);
@@ -394,7 +371,13 @@ export function WeeklyCalendar() {
       return;
     }
 
-    const time = getTimeFromGridPosition(e.clientX, e.clientY);
+    const time = getTimeFromGridPosition(e.pageX, e.pageY);
+    console.log("mouse down", {
+      x: e.pageX,
+      y: e.pageY,
+      scrollY: window.scrollY,
+      time,
+    });
     if (!time) {
       return;
     }
@@ -406,7 +389,7 @@ export function WeeklyCalendar() {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging) {
-      const time = getTimeFromGridPosition(e.clientX, e.clientY);
+      const time = getTimeFromGridPosition(e.pageX, e.pageY);
       if (!time) {
         return;
       }
@@ -429,7 +412,7 @@ export function WeeklyCalendar() {
       setNewBlockDay(dragStart.day);
 
       // Position dialog near the mouse
-      setDialogPosition({ x: e.clientX, y: e.clientY });
+      setDialogPosition({ x: e.pageX, y: e.pageY });
       setIsDialogOpen(true);
 
       setDragStart(null);
@@ -605,6 +588,9 @@ export function WeeklyCalendar() {
           onClose={() => {
             setIsDialogOpen(false);
             setDialogPosition(undefined);
+            setNewBlockStart(null);
+            setNewBlockEnd(null);
+            setNewBlockDay(0);
           }}
           workspaceId={currentWorkspaceId}
           startTime={newBlockStart}
