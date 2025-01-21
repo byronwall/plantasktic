@@ -300,20 +300,33 @@ export function WeeklyCalendar() {
     }
 
     const rect = gridRef.current.getBoundingClientRect();
-    // Convert page coordinates to relative coordinates by subtracting the grid's position
-    const relativeX = x - (rect.left + window.scrollX);
-    const relativeY = y - (rect.top + window.scrollY);
+    const scrollY = window.scrollY;
+
+    // Convert page coordinates to relative coordinates
+    const relativeX = x - rect.left;
+    const relativeY = y - rect.top - scrollY;
+
+    // Ensure coordinates are within bounds
+    if (
+      relativeX < 0 ||
+      relativeY < 0 ||
+      relativeX > rect.width ||
+      relativeY > rect.height + scrollY
+    ) {
+      return null;
+    }
 
     const dayWidth = rect.width / 7;
     const hourHeight = 64; // matches the h-16 class
 
-    const day = Math.floor(relativeX / dayWidth);
-    const hour = Math.floor(relativeY / hourHeight) + startHour;
-    const minute = Math.floor((relativeY % hourHeight) / (hourHeight / 60));
+    const day = Math.max(0, Math.min(6, Math.floor(relativeX / dayWidth)));
+    const rawHour = relativeY / hourHeight + startHour;
+    const hour = Math.max(startHour, Math.min(endHour, Math.floor(rawHour)));
+    const minute = Math.floor((rawHour % 1) * 60);
 
     return {
-      day: Math.max(0, Math.min(6, day)),
-      hour: Math.max(startHour, Math.min(endHour, hour)),
+      day,
+      hour,
       minute: Math.max(0, Math.min(59, minute)),
     };
   };
@@ -341,6 +354,7 @@ export function WeeklyCalendar() {
       return;
     }
 
+    const rect = gridRef.current.getBoundingClientRect();
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
     if (!time) {
       return;
@@ -356,15 +370,30 @@ export function WeeklyCalendar() {
       }
       case "drag_existing": {
         const { blockId, startOffset } = dragState;
-        const adjustedY = e.pageY - startOffset.y;
-        const adjustedTime = getTimeFromGridPosition(e.pageX, adjustedY);
+        const block = timeBlocks?.find((b) => b.id === blockId);
+        if (!block) {
+          return;
+        }
+
+        // Calculate adjusted position relative to the grid
+        const adjustedX = e.pageX - rect.left - startOffset.x;
+        const adjustedY = e.pageY - rect.top - startOffset.y;
+
+        // Get the time from the adjusted position
+        const adjustedTime = getTimeFromGridPosition(
+          e.pageX - startOffset.x,
+          e.pageY - startOffset.y,
+        );
         if (!adjustedTime) {
           return;
         }
 
         setDragState({
           ...dragState,
-          currentPosition: { x: e.pageX, y: adjustedY },
+          currentPosition: {
+            x: e.pageX - startOffset.x,
+            y: e.pageY - startOffset.y,
+          },
         });
         break;
       }
@@ -407,27 +436,31 @@ export function WeeklyCalendar() {
         break;
       }
       case "drag_existing": {
-        const { blockId, startOffset, currentPosition } = dragState;
-        const block = timeBlocks.find((b) => b.id === blockId);
+        const { blockId, currentPosition } = dragState;
+        const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
-          break;
+          return null;
         }
 
-        const adjustedY = currentPosition.y;
-        const time = getTimeFromGridPosition(currentPosition.x, adjustedY);
+        const time = getTimeFromGridPosition(
+          currentPosition.x,
+          currentPosition.y,
+        );
         if (!time) {
-          break;
+          return null;
         }
 
         const blockStart = new Date(block.startTime);
         const blockEnd = new Date(block.endTime);
-        const duration = blockEnd.getTime() - blockStart.getTime();
+        const duration =
+          (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
 
         const newStart = new Date(weekStart);
         newStart.setDate(newStart.getDate() + time.day);
         newStart.setHours(time.hour, time.minute, 0, 0);
 
-        const newEnd = new Date(newStart.getTime() + duration);
+        const newEnd = new Date(newStart.getTime());
+        newEnd.setTime(newStart.getTime() + duration * 60 * 60 * 1000);
 
         updateTimeBlockMutation.mutate({
           id: blockId,
@@ -552,6 +585,7 @@ export function WeeklyCalendar() {
           top: `${(time.hour - startHour + time.minute / 60) * 64}px`,
           height: `${duration * 64}px`,
           width: `${100 / 7}%`,
+          backgroundColor: block.color || "#3b82f6",
         };
         break;
       }
@@ -589,7 +623,7 @@ export function WeeklyCalendar() {
           ...style,
           left: `${(dayOffset * 100) / 7}%`,
           top: `${startHourOffset * 64}px`,
-          height: `${duration * 64}px`,
+          height: `${Math.max(1, duration) * 64}px`,
           width: `${100 / 7}%`,
         };
         break;
