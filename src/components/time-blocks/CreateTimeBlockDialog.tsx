@@ -29,7 +29,6 @@ interface CreateTimeBlockDialogProps {
   startTime: Date;
   endTime: Date;
   dayOfWeek: number;
-  position?: { x: number; y: number };
 }
 
 export function CreateTimeBlockDialog({
@@ -39,7 +38,6 @@ export function CreateTimeBlockDialog({
   startTime,
   endTime,
   dayOfWeek,
-  position,
 }: CreateTimeBlockDialogProps) {
   const [title, setTitle] = useState("");
   const [color, setColor] = useState("#3b82f6"); // Default blue color
@@ -107,17 +105,9 @@ export function CreateTimeBlockDialog({
     setSelectedTaskTitle("");
   };
 
-  const dialogStyle = position
-    ? {
-        position: "absolute" as const,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-      }
-    : {};
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent style={dialogStyle}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Time Block</DialogTitle>
         </DialogHeader>

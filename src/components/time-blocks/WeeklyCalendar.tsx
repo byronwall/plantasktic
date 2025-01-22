@@ -216,10 +216,6 @@ export function WeeklyCalendar({
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
-  const [dialogPosition, setDialogPosition] = useState<{
-    x: number;
-    y: number;
-  }>();
   const [newBlockStart, setNewBlockStart] = useState<Date | null>(null);
   const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
   const [newBlockDay, setNewBlockDay] = useState<number>(0);
@@ -413,7 +409,6 @@ export function WeeklyCalendar({
         setNewBlockStart(startDate);
         setNewBlockEnd(endDate);
         setNewBlockDay(startTime.day);
-        setDialogPosition({ x: e.pageX, y: e.pageY });
         setIsDialogOpen(true);
         break;
       }
@@ -835,7 +830,6 @@ export function WeeklyCalendar({
           isOpen={isDialogOpen}
           onClose={() => {
             setIsDialogOpen(false);
-            setDialogPosition(undefined);
             setNewBlockStart(null);
             setNewBlockEnd(null);
             setNewBlockDay(0);
@@ -844,7 +838,6 @@ export function WeeklyCalendar({
           startTime={newBlockStart}
           endTime={newBlockEnd}
           dayOfWeek={newBlockDay}
-          position={dialogPosition}
         />
       )}
 
