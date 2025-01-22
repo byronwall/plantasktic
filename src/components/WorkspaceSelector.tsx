@@ -35,10 +35,6 @@ export function WorkspaceSelector({ value, onChange }: WorkspaceSelectorProps) {
     (workspace) => workspace.id === value,
   );
 
-  console.log("workspaces", workspaces);
-  console.log("value", value);
-  console.log("selectedWorkspace", selectedWorkspace);
-
   const filteredWorkspaces = workspaces.filter((workspace) =>
     workspace.name.toLowerCase().includes(search.toLowerCase()),
   );

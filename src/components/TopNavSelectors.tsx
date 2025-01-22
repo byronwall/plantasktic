@@ -16,9 +16,19 @@ export function TopNavSelectors() {
       router.push("/");
       return;
     }
+
     const workspace = workspaces.find((w) => w.id === workspaceId);
     if (workspace) {
-      router.push(`/${workspace.name}`);
+      // Get the current path segments and replace just the workspace name
+      const pathSegments = window.location.pathname.split("/").filter(Boolean);
+      if (pathSegments.length > 1) {
+        // Replace the first segment (workspace) and keep the rest
+        pathSegments[0] = workspace.name;
+        router.push(`/${pathSegments.join("/")}`);
+      } else {
+        // If only workspace or root, just use workspace name
+        router.push(`/${workspace.name}`);
+      }
     }
   };
 
