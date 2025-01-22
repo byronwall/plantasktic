@@ -105,6 +105,26 @@ export const timeBlockRouter = createTRPCRouter({
       });
     }),
 
+  deleteByDateRange: protectedProcedure
+    .input(
+      z.object({
+        startTime: z.date(),
+        endTime: z.date(),
+        workspaceId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.timeBlock.deleteMany({
+        where: {
+          workspaceId: input.workspaceId,
+          startTime: {
+            gte: input.startTime,
+            lt: input.endTime,
+          },
+        },
+      });
+    }),
+
   assignTask: protectedProcedure
     .input(
       z.object({

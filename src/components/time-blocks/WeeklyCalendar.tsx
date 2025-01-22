@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
-import { Plus } from "lucide-react";
+import { List, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
 import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
+import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
 
 import { DateInput } from "../ui/date-input";
@@ -214,6 +215,7 @@ export function WeeklyCalendar({
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isListDialogOpen, setIsListDialogOpen] = useState(false);
   const [dialogPosition, setDialogPosition] = useState<{
     x: number;
     y: number;
@@ -744,6 +746,11 @@ export function WeeklyCalendar({
             </div>
           </div>
 
+          <Button variant="outline" onClick={() => setIsListDialogOpen(true)}>
+            <List className="mr-2 h-4 w-4" />
+            List View
+          </Button>
+
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Create Block
@@ -848,6 +855,13 @@ export function WeeklyCalendar({
           timeBlock={selectedTimeBlock}
         />
       )}
+
+      <ListTimeBlocksDialog
+        isOpen={isListDialogOpen}
+        onClose={() => setIsListDialogOpen(false)}
+        onEditBlock={setSelectedTimeBlock}
+        weekStart={weekStart}
+      />
     </div>
   );
 }
