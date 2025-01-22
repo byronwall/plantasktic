@@ -1,12 +1,13 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
-import { List, Plus } from "lucide-react";
+import { Link, List, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { cn } from "~/lib/utils";
+import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
@@ -81,6 +82,7 @@ export function TimeBlock({
   startHour,
   gridRef,
 }: TimeBlockProps) {
+  const openEditDialog = useEditTaskStore((state) => state.open);
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
 
@@ -167,7 +169,24 @@ export function TimeBlock({
           <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
         </>
       )}
-      {block.title || "Untitled Block"}
+      <div className="flex items-center gap-2">
+        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+          {block.title || "Untitled Block"}
+        </span>
+        {block.taskAssignments?.length > 0 && (
+          <button
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              if (block.taskAssignments?.[0]?.task) {
+                openEditDialog(block.taskAssignments[0].task);
+              }
+            }}
+            className="rounded p-0.5 hover:bg-black/10"
+          >
+            <Link className="h-3 w-3" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

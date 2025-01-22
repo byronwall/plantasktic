@@ -12,6 +12,8 @@ import { WorkspaceProjectProvider } from "~/hooks/useWorkspaceProject";
 import { auth } from "~/server/auth";
 import { TRPCReactProvider } from "~/trpc/react";
 
+import { GlobalModals } from "./_components/GlobalModals";
+
 export const metadata: Metadata = {
   title: "Task Manager",
   description: "A simple task management application",
@@ -43,6 +45,7 @@ export default async function RootLayout({
                       </div>
                     </div>
                     <div className="mx-auto p-2">{children}</div>
+                    <GlobalModals />
                   </main>
                 </SidebarProvider>
               </WorkspaceProjectProvider>
