@@ -37,3 +37,4 @@ Follow these rules when you write code:
 - Use descriptive variable and function/const names. Also, event functions should be named with a “handle” prefix, like “handleClick” for onClick and “handleKeyDown” for onKeyDown.
 - Use consts instead of functions, for example, “const toggle = () =>”. Also, define a type if possible.
 - For mutations, do not add an onSuccess callback. They're handled in the query client.
+- For forms, set the autocompletion to off.

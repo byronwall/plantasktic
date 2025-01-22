@@ -1,10 +1,12 @@
 "use client";
 
+import { format } from "date-fns";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -56,7 +58,6 @@ export function DayMetadataSection({
   });
 
   const upsertMutation = api.timeBlock.upsertTimeBlockDayMeta.useMutation();
-
   const deleteMutation = api.timeBlock.deleteTimeBlockDayMeta.useMutation();
 
   const onSubmit = async (data: MetadataFormData) => {
@@ -79,14 +80,24 @@ export function DayMetadataSection({
     });
   };
 
+  const handleShutdownChange = (checked: boolean) => {
+    upsertMutation.mutate({
+      workspaceId,
+      date,
+      key: "shutdown",
+      value: checked.toString(),
+    });
+  };
+
+  const shutdownValue =
+    metadata.find((item) => item.key === "shutdown")?.value === "true";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-muted-foreground">
-          Metadata
-        </div>
+        <div className="text-sm font-medium">{format(date, "EEE MMM d")}</div>
         <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger>
             <Button variant="ghost" size="icon" className="h-6 w-6">
               <Plus className="h-4 w-4" />
             </Button>
@@ -118,6 +129,7 @@ export function DayMetadataSection({
                         <Input
                           {...field}
                           placeholder="e.g., mood, energy, focus"
+                          autoComplete="off"
                         />
                       </FormControl>
                     </FormItem>
@@ -130,7 +142,11 @@ export function DayMetadataSection({
                     <FormItem>
                       <FormLabel>Value</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Enter value" />
+                        <Input
+                          {...field}
+                          placeholder="Enter value"
+                          autoComplete="off"
+                        />
                       </FormControl>
                     </FormItem>
                   )}
@@ -147,6 +163,19 @@ export function DayMetadataSection({
           </PopoverContent>
         </Popover>
       </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="shutdown"
+          checked={shutdownValue}
+          onCheckedChange={handleShutdownChange}
+        />
+        <label
+          htmlFor="shutdown"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Shutdown
+        </label>
+      </div>
       <div
         className={cn(
           "space-y-1.5",
@@ -158,26 +187,28 @@ export function DayMetadataSection({
             No metadata added
           </p>
         ) : (
-          metadata.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between rounded-md bg-muted/50 px-2 py-1.5 text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{item.key}:</span>
-                <span>{item.value}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                onClick={() => handleDelete(item.key)}
-                disabled={deleteMutation.isPending}
+          metadata
+            .filter((item) => item.key !== "shutdown")
+            .map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded-md bg-muted/50 px-2 py-1.5 text-sm"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          ))
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{item.key}:</span>
+                  <span>{item.value}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={() => handleDelete(item.key)}
+                  disabled={deleteMutation.isPending}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))
         )}
       </div>
     </div>

@@ -878,10 +878,7 @@ export function WeeklyCalendar({
               );
 
               return (
-                <div key={dayOffset} className="space-y-2">
-                  <div className="text-sm font-medium">
-                    {format(date, "EEE MMM d")}
-                  </div>
+                <div key={dayOffset}>
                   <DayMetadataSection
                     workspaceId={currentWorkspaceId}
                     date={date}
