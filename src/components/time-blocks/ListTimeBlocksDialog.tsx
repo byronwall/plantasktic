@@ -148,6 +148,23 @@ export function ListTimeBlocksDialog({
                             {format(new Date(block.startTime), "h:mm a")} -{" "}
                             {format(new Date(block.endTime), "h:mm a")}
                           </div>
+                          {block.taskAssignments?.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              <div className="text-xs font-medium text-muted-foreground">
+                                Linked Tasks:
+                              </div>
+                              <ul className="space-y-1">
+                                {block.taskAssignments.map((assignment) => (
+                                  <li
+                                    key={assignment.task.task_id}
+                                    className="text-sm text-muted-foreground"
+                                  >
+                                    • {assignment.task.title}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
