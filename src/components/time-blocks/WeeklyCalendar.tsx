@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
 import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
+import { getOverlappingGroups } from "./overlapHelpers";
 
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
@@ -19,8 +20,10 @@ import type { TimeBlock as PrismaTimeBlock } from "@prisma/client";
 
 const DAYS = Array.from({ length: 7 }, (_, i) => i);
 
-const DEFAULT_START_HOUR = 6;
-const DEFAULT_END_HOUR = 20;
+type WeeklyCalendarProps = {
+  defaultStartHour?: number;
+  defaultEndHour?: number;
+};
 
 type TimeBlockTask = {
   id: string;
@@ -46,75 +49,13 @@ type TimeBlockTask = {
   };
 };
 
-type TimeBlock = PrismaTimeBlock & {
+export type TimeBlock = PrismaTimeBlock & {
   taskAssignments: TimeBlockTask[];
 };
 
-type TimeBlockWithPosition = TimeBlock & {
+export type TimeBlockWithPosition = TimeBlock & {
   index?: number;
   totalOverlaps?: number;
-};
-
-const doBlocksOverlap = (block1: TimeBlock, block2: TimeBlock) => {
-  const start1 = new Date(block1.startTime);
-  const end1 = new Date(block1.endTime);
-  const start2 = new Date(block2.startTime);
-  const end2 = new Date(block2.endTime);
-
-  return start1 < end2 && start2 < end1;
-};
-
-const getOverlappingGroups = (
-  blocks: TimeBlock[],
-): TimeBlockWithPosition[][] => {
-  const groups: TimeBlockWithPosition[][] = [];
-
-  // Sort blocks by start time
-  const sortedBlocks = [...blocks].sort(
-    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-  );
-
-  for (const block of sortedBlocks) {
-    let addedToGroup = false;
-
-    // Try to add to an existing group
-    for (const group of groups) {
-      if (
-        group.some((existingBlock) => doBlocksOverlap(existingBlock, block))
-      ) {
-        if (group.length < 3) {
-          // Add the new block and update all blocks in the group
-          const newTotalOverlaps = group.length + 1;
-          // Update existing blocks in the group
-          group.forEach((existingBlock, idx) => {
-            existingBlock.totalOverlaps = newTotalOverlaps;
-            existingBlock.index = idx;
-          });
-          // Add new block
-          group.push({
-            ...block,
-            index: group.length,
-            totalOverlaps: newTotalOverlaps,
-          });
-        } else {
-          group.push({
-            ...block,
-            index: group.length,
-            totalOverlaps: group.length + 1,
-          });
-        }
-        addedToGroup = true;
-        break;
-      }
-    }
-
-    // If not added to any group, create a new one
-    if (!addedToGroup) {
-      groups.push([{ ...block, index: 0, totalOverlaps: 1 }]);
-    }
-  }
-
-  return groups;
 };
 
 type TimeBlockProps = {
@@ -127,20 +68,21 @@ type TimeBlockProps = {
     endTime: Date,
   ) => void;
   isPreview?: boolean;
+  startHour: number;
 };
 
-function TimeBlock({
+export function TimeBlock({
   block,
-
   onDragStart,
   onResizeStart,
   isPreview = false,
+  startHour,
 }: TimeBlockProps) {
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
 
   const dayOffset = blockStart.getDay();
-  const startHourOffset = blockStart.getHours() - DEFAULT_START_HOUR;
+  const startHourOffset = blockStart.getHours() - startHour;
   const startMinuteOffset = blockStart.getMinutes() / 60;
   const duration =
     (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
@@ -248,11 +190,14 @@ type DragState =
       currentPosition: { x: number; y: number };
     };
 
-export function WeeklyCalendar() {
+export function WeeklyCalendar({
+  defaultStartHour = 6,
+  defaultEndHour = 20,
+}: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [startHour, setStartHour] = useState(DEFAULT_START_HOUR);
-  const [endHour, setEndHour] = useState(DEFAULT_END_HOUR);
+  const [startHour, setStartHour] = useState(defaultStartHour);
+  const [endHour, setEndHour] = useState(defaultEndHour);
   const weekStart = startOfWeek(selectedDate);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -426,8 +371,6 @@ export function WeeklyCalendar() {
     if (!gridRef.current || !timeBlocks) {
       return;
     }
-
-    console.log("dragState", dragState.type);
 
     switch (dragState.type) {
       case "drag_new": {
@@ -739,6 +682,7 @@ export function WeeklyCalendar() {
         onDragStart={() => undefined}
         onResizeStart={() => undefined}
         isPreview={true}
+        startHour={startHour}
       />
     );
   };
@@ -857,6 +801,7 @@ export function WeeklyCalendar() {
                       block={block}
                       onDragStart={handleBlockDragStart}
                       onResizeStart={handleBlockResizeStart}
+                      startHour={startHour}
                     />
                   ))}
               {renderDragPreview()}
