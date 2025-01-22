@@ -46,7 +46,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>
-                      <Link href="/">All Tasks</Link>
+                      <Link href="/">Home View</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   {currentWorkspace && (
@@ -72,7 +72,7 @@ export function AppSidebar() {
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+              <SidebarGroupLabel>Workspaces - Tasks</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {workspaces.map((workspace) => (
@@ -93,7 +93,7 @@ export function AppSidebar() {
 
             {currentWorkspace && (
               <SidebarGroup>
-                <SidebarGroupLabel>Projects</SidebarGroupLabel>
+                <SidebarGroupLabel>Projects - Tasks</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {workspaceProjects.map((project) => (
