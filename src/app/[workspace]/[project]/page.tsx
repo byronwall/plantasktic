@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { TaskList } from "~/app/_components/TaskList";
+import { ProjectHeader } from "~/components/ProjectHeader";
 import { getCurrentProjectServer } from "~/hooks/getCurrentProjectParams";
 
 export default async function ProjectPage({
@@ -13,16 +14,15 @@ export default async function ProjectPage({
   );
 
   if (!workspaceObj || !projectObj) {
-    console.log("not found", workspaceObj, projectObj);
     notFound();
   }
 
   return (
     <div className="container mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{projectObj.name}</h1>
-        <p className="text-gray-500">Workspace: {workspaceObj.name}</p>
-      </div>
+      <ProjectHeader
+        workspaceName={workspaceObj.name}
+        projectId={projectObj.id}
+      />
       <TaskList workspaceId={workspaceObj.id} projectId={projectObj.id} />
     </div>
   );

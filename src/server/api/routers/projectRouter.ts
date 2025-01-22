@@ -60,4 +60,15 @@ export const projectRouter = createTRPCRouter({
         },
       });
     }),
+
+  getById: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.project.findFirst({
+        where: {
+          id: input.projectId,
+          userId: ctx.session.user.id,
+        },
+      });
+    }),
 });
