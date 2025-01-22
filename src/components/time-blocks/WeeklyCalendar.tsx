@@ -69,6 +69,7 @@ type TimeBlockProps = {
   ) => void;
   isPreview?: boolean;
   startHour: number;
+  gridRef: React.RefObject<HTMLDivElement>;
 };
 
 export function TimeBlock({
@@ -77,6 +78,7 @@ export function TimeBlock({
   onResizeStart,
   isPreview = false,
   startHour,
+  gridRef,
 }: TimeBlockProps) {
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
@@ -93,17 +95,26 @@ export function TimeBlock({
       ? baseWidth / Math.min(block.totalOverlaps, 3)
       : baseWidth;
 
+  // Calculate the actual width in pixels to subtract 2px from each side
+  const gridWidth = gridRef.current?.clientWidth ?? 0;
+  const adjustedWidth = gridWidth ? width - (4 / gridWidth) * 100 : width;
+
   const leftOffset =
     block.totalOverlaps && block.totalOverlaps <= 3 && block.index
       ? dayOffset * baseWidth + width * (block.index || 0)
       : dayOffset * baseWidth;
 
+  // Add 2px margin to center the block
+  const adjustedLeftOffset = gridWidth
+    ? leftOffset + (2 / gridWidth) * 100
+    : leftOffset;
+
   const style = {
     position: "absolute" as const,
-    left: `${leftOffset}%`,
+    left: `${adjustedLeftOffset}%`,
     top: `${(startHourOffset + startMinuteOffset) * 64}px`,
     height: `${duration * 64}px`,
-    width: `${width}%`,
+    width: `${adjustedWidth}%`,
     backgroundColor: block.color || "#3b82f6",
     opacity: isPreview ? 0.4 : 0.8,
     borderRadius: "0.375rem",
@@ -683,6 +694,7 @@ export function WeeklyCalendar({
         onResizeStart={() => undefined}
         isPreview={true}
         startHour={startHour}
+        gridRef={gridRef}
       />
     );
   };
@@ -802,6 +814,7 @@ export function WeeklyCalendar({
                       onDragStart={handleBlockDragStart}
                       onResizeStart={handleBlockResizeStart}
                       startHour={startHour}
+                      gridRef={gridRef}
                     />
                   ))}
               {renderDragPreview()}
