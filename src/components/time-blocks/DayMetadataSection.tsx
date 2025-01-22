@@ -8,6 +8,12 @@ import { useForm } from "react-hook-form";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -44,15 +50,28 @@ type MetadataFormData = {
   value: string;
 };
 
+type EditMetadataFormData = {
+  value: string;
+};
+
 export function DayMetadataSection({
   workspaceId,
   date,
   metadata,
 }: DayMetadataProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [editingMetadata, setEditingMetadata] =
+    useState<DayMetadataItem | null>(null);
+
   const form = useForm<MetadataFormData>({
     defaultValues: {
       key: "",
+      value: "",
+    },
+  });
+
+  const editForm = useForm<EditMetadataFormData>({
+    defaultValues: {
       value: "",
     },
   });
@@ -78,19 +97,43 @@ export function DayMetadataSection({
       date,
       key,
     });
+    setEditingMetadata(null);
   };
 
-  const handleShutdownChange = (checked: boolean) => {
+  const handleBooleanChange = (key: string, checked: boolean) => {
     upsertMutation.mutate({
       workspaceId,
       date,
-      key: "shutdown",
+      key,
       value: checked.toString(),
     });
   };
 
+  const handleEditSubmit = async (data: EditMetadataFormData) => {
+    if (!editingMetadata) {
+      return;
+    }
+
+    await upsertMutation.mutateAsync({
+      workspaceId,
+      date,
+      key: editingMetadata.key,
+      value: data.value,
+    });
+
+    setEditingMetadata(null);
+  };
+
+  const handleEditClick = (item: DayMetadataItem) => {
+    setEditingMetadata(item);
+    editForm.reset({ value: item.value });
+  };
+
   const shutdownValue =
     metadata.find((item) => item.key === "shutdown")?.value === "true";
+
+  const isBooleanValue = (value: string) =>
+    value.toLowerCase() === "true" || value.toLowerCase() === "false";
 
   return (
     <div className="space-y-2">
@@ -168,7 +211,9 @@ export function DayMetadataSection({
         <Checkbox
           id="shutdown"
           checked={shutdownValue}
-          onCheckedChange={handleShutdownChange}
+          onCheckedChange={(checked: boolean) =>
+            handleBooleanChange("shutdown", checked)
+          }
         />
         <label
           htmlFor="shutdown"
@@ -193,20 +238,67 @@ export function DayMetadataSection({
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{item.key}:</span>
-                  <span>{item.value}</span>
+                  {isBooleanValue(item.value) ? (
+                    <Checkbox
+                      checked={item.value.toLowerCase() === "true"}
+                      onCheckedChange={(checked: boolean) =>
+                        handleBooleanChange(item.key, checked)
+                      }
+                    />
+                  ) : (
+                    <button
+                      onClick={() => handleEditClick(item)}
+                      className="hover:underline"
+                    >
+                      {item.value}
+                    </button>
+                  )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                  onClick={() => handleDelete(item.key)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
               </div>
             ))}
       </div>
+
+      <Dialog
+        open={!!editingMetadata}
+        onOpenChange={() => setEditingMetadata(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit {editingMetadata?.key}</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(handleEditSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.control}
+                name="value"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Value</FormLabel>
+                    <FormControl>
+                      <Input {...field} autoComplete="off" autoFocus />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() =>
+                    editingMetadata && handleDelete(editingMetadata.key)
+                  }
+                >
+                  Delete
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
