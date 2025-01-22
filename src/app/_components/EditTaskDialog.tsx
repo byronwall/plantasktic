@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
-import { DateInput } from "~/components/ui/date-input";
 import {
   Dialog,
   DialogContent,
@@ -9,14 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
-import { ComboBox } from "./ComboBox";
-import { TaskCategory } from "./TaskCategory";
+import { TaskField } from "./TaskField";
 
 const TASK_STATUSES = [
   "open",
@@ -74,6 +69,17 @@ export function EditTaskDialog() {
     return null;
   }
 
+  const fieldsToShow = [
+    "title",
+    "description",
+    "status",
+    "category",
+    "priority",
+    "duration",
+    "start_date",
+    "due_date",
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <DialogContent className="max-w-2xl">
@@ -81,111 +87,24 @@ export function EditTaskDialog() {
           <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
+        <div className="flex flex-col gap-4 py-4">
+          {fieldsToShow.map((field) => (
+            <TaskField
+              key={field}
+              task={task}
+              className="z-50 justify-start"
+              field={field as keyof typeof task}
+              showLabel
+              showTextLabel
             />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Status</Label>
-              <ComboBox
-                options={[...TASK_STATUSES]}
-                value={formData.status}
-                onChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    status: value as (typeof TASK_STATUSES)[number],
-                  }))
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Category</Label>
-              <TaskCategory
-                taskId={task.task_id}
-                currentCategory={task.category}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Input
-                id="priority"
-                value={formData.priority}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, priority: e.target.value }))
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="duration">Duration (hours)</Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.duration}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, duration: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Start Date</Label>
-              <DateInput
-                value={formData.start_date ?? undefined}
-                onChange={(date) =>
-                  setFormData((prev) => ({ ...prev, start_date: date ?? null }))
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Due Date</Label>
-              <DateInput
-                value={formData.due_date ?? undefined}
-                onChange={(date) =>
-                  setFormData((prev) => ({ ...prev, due_date: date ?? null }))
-                }
-              />
-            </div>
-          </div>
+          ))}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={close}>
-            Cancel
+            Close
           </Button>
-          <Button onClick={handleSubmit} disabled={updateTask.isPending}>
-            Save Changes
-          </Button>
+          <Button onClick={handleSubmit}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -47,6 +47,7 @@ export type TaskFieldProps = {
   task: Task;
   field: keyof Task;
   showLabel?: boolean;
+  showTextLabel?: boolean;
   className?: string;
 };
 
@@ -126,6 +127,7 @@ export function TaskField({
   task,
   field,
   showLabel = false,
+  showTextLabel = false,
   className,
 }: TaskFieldProps) {
   const updateTask = api.task.updateTask.useMutation();
@@ -279,19 +281,26 @@ export function TaskField({
         .replace(/_/g, " ")
         .replace(/\b\w/g, (l) => l.toUpperCase())}
     >
-      <span
-        className="mr-2 text-gray-500"
-        title={field
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (l) => l.toUpperCase())}
-      >
-        {getFieldIcon()}
-      </span>
+      <div className="flex items-center gap-2">
+        <span
+          className="text-gray-500"
+          title={field
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase())}
+        >
+          {getFieldIcon()}
+        </span>
+        {showTextLabel && (
+          <span className="text-sm text-gray-500">
+            {field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+          </span>
+        )}
+      </div>
     </SimpleTooltip>
   ) : null;
 
   return (
-    <div className={cn(className, "flex items-center justify-center gap-0.5")}>
+    <div className={cn("flex items-center justify-center gap-0.5", className)}>
       {label}
 
       {renderField()}

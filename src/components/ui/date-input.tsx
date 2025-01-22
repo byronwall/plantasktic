@@ -20,7 +20,6 @@ interface DateInputProps {
   minimal?: boolean;
   iconClassName?: string;
   showQuickButtons?: boolean;
-  modal?: boolean;
 }
 
 interface DateParts {
@@ -37,7 +36,6 @@ const DateInput: React.FC<DateInputProps> = ({
   minimal = false,
   iconClassName,
   showQuickButtons = true,
-  modal,
 }) => {
   const [date, setDate] = React.useState<DateParts | undefined>(() => {
     if (!value) {
@@ -288,12 +286,14 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   return (
-    <Popover modal={modal}>
+    <Popover>
       <PopoverTrigger asChild>
         {value ? (
-          <span className={cn("cursor-pointer text-base", className)}>
-            {new UTCDate(value).toLocaleDateString()}
-          </span>
+          <Button variant={"ghost"} className="border-none">
+            <span className={cn("cursor-pointer text-base", className)}>
+              {new UTCDate(value).toLocaleDateString()}
+            </span>
+          </Button>
         ) : (
           <Button variant={"outline"} className={cn("w-9 p-0", iconClassName)}>
             <CalendarIcon className="m-auto h-4 w-4 text-muted-foreground" />
@@ -301,10 +301,7 @@ const DateInput: React.FC<DateInputProps> = ({
         )}
       </PopoverTrigger>
       <PopoverContent
-        className={cn(
-          "z-10 w-auto border bg-white p-0",
-          classNamePopoverContent,
-        )}
+        className={cn("w-auto border bg-white p-0", classNamePopoverContent)}
         align="center"
       >
         <div className="flex border border-black p-1 shadow-lg">

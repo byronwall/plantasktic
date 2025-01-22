@@ -186,15 +186,11 @@ export function MetadataSummaryDialog({
               {viewMode === "custom" ? (
                 <>
                   <DateInput
-                    modal={true}
-                    classNamePopoverContent="z-50"
                     value={customStartDate}
                     onChange={(date) => date && setCustomStartDate(date)}
                   />
                   <span>to</span>
                   <DateInput
-                    modal={true}
-                    classNamePopoverContent="z-50"
                     value={customEndDate}
                     onChange={(date) => date && setCustomEndDate(date)}
                   />
