@@ -9,6 +9,7 @@ import {
   startOfYear,
   subMonths,
 } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -30,7 +31,7 @@ import {
   TableRow,
 } from "../ui/table";
 
-type ViewMode = "week" | "month" | "year";
+type ViewMode = "week" | "month" | "year" | "custom";
 
 type MetadataSummaryDialogProps = {
   isOpen: boolean;
@@ -46,6 +47,10 @@ export function MetadataSummaryDialog({
   const { currentWorkspaceId } = useCurrentProject();
   const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [selectedDate, setSelectedDate] = useState<Date>(weekStart);
+  const [customStartDate, setCustomStartDate] = useState<Date>(weekStart);
+  const [customEndDate, setCustomEndDate] = useState<Date>(
+    endOfMonth(weekStart),
+  );
 
   // Calculate date range based on view mode
   const getDateRange = () => {
@@ -64,6 +69,11 @@ export function MetadataSummaryDialog({
         return {
           startDate: startOfYear(selectedDate),
           endDate: endOfYear(selectedDate),
+        };
+      case "custom":
+        return {
+          startDate: customStartDate,
+          endDate: customEndDate,
         };
     }
   };
@@ -112,6 +122,8 @@ export function MetadataSummaryDialog({
           return subMonths(prev, 1);
         case "year":
           return new Date(prev.getFullYear() - 1, 0, 1);
+        default:
+          return prev;
       }
     });
   };
@@ -124,6 +136,8 @@ export function MetadataSummaryDialog({
           return addMonths(prev, 1);
         case "year":
           return new Date(prev.getFullYear() + 1, 0, 1);
+        default:
+          return prev;
       }
     });
   };
@@ -140,7 +154,7 @@ export function MetadataSummaryDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-12">
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === "week" ? "default" : "outline"}
@@ -160,19 +174,45 @@ export function MetadataSummaryDialog({
               >
                 Year
               </Button>
+              <Button
+                variant={viewMode === "custom" ? "default" : "outline"}
+                onClick={() => setViewMode("custom")}
+              >
+                Custom
+              </Button>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handlePrevious}>
-                Previous
-              </Button>
-              <DateInput
-                value={selectedDate}
-                onChange={(date) => date && setSelectedDate(date)}
-              />
-              <Button variant="outline" onClick={handleNext}>
-                Next
-              </Button>
+              {viewMode === "custom" ? (
+                <>
+                  <DateInput
+                    modal={true}
+                    classNamePopoverContent="z-50"
+                    value={customStartDate}
+                    onChange={(date) => date && setCustomStartDate(date)}
+                  />
+                  <span>to</span>
+                  <DateInput
+                    modal={true}
+                    classNamePopoverContent="z-50"
+                    value={customEndDate}
+                    onChange={(date) => date && setCustomEndDate(date)}
+                  />
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={handlePrevious}>
+                    <ChevronLeft />
+                  </Button>
+                  <DateInput
+                    value={selectedDate}
+                    onChange={(date) => date && setSelectedDate(date)}
+                  />
+                  <Button variant="outline" onClick={handleNext}>
+                    <ChevronRight />
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 

@@ -1,11 +1,6 @@
 "use client";
 
 import { UTCDate } from "@date-fns/utc";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@radix-ui/react-popover";
 import { addDays, endOfMonth, endOfWeek } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 import React, { useEffect, useRef } from "react";
@@ -15,14 +10,17 @@ import { cn } from "~/lib/utils";
 import { Button } from "./button";
 import { Calendar } from "./calendar";
 import { Input } from "./input";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 interface DateInputProps {
   value?: Date;
   onChange: (date: Date | undefined) => void;
   className?: string;
+  classNamePopoverContent?: string;
   minimal?: boolean;
   iconClassName?: string;
   showQuickButtons?: boolean;
+  modal?: boolean;
 }
 
 interface DateParts {
@@ -35,9 +33,11 @@ const DateInput: React.FC<DateInputProps> = ({
   value,
   onChange,
   className,
+  classNamePopoverContent,
   minimal = false,
   iconClassName,
   showQuickButtons = true,
+  modal,
 }) => {
   const [date, setDate] = React.useState<DateParts | undefined>(() => {
     if (!value) {
@@ -288,7 +288,7 @@ const DateInput: React.FC<DateInputProps> = ({
   };
 
   return (
-    <Popover>
+    <Popover modal={modal}>
       <PopoverTrigger asChild>
         {value ? (
           <span className={cn("cursor-pointer text-base", className)}>
@@ -301,7 +301,10 @@ const DateInput: React.FC<DateInputProps> = ({
         )}
       </PopoverTrigger>
       <PopoverContent
-        className="z-10 w-auto border bg-white p-0"
+        className={cn(
+          "z-10 w-auto border bg-white p-0",
+          classNamePopoverContent,
+        )}
         align="center"
       >
         <div className="flex border border-black p-1 shadow-lg">
