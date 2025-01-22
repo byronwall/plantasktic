@@ -130,6 +130,7 @@ export function DayMetadataSection({
                           {...field}
                           placeholder="e.g., mood, energy, focus"
                           autoComplete="off"
+                          autoFocus
                         />
                       </FormControl>
                     </FormItem>
@@ -182,11 +183,7 @@ export function DayMetadataSection({
           metadata.length === 0 && "rounded-md border border-dashed p-2",
         )}
       >
-        {metadata.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">
-            No metadata added
-          </p>
-        ) : (
+        {metadata.length > 0 &&
           metadata
             .filter((item) => item.key !== "shutdown")
             .map((item) => (
@@ -208,8 +205,7 @@ export function DayMetadataSection({
                   <X className="h-3 w-3" />
                 </Button>
               </div>
-            ))
-        )}
+            ))}
       </div>
     </div>
   );
