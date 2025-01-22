@@ -1,37 +1,29 @@
-"use client";
-
 import { notFound } from "next/navigation";
 
 import { TaskList } from "~/app/_components/TaskList";
-import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { getCurrentProjectServer } from "~/hooks/getCurrentProjectParams";
 
-export default function ProjectPage() {
-  const {
-    currentWorkspace,
-    currentProject,
-    isInvalidWorkspace,
-    isInvalidProject,
-  } = useCurrentProject();
+export default async function ProjectPage({
+  params,
+}: {
+  params: Promise<{ workspace: string; project: string }>;
+}) {
+  const { workspaceObj, projectObj } = await getCurrentProjectServer(
+    await params,
+  );
 
-  if (
-    isInvalidWorkspace ||
-    isInvalidProject ||
-    !currentWorkspace ||
-    !currentProject
-  ) {
+  if (!workspaceObj || !projectObj) {
+    console.log("not found", workspaceObj, projectObj);
     notFound();
   }
 
   return (
     <div className="container mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{currentProject.name}</h1>
-        <p className="text-gray-500">Workspace: {currentWorkspace.name}</p>
+        <h1 className="text-2xl font-bold">{projectObj.name}</h1>
+        <p className="text-gray-500">Workspace: {workspaceObj.name}</p>
       </div>
-      <TaskList
-        workspaceId={currentWorkspace.id}
-        projectId={currentProject.id}
-      />
+      <TaskList workspaceId={workspaceObj.id} projectId={projectObj.id} />
     </div>
   );
 }

@@ -32,10 +32,11 @@ export function CreateProjectButton({ workspaceId }: CreateProjectButtonProps) {
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className="h-full justify-start p-4 text-lg"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
       >
-        <Plus className="mr-2 h-4 w-4" />
-        Create Project
+        <Plus className="h-4 w-4" />
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

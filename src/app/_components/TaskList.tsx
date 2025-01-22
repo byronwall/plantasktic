@@ -27,6 +27,7 @@ import { TaskTable } from "./TaskTable";
 type TaskListProps = {
   workspaceId: string | null;
   projectId: string | null;
+  initialView?: ViewMode;
 };
 
 type ViewMode =
@@ -40,11 +41,15 @@ type ViewMode =
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
-export function TaskList({ workspaceId, projectId }: TaskListProps) {
+export function TaskList({
+  workspaceId,
+  projectId,
+  initialView = "list",
+}: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false);
   const [showFieldNames, setShowFieldNames] = useState(true);
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
   const { searchQuery } = useSearch();
 
   const { data: rawTasks } = api.task.getTasks.useQuery({
