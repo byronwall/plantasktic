@@ -142,9 +142,10 @@ model Workspace {
     userId String
     user   User   @relation(fields: [userId], references: [id])
 
-    projects  Project[]
-    goals     Goal[]
-    TimeBlock TimeBlock[]
+    projects    Project[]
+    goals       Goal[]
+    TimeBlock   TimeBlock[]
+    DayMetadata TimeBlockDayMetadata[]
 
     @@index([userId])
 }
@@ -247,4 +248,21 @@ model TimeBlockTask {
     @@unique([timeBlockId, taskId])
     @@index([timeBlockId])
     @@index([taskId])
+}
+
+model TimeBlockDayMetadata {
+    id         String   @id @default(cuid())
+    date       DateTime
+    key        String
+    value      String
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    workspaceId String
+    workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+    @@unique([workspaceId, date, key])
+    @@index([workspaceId])
+    @@index([date])
+    @@map("DayMetadata")
 }

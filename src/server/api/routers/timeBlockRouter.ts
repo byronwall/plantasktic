@@ -1,4 +1,4 @@
-import { endOfWeek } from "date-fns";
+import { endOfDay, endOfWeek, startOfDay } from "date-fns";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -162,6 +162,98 @@ export const timeBlockRouter = createTRPCRouter({
           timeBlockId_taskId: {
             timeBlockId: input.timeBlockId,
             taskId: input.taskId,
+          },
+        },
+      });
+    }),
+
+  // Day metadata procedures
+  getTimeBlockDayMeta: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        date: z.date(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const dayStart = startOfDay(input.date);
+      const dayEnd = endOfDay(input.date);
+
+      return ctx.db.timeBlockDayMetadata.findMany({
+        where: {
+          workspaceId: input.workspaceId,
+          date: {
+            gte: dayStart,
+            lte: dayEnd,
+          },
+        },
+      });
+    }),
+
+  getWeekMetadata: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        weekStart: z.date(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const weekEnd = endOfWeek(input.weekStart);
+
+      return ctx.db.timeBlockDayMetadata.findMany({
+        where: {
+          workspaceId: input.workspaceId,
+          date: {
+            gte: input.weekStart,
+            lte: weekEnd,
+          },
+        },
+      });
+    }),
+
+  upsertTimeBlockDayMeta: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        date: z.date(),
+        key: z.string(),
+        value: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.timeBlockDayMetadata.upsert({
+        where: {
+          workspaceId_date_key: {
+            workspaceId: input.workspaceId,
+            date: startOfDay(input.date),
+            key: input.key,
+          },
+        },
+        create: {
+          ...input,
+          date: startOfDay(input.date),
+        },
+        update: {
+          value: input.value,
+        },
+      });
+    }),
+
+  deleteTimeBlockDayMeta: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        date: z.date(),
+        key: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.timeBlockDayMetadata.delete({
+        where: {
+          workspaceId_date_key: {
+            workspaceId: input.workspaceId,
+            date: startOfDay(input.date),
+            key: input.key,
           },
         },
       });

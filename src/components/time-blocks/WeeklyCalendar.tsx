@@ -11,6 +11,7 @@ import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
 import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
+import { DayMetadataSection } from "./DayMetadataSection";
 import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
@@ -221,6 +222,16 @@ type DragState =
       currentPosition: { x: number; y: number };
     };
 
+type DayMetadataItem = {
+  id: string;
+  date: Date;
+  key: string;
+  value: string;
+  created_at: Date;
+  updated_at: Date;
+  workspaceId: string;
+};
+
 export function WeeklyCalendar({
   defaultStartHour = 6,
   defaultEndHour = 20,
@@ -255,6 +266,18 @@ export function WeeklyCalendar({
 
   // Add mutation
   const updateTimeBlockMutation = api.timeBlock.update.useMutation();
+
+  // Add metadata query
+  const { data: weekMetadata = [] as DayMetadataItem[] } =
+    api.timeBlock.getWeekMetadata.useQuery(
+      {
+        workspaceId: currentWorkspaceId || "",
+        weekStart,
+      },
+      {
+        enabled: !!currentWorkspaceId,
+      },
+    );
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -842,6 +865,33 @@ export function WeeklyCalendar({
             </div>
           </div>
         </div>
+
+        {/* Day Metadata Section */}
+        {currentWorkspaceId && (
+          <div className="grid grid-cols-7 gap-4 rounded-lg border bg-card p-4">
+            {DAYS.map((dayOffset) => {
+              const date = addDays(weekStart, dayOffset);
+              const dayMetadata = weekMetadata.filter(
+                (meta) =>
+                  format(meta.date, "yyyy-MM-dd") ===
+                  format(date, "yyyy-MM-dd"),
+              );
+
+              return (
+                <div key={dayOffset} className="space-y-2">
+                  <div className="text-sm font-medium">
+                    {format(date, "EEE MMM d")}
+                  </div>
+                  <DayMetadataSection
+                    workspaceId={currentWorkspaceId}
+                    date={date}
+                    metadata={dayMetadata}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {currentWorkspaceId && newBlockStart && newBlockEnd && (
