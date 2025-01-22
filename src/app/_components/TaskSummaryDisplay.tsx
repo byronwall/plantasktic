@@ -19,7 +19,7 @@ interface TaskSummaryDisplayProps {
 
 export function TaskSummaryDisplay({ task, fields }: TaskSummaryDisplayProps) {
   return (
-    <div className="flex items-center justify-between rounded-lg border p-2">
+    <div className="flex items-center rounded-lg border p-2">
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -30,7 +30,7 @@ export function TaskSummaryDisplay({ task, fields }: TaskSummaryDisplayProps) {
           <TaskActions task={task} />
         </PopoverContent>
       </Popover>
-      <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-1 items-center justify-between gap-2">
         {fields.map((field) => (
           <TaskField key={field} task={task} field={field} />
         ))}
