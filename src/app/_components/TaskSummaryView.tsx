@@ -2,9 +2,8 @@ import { addDays, isAfter, isBefore, startOfDay } from "date-fns";
 import { BarChart3, Calendar, ListTodo, Star } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { ScrollArea } from "~/components/ui/scroll-area";
 
-import { TaskField } from "./TaskField";
+import { TaskSummaryDisplay } from "./TaskSummaryDisplay";
 
 import type { Task } from "@prisma/client";
 
@@ -50,7 +49,11 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
       if (!b.priority) {
         return -1;
       }
-      return b.priority.localeCompare(a.priority);
+
+      // attempt to parse priority as a number
+      const aPriority = parseInt(a.priority);
+      const bPriority = parseInt(b.priority);
+      return bPriority - aPriority;
     })
     .slice(0, 10);
 
@@ -87,19 +90,15 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {tasksByDueDate.map((task) => (
-                <div
-                  key={task.task_id}
-                  className="flex items-center justify-between rounded-lg border p-2"
-                >
-                  <TaskField task={task} field="title" />
-                  <TaskField task={task} field="due_date" />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="space-y-2">
+            {tasksByDueDate.map((task) => (
+              <TaskSummaryDisplay
+                key={task.task_id}
+                task={task}
+                fields={["title", "due_date"]}
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -112,19 +111,15 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
           <Star className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {tasksByPriority.map((task) => (
-                <div
-                  key={task.task_id}
-                  className="flex items-center justify-between rounded-lg border p-2"
-                >
-                  <TaskField task={task} field="title" />
-                  <TaskField task={task} field="priority" />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+          <div className="space-y-2">
+            {tasksByPriority.map((task) => (
+              <TaskSummaryDisplay
+                key={task.task_id}
+                task={task}
+                fields={["title", "priority"]}
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
