@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
-import { Link, List, Plus } from "lucide-react";
+import { Link, List, Plus, Table } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -14,6 +14,7 @@ import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
 import { DayMetadataSection } from "./DayMetadataSection";
 import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
+import { MetadataSummaryDialog } from "./MetadataSummaryDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
 
 import { DateInput } from "../ui/date-input";
@@ -246,6 +247,7 @@ export function WeeklyCalendar({
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
+  const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
   const [newBlockStart, setNewBlockStart] = useState<Date | null>(null);
   const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
   const [newBlockDay, setNewBlockDay] = useState<number>(0);
@@ -783,6 +785,14 @@ export function WeeklyCalendar({
             </div>
           </div>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsMetadataSummaryOpen(true)}
+          >
+            <Table className="mr-2 h-4 w-4" />
+            Summary
+          </Button>
+
           <Button variant="outline" onClick={() => setIsListDialogOpen(true)}>
             <List className="mr-2 h-4 w-4" />
             List View
@@ -919,6 +929,12 @@ export function WeeklyCalendar({
         isOpen={isListDialogOpen}
         onClose={() => setIsListDialogOpen(false)}
         onEditBlock={setSelectedTimeBlock}
+        weekStart={weekStart}
+      />
+
+      <MetadataSummaryDialog
+        isOpen={isMetadataSummaryOpen}
+        onClose={() => setIsMetadataSummaryOpen(false)}
         weekStart={weekStart}
       />
     </div>

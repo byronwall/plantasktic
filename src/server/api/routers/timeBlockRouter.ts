@@ -211,6 +211,29 @@ export const timeBlockRouter = createTRPCRouter({
       });
     }),
 
+  getDateRangeMetadata: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        startDate: z.date(),
+        endDate: z.date(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.timeBlockDayMetadata.findMany({
+        where: {
+          workspaceId: input.workspaceId,
+          date: {
+            gte: input.startDate,
+            lte: input.endDate,
+          },
+        },
+        orderBy: {
+          date: "asc",
+        },
+      });
+    }),
+
   upsertTimeBlockDayMeta: protectedProcedure
     .input(
       z.object({
