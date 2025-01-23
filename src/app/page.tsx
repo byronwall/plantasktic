@@ -8,16 +8,6 @@ import { api, HydrateClient } from "~/trpc/server";
 import type { Task, Workspace } from "@prisma/client";
 
 export default async function HomePage() {
-  const workspaces = await api.workspace.getAll();
-  const dueTasks = (
-    await api.task.getTasks({
-      showCompleted: false,
-    })
-  )
-    .filter((task) => task.due_date !== null)
-    .sort((a, b) => a.due_date!.getTime() - b.due_date!.getTime())
-    .slice(0, 10);
-
   const session = await auth();
 
   if (!session) {
@@ -35,6 +25,17 @@ export default async function HomePage() {
       </div>
     );
   }
+
+  const workspaces = await api.workspace.getAll();
+  const dueTasks = (
+    await api.task.getTasks({
+      showCompleted: false,
+    })
+  )
+    .filter((task) => task.due_date !== null)
+    .sort((a, b) => a.due_date!.getTime() - b.due_date!.getTime())
+    .slice(0, 10);
+
   return (
     <HydrateClient>
       <div className="container mx-auto flex flex-col gap-4 p-4">
