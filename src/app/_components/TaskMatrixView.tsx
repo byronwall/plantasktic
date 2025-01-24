@@ -1,28 +1,14 @@
 "use client";
 
-import {
-  closestCorners,
-  DndContext,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
 import { useState } from "react";
 
+import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { cn } from "~/lib/utils";
-import { api } from "~/trpc/react";
+import { useEditTaskStore } from "~/stores/useEditTaskStore";
 
 import { ComboBox } from "./ComboBox";
 import { useTaskColumns } from "./hooks/useTaskColumns";
-import { TaskField } from "./TaskField";
+import { TaskAvatar } from "./TaskAvatar";
 
 import type { Task } from "./TaskList";
 
@@ -32,95 +18,52 @@ type MatrixCell = {
   tasks: Task[];
 };
 
-type DraggableTaskCardProps = {
-  task: Task;
-  rowField: keyof Task;
-  colField: keyof Task;
-};
-
-function DraggableTaskCard({
-  task,
-  rowField,
-  colField,
-}: DraggableTaskCardProps) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: task.task_id,
-  });
-
-  const style = transform
-    ? {
-        transform: CSS.Transform.toString(transform),
-      }
-    : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="w-full rounded-lg border bg-card p-2 shadow-sm"
-    >
-      <div className="flex items-center gap-2">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab rounded p-1 hover:bg-muted"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <div className="flex-1">
-          <TaskField task={task} field="title" />
-          <div className="flex gap-2 text-xs text-muted-foreground">
-            <TaskField task={task} field={rowField} />
-            <span>•</span>
-            <TaskField task={task} field={colField} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type DroppableMatrixCellProps = {
-  cell: MatrixCell;
-  children: React.ReactNode;
-};
-
-function DroppableMatrixCell({ cell, children }: DroppableMatrixCellProps) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `${cell.rowValue}:${cell.colValue}`,
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "flex h-full min-h-[100px] flex-col gap-2 rounded-lg border bg-muted/50 p-2",
-        isOver && "ring-2 ring-primary",
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
 const GROUPABLE_FIELDS = ["status", "category", "priority"] as const;
 type GroupableField = (typeof GROUPABLE_FIELDS)[number];
+
+type TaskGridCellProps = {
+  cell: MatrixCell;
+  isSelected: boolean;
+  onSelect: () => void;
+};
+
+function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
+  const { open } = useEditTaskStore();
+
+  return (
+    <div
+      onClick={onSelect}
+      className={cn(
+        "flex h-full min-h-[100px] flex-wrap content-start gap-2 rounded-lg border bg-muted/50 p-2",
+        isSelected && "ring-2 ring-primary",
+      )}
+    >
+      {cell.tasks.map((task) => (
+        <SimpleTooltip
+          content={task.title}
+          key={task.task_id}
+          className="max-w-sm text-wrap break-words text-base"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              open(task);
+            }}
+            className="rounded-full hover:ring-2 hover:ring-primary"
+          >
+            <TaskAvatar title={task.title} size={32} />
+          </button>
+        </SimpleTooltip>
+      ))}
+    </div>
+  );
+}
 
 export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
   const [rowField, setRowField] = useState<GroupableField>("status");
   const [colField, setColField] = useState<GroupableField>("priority");
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const { TASK_STATUSES } = useTaskColumns();
-  const updateTask = api.task.updateTask.useMutation();
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 4,
-      },
-    }),
-    useSensor(KeyboardSensor),
-  );
 
   // Get unique values for rows and columns
   const rowValues = new Set<string>();
@@ -151,37 +94,11 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
     });
   });
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as number);
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (!over) {
-      return;
-    }
-
-    const activeTask = tasks.find((t) => t.task_id === active.id);
-    if (!activeTask) {
-      return;
-    }
-
-    const [newRowValue, newColValue] = (over.id as string).split(":");
-    const currentRowValue = String(activeTask[rowField] ?? "None");
-    const currentColValue = String(activeTask[colField] ?? "None");
-
-    if (newRowValue !== currentRowValue || newColValue !== currentColValue) {
-      await updateTask.mutateAsync({
-        taskId: activeTask.task_id,
-        data: {
-          [rowField]: newRowValue === "None" ? null : newRowValue,
-          [colField]: newColValue === "None" ? null : newColValue,
-        },
-      });
-    }
-  };
+  const selectedTasks = selectedCell
+    ? (matrixCells.find(
+        (cell) => `${cell.rowValue}:${cell.colValue}` === selectedCell,
+      )?.tasks ?? [])
+    : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -206,66 +123,73 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
         </div>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: `auto repeat(${colValues.size}, minmax(200px, 1fr))`,
-          }}
-        >
-          {/* Header row */}
-          <div className="h-8" /> {/* Empty corner cell */}
-          {Array.from(colValues).map((colValue) => (
-            <div key={colValue} className="text-center font-medium">
-              {colValue}
-            </div>
-          ))}
-          {/* Matrix rows */}
-          {Array.from(rowValues).map((rowValue) => (
-            <div key={rowValue} className="contents">
-              <div className="flex h-full items-center font-medium">
-                {rowValue}
+      <div className="flex gap-8">
+        <div className="flex-1">
+          <div
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: `auto repeat(${colValues.size}, minmax(200px, 1fr))`,
+            }}
+          >
+            {/* Header row */}
+            <div className="h-8" /> {/* Empty corner cell */}
+            {Array.from(colValues).map((colValue) => (
+              <div key={colValue} className="text-center font-medium">
+                {colValue}
               </div>
-              {Array.from(colValues).map((colValue) => {
-                const cell = matrixCells.find(
-                  (c) => c.rowValue === rowValue && c.colValue === colValue,
-                )!;
-                return (
-                  <DroppableMatrixCell
-                    key={`${rowValue}:${colValue}`}
-                    cell={cell}
-                  >
-                    {cell.tasks.map((task) => (
-                      <DraggableTaskCard
-                        key={task.task_id}
-                        task={task}
-                        rowField={rowField}
-                        colField={colField}
-                      />
-                    ))}
-                  </DroppableMatrixCell>
-                );
-              })}
-            </div>
-          ))}
+            ))}
+            {/* Matrix rows */}
+            {Array.from(rowValues).map((rowValue) => (
+              <div key={rowValue} className="contents">
+                <div className="flex h-full items-center font-medium">
+                  {rowValue}
+                </div>
+                {Array.from(colValues).map((colValue) => {
+                  const cell = matrixCells.find(
+                    (c) => c.rowValue === rowValue && c.colValue === colValue,
+                  )!;
+                  const cellId = `${rowValue}:${colValue}`;
+                  return (
+                    <TaskGridCell
+                      key={cellId}
+                      cell={cell}
+                      isSelected={selectedCell === cellId}
+                      onSelect={() => setSelectedCell(cellId)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
 
-        <DragOverlay>
-          {activeId && (
-            <div className="w-72 rounded-lg border bg-card p-4 shadow-lg">
-              <TaskField
-                task={tasks.find((t) => t.task_id === activeId)!}
-                field="title"
-              />
-            </div>
-          )}
-        </DragOverlay>
-      </DndContext>
+        <div className="">
+          <h3 className="mb-2 text-lg font-medium">Selected Tasks</h3>
+          <div className="rounded-lg border bg-card p-4">
+            {!selectedCell ? (
+              <p className="text-sm text-muted-foreground">
+                Select a cell to view tasks
+              </p>
+            ) : selectedTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No tasks in selected cell
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {selectedTasks.map((task) => (
+                  <li
+                    key={task.task_id}
+                    className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2"
+                  >
+                    <TaskAvatar title={task.title} size={24} />
+                    <span>{task.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
