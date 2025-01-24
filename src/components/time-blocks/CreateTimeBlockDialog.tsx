@@ -31,6 +31,11 @@ interface CreateTimeBlockDialogProps {
   dayOfWeek: number;
 }
 
+const generateRandomHslColor = () => {
+  const hue = Math.floor(Math.random() * 360); // Random hue between 0 and 360
+  return `hsl(${hue}, 70%, 50%)`; // Fixed saturation and lightness for consistency
+};
+
 export function CreateTimeBlockDialog({
   isOpen,
   onClose,
@@ -40,7 +45,7 @@ export function CreateTimeBlockDialog({
   dayOfWeek,
 }: CreateTimeBlockDialogProps) {
   const [title, setTitle] = useState("");
-  const [color, setColor] = useState("#3b82f6"); // Default blue color
+  const [color, setColor] = useState(generateRandomHslColor()); // Initialize with random HSL color
   const [selectedStartDate, setSelectedStartDate] = useState<Date>(startTime);
   const [selectedEndDate, setSelectedEndDate] = useState<Date>(endTime);
   const [startTimeStr, setStartTimeStr] = useState(format(startTime, "HH:mm"));
@@ -212,12 +217,31 @@ export function CreateTimeBlockDialog({
               </div>
             </div>
             <div>
-              <Input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="h-10 w-20"
-              />
+              <label className="text-sm font-medium">Color</label>
+              <div className="mt-2 flex items-center gap-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  value={/hsl\((\d+)/.exec(color)?.[1] ?? "0"}
+                  onChange={(e) => setColor(`hsl(${e.target.value}, 70%, 50%)`)}
+                  className="h-2 w-full appearance-none rounded-lg [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:mt-[-4px] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:shadow-md"
+                  style={{
+                    background: `linear-gradient(to right,
+                      hsl(0, 70%, 50%),
+                      hsl(60, 70%, 50%),
+                      hsl(120, 70%, 50%),
+                      hsl(180, 70%, 50%),
+                      hsl(240, 70%, 50%),
+                      hsl(300, 70%, 50%),
+                      hsl(360, 70%, 50%))`,
+                  }}
+                />
+                <div
+                  className="h-8 w-16 rounded-md border shadow-sm"
+                  style={{ backgroundColor: color }}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
