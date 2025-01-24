@@ -116,7 +116,9 @@ function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
       onClick={isEmpty ? undefined : onSelect}
       className={cn(
         "flex h-full min-h-[100px] flex-wrap content-start gap-2 rounded-lg border p-2",
-        isEmpty ? "cursor-default bg-white" : "cursor-pointer bg-muted/50",
+        isEmpty
+          ? "cursor-default bg-white"
+          : "cursor-pointer bg-muted/50 hover:bg-muted/70",
         !isEmpty && isSelected && "ring-2 ring-primary",
       )}
     >
@@ -150,7 +152,7 @@ const formatFieldName = (value: string): string => {
 };
 
 export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
-  const [rowField, setRowField] = useState<GroupableField>("status");
+  const [rowField, setRowField] = useState<GroupableField>("due_date_bucket");
   const [colField, setColField] = useState<GroupableField>("priority");
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const { TASK_STATUSES } = useTaskColumns();
