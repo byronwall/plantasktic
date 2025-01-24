@@ -1,5 +1,6 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -55,7 +56,7 @@ export function CommandMenu() {
     },
   );
 
-  const createQuickTask = api.task.createQuickTask.useMutation();
+  console.log("search result", searchResults);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -68,19 +69,6 @@ export function CommandMenu() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
-
-  const handleCreateQuickTask = async (title: string) => {
-    try {
-      await createQuickTask.mutateAsync({
-        title,
-        workspaceId: currentWorkspaceId ?? undefined,
-      });
-      setOpen(false);
-      setSearchQuery("");
-    } catch (error) {
-      console.error("Failed to create quick task:", error);
-    }
-  };
 
   const handleTaskClick = (task: Task) => {
     openTask(task);
@@ -95,23 +83,18 @@ export function CommandMenu() {
         onValueChange={setSearchQuery}
       />
       <CommandList className="max-h-[calc(100vh-180px)]">
-        <CommandEmpty>
-          {searchQuery ? (
-            <CommandItem
-              onSelect={() => {
-                void handleCreateQuickTask(searchQuery);
-              }}
-            >
-              Create task: {searchQuery}
-            </CommandItem>
-          ) : (
-            "No results found."
-          )}
-        </CommandEmpty>
+        <CommandEmpty>No results found.</CommandEmpty>
 
         {searchQuery.length > 0 && searchResults.length > 0 && (
           <>
-            <CommandGroup heading="Search Results">
+            <CommandGroup
+              heading={
+                <div className="flex items-center gap-2">
+                  <Search className="size-4" />
+                  <span>Search Results</span>
+                </div>
+              }
+            >
               {searchResults.map((task) => (
                 <CommandItem
                   key={task.task_id}
@@ -237,27 +220,6 @@ export function CommandMenu() {
               {goal.title}
             </CommandItem>
           ))}
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading="Quick Actions">
-          <CommandItem
-            onSelect={() => {
-              setSearchQuery("");
-              setOpen(false);
-            }}
-          >
-            Create Quick Task
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setSearchQuery("");
-              setOpen(false);
-            }}
-          >
-            Search Tasks
-          </CommandItem>
         </CommandGroup>
       </CommandList>
     </CommandDialog>
