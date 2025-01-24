@@ -36,7 +36,7 @@ export function ColorPalettePicker() {
           <Palette className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[360px]">
+      <PopoverContent className="w-[400px]">
         <div className="space-y-4">
           <div>
             <Label>Avatar Style</Label>
@@ -56,7 +56,7 @@ export function ColorPalettePicker() {
 
           <div>
             <Label>Color Palette</Label>
-            <div className="mt-2 grid grid-cols-4 gap-2">
+            <div className="mt-2 grid grid-cols-5 gap-2">
               {colorPalettes.map((colors, index) => (
                 <button
                   key={index}
