@@ -65,6 +65,8 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const { TASK_STATUSES } = useTaskColumns();
 
+  const { open } = useEditTaskStore();
+
   // Get unique values for rows and columns
   const rowValues = new Set<string>();
   const colValues = new Set<string>();
@@ -98,7 +100,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
     ? (matrixCells.find(
         (cell) => `${cell.rowValue}:${cell.colValue}` === selectedCell,
       )?.tasks ?? [])
-    : [];
+    : tasks;
 
   return (
     <div className="flex flex-col gap-4">
@@ -165,11 +167,28 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
 
         <div className="">
           <h3 className="mb-2 text-lg font-medium">Selected Tasks</h3>
-          <div className="rounded-lg border bg-card p-4">
-            {!selectedCell ? (
-              <p className="text-sm text-muted-foreground">
-                Select a cell to view tasks
-              </p>
+          <div className="rounded-lg border bg-card p-2">
+            {selectedCell === null ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  All tasks (select a cell to filter)
+                </p>
+                <ul className="space-y-2">
+                  {tasks.map((task) => (
+                    <li
+                      key={task.task_id}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/50 p-2 hover:bg-muted/70"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        open(task);
+                      }}
+                    >
+                      <TaskAvatar title={task.title} size={24} />
+                      <span>{task.title}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : selectedTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No tasks in selected cell
@@ -179,7 +198,11 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                 {selectedTasks.map((task) => (
                   <li
                     key={task.task_id}
-                    className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/50 p-2 hover:bg-muted/70"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      open(task);
+                    }}
                   >
                     <TaskAvatar title={task.title} size={24} />
                     <span>{task.title}</span>
