@@ -1,11 +1,10 @@
-import Avatar from "boring-avatars";
 import { useState } from "react";
 
 import { Textarea } from "~/components/ui/textarea";
-import { useColorPaletteStore } from "~/stores/useColorPaletteStore";
 import { api } from "~/trpc/react";
 
 import { SimpleMarkdown } from "./SimpleMarkdown";
+import { TaskAvatar } from "./TaskAvatar";
 
 type TaskTitleProps = {
   taskId: number;
@@ -20,7 +19,6 @@ export function TaskTitle({
 }: TaskTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(title);
-  const { selectedColors, avatarVariant } = useColorPaletteStore();
 
   const updateTask = api.task.updateTask.useMutation();
 
@@ -75,13 +73,7 @@ export function TaskTitle({
         />
       ) : (
         <div className="flex items-center gap-2">
-          <Avatar
-            name={title}
-            colors={selectedColors}
-            variant={avatarVariant}
-            size={24}
-            className="shrink-0"
-          />
+          <TaskAvatar title={title} />
           <SimpleMarkdown text={title} />
         </div>
       )}

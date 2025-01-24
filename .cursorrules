@@ -40,3 +40,4 @@ Follow these rules when you write code:
 - For forms, set the autocompletion to off.
 - For forms and other UI, look for components in the shadcn library via the `ui` folder.
 - For global state, create a new Zustand store
+- When refactoring comps out, avoid prop drilling as much as possible. Always extract as many variables as possible.
