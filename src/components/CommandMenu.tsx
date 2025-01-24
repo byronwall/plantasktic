@@ -56,8 +56,6 @@ export function CommandMenu() {
     },
   );
 
-  console.log("search result", searchResults);
-
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {

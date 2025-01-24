@@ -1,3 +1,4 @@
+import Avatar from "boring-avatars";
 import { useState } from "react";
 
 import { Textarea } from "~/components/ui/textarea";
@@ -63,7 +64,17 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
           autoFocus
         />
       ) : (
-        <SimpleMarkdown text={title} />
+        <div className="flex items-center gap-2">
+          <Avatar
+            name={title}
+            colors={["#49007e", "#ff7d10", "#ffb238"]}
+            variant="marble"
+            size={24}
+            className="shrink-0"
+          />
+
+          <SimpleMarkdown text={title} />
+        </div>
       )}
     </div>
   );
