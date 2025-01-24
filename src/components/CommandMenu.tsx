@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { TaskTitle } from "~/app/_components/TaskTitle";
 import {
   CommandDialog,
   CommandEmpty,
@@ -98,7 +99,11 @@ export function CommandMenu() {
                   key={task.task_id}
                   onSelect={() => handleTaskClick(task)}
                 >
-                  {task.title}
+                  <TaskTitle
+                    taskId={task.task_id}
+                    title={task.title}
+                    isReadOnly
+                  />
                   {task.project && (
                     <span className="ml-2 text-sm text-muted-foreground">
                       {task.project.name}
@@ -197,7 +202,7 @@ export function CommandMenu() {
               key={task.task_id}
               onSelect={() => handleTaskClick(task)}
             >
-              {task.title}
+              <TaskTitle taskId={task.task_id} title={task.title} isReadOnly />
               <span className="ml-2 text-sm text-muted-foreground">
                 {task.due_date?.toLocaleDateString()}
               </span>

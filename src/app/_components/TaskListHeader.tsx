@@ -1,3 +1,4 @@
+import { ColorPalettePicker } from "~/components/ColorPalettePicker";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -82,6 +83,7 @@ export function TaskListHeader({
         )}
       </div>
       <div className="flex items-center gap-4">
+        <ColorPalettePicker />
         <div className="flex items-center gap-2">
           <span className="text-sm">Show Field Names</span>
           <Switch

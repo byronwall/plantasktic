@@ -2,6 +2,7 @@ import Avatar from "boring-avatars";
 import { useState } from "react";
 
 import { Textarea } from "~/components/ui/textarea";
+import { useColorPaletteStore } from "~/stores/useColorPaletteStore";
 import { api } from "~/trpc/react";
 
 import { SimpleMarkdown } from "./SimpleMarkdown";
@@ -9,11 +10,17 @@ import { SimpleMarkdown } from "./SimpleMarkdown";
 type TaskTitleProps = {
   taskId: number;
   title: string;
+  isReadOnly?: boolean;
 };
 
-export function TaskTitle({ taskId, title }: TaskTitleProps) {
+export function TaskTitle({
+  taskId,
+  title,
+  isReadOnly = false,
+}: TaskTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(title);
+  const { selectedColors, avatarVariant } = useColorPaletteStore();
 
   const updateTask = api.task.updateTask.useMutation();
 
@@ -34,6 +41,9 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
   };
 
   const startEditing = () => {
+    if (isReadOnly) {
+      return;
+    }
     setIsEditing(true);
     setEditText(title);
   };
@@ -46,7 +56,7 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
   return (
     <div
       onClick={startEditing}
-      className="max-w-2xl shrink flex-grow-[6] basis-[600px] [overflow-wrap:anywhere]"
+      className={`max-w-2xl shrink flex-grow-[6] basis-[600px] [overflow-wrap:anywhere] ${!isReadOnly ? "cursor-pointer" : ""}`}
     >
       {isEditing ? (
         <Textarea
@@ -67,12 +77,11 @@ export function TaskTitle({ taskId, title }: TaskTitleProps) {
         <div className="flex items-center gap-2">
           <Avatar
             name={title}
-            colors={["#49007e", "#ff7d10", "#ffb238"]}
-            variant="marble"
+            colors={selectedColors}
+            variant={avatarVariant}
             size={24}
             className="shrink-0"
           />
-
           <SimpleMarkdown text={title} />
         </div>
       )}
