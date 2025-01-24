@@ -1,3 +1,4 @@
+import { type Task } from "@prisma/client";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -78,7 +79,8 @@ export function EditTaskDialog() {
     "duration",
     "start_date",
     "due_date",
-  ];
+    "comments",
+  ] as const satisfies (keyof Task)[];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
