@@ -29,6 +29,7 @@ interface ComboBoxProps {
   emptyText?: string;
   children?: React.ReactNode;
   allowClear?: boolean;
+  renderOption?: (value: string) => React.ReactNode;
 }
 
 export function ComboBox({
@@ -41,6 +42,7 @@ export function ComboBox({
   emptyText = "No option found.",
   children,
   allowClear = false,
+  renderOption,
 }: ComboBoxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -64,7 +66,7 @@ export function ComboBox({
               aria-expanded={open}
               className="w-[200px] justify-between"
             >
-              {value || placeholder}
+              {renderOption ? renderOption(value) : value || placeholder}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           )}
@@ -110,7 +112,7 @@ export function ComboBox({
                         value === option ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    {option}
+                    {renderOption ? renderOption(option) : option}
                   </CommandItem>
                 ))}
               </CommandGroup>
