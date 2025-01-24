@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 
 import { AppSidebar } from "~/components/AppSidebar";
+import { CommandMenu } from "~/components/CommandMenu";
 import { TaskInput } from "~/components/TaskInput";
 import { TopNavSelectors } from "~/components/TopNavSelectors";
 import { SidebarProvider } from "~/components/ui/sidebar";
@@ -46,6 +47,7 @@ export default async function RootLayout({
                     </div>
                     <div className="mx-auto p-2">{children}</div>
                     <GlobalModals />
+                    <CommandMenu />
                   </main>
                 </SidebarProvider>
               </WorkspaceProjectProvider>

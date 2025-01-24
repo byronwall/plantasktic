@@ -332,4 +332,108 @@ export const taskRouter = createTRPCRouter({
         take: 10,
       });
     }),
+
+  // New endpoints for command menu
+  searchTasks: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        workspaceId: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const whereClause: Prisma.TaskWhereInput = {
+        userId: ctx.session.user.id,
+        title: {
+          contains: input.query,
+          mode: "insensitive",
+        },
+      };
+
+      if (input.workspaceId) {
+        whereClause.project = {
+          workspaceId: input.workspaceId,
+        };
+      }
+
+      return ctx.db.task.findMany({
+        where: whereClause,
+        orderBy: {
+          updated_at: "desc",
+        },
+        include: {
+          project: true,
+        },
+        take: 10,
+      });
+    }),
+
+  createQuickTask: protectedProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        workspaceId: z.string().optional(),
+        projectId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.projectId) {
+        return ctx.db.task.create({
+          data: {
+            title: input.title,
+            status: "open",
+            userId: ctx.session.user.id,
+            projectId: input.projectId,
+          },
+        });
+      }
+
+      if (input.workspaceId) {
+        // First find or create the "Quick Tasks" project
+        const quickTasksProject = await ctx.db.project.findFirst({
+          where: {
+            name: "Quick Tasks",
+            userId: ctx.session.user.id,
+            workspaceId: input.workspaceId,
+          },
+        });
+
+        if (!quickTasksProject) {
+          const newProject = await ctx.db.project.create({
+            data: {
+              name: "Quick Tasks",
+              userId: ctx.session.user.id,
+              workspaceId: input.workspaceId,
+            },
+          });
+
+          return ctx.db.task.create({
+            data: {
+              title: input.title,
+              status: "open",
+              userId: ctx.session.user.id,
+              projectId: newProject.id,
+            },
+          });
+        }
+
+        return ctx.db.task.create({
+          data: {
+            title: input.title,
+            status: "open",
+            userId: ctx.session.user.id,
+            projectId: quickTasksProject.id,
+          },
+        });
+      }
+
+      // If no project or workspace, just create the task
+      return ctx.db.task.create({
+        data: {
+          title: input.title,
+          status: "open",
+          userId: ctx.session.user.id,
+        },
+      });
+    }),
 });
