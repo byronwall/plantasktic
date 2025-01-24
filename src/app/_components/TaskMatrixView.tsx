@@ -109,13 +109,15 @@ type TaskGridCellProps = {
 
 function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
   const { open } = useEditTaskStore();
+  const isEmpty = cell.tasks.length === 0;
 
   return (
     <div
-      onClick={onSelect}
+      onClick={isEmpty ? undefined : onSelect}
       className={cn(
-        "flex h-full min-h-[100px] flex-wrap content-start gap-2 rounded-lg border bg-muted/50 p-2",
-        isSelected && "ring-2 ring-primary",
+        "flex h-full min-h-[100px] flex-wrap content-start gap-2 rounded-lg border p-2",
+        isEmpty ? "cursor-default bg-white" : "cursor-pointer bg-muted/50",
+        !isEmpty && isSelected && "ring-2 ring-primary",
       )}
     >
       {cell.tasks.map((task) => (
@@ -315,7 +317,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
           </div>
         </div>
 
-        <div className="">
+        <div className="min-w-[300px]">
           <h3 className="mb-2 text-lg font-medium">Selected Tasks</h3>
           <div className="rounded-lg border bg-card p-2">
             {selectedCell === null ? (
