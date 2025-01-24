@@ -12,6 +12,7 @@ import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
 import { TaskField } from "./TaskField";
+import { TaskTitle } from "./TaskTitle";
 
 const TASK_STATUSES = [
   "open",
@@ -25,6 +26,10 @@ const TASK_STATUSES = [
 export function EditTaskDialog() {
   const { isOpen, task, close } = useEditTaskStore();
   const updateTask = api.task.updateTask.useMutation();
+  const relatedTasks = api.task.getRelatedTasks.useQuery(
+    { taskId: task?.task_id ?? 0 },
+    { enabled: !!task },
+  );
 
   const [formData, setFormData] = useState({
     title: "",
@@ -141,6 +146,48 @@ export function EditTaskDialog() {
               showTextLabel
               className="z-50"
             />
+          </div>
+
+          {/* Related Tasks Section */}
+          <div className="col-span-3">
+            <div className="space-y-4">
+              {/* Parent Task */}
+              <div>
+                <h3 className="mb-2 text-sm font-medium">Parent Task</h3>
+                {relatedTasks.data?.parentTask ? (
+                  <TaskTitle
+                    taskId={relatedTasks.data.parentTask.task_id}
+                    title={relatedTasks.data.parentTask.title}
+                    isReadOnly
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No parent task
+                  </p>
+                )}
+              </div>
+
+              {/* Sub Tasks */}
+              <div>
+                <h3 className="mb-2 text-sm font-medium">Sub Tasks</h3>
+                <div className="space-y-2">
+                  {relatedTasks.data?.subTasks.length ? (
+                    relatedTasks.data.subTasks.map((subTask) => (
+                      <TaskTitle
+                        key={subTask.task_id}
+                        taskId={subTask.task_id}
+                        title={subTask.title}
+                        isReadOnly
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No sub tasks
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

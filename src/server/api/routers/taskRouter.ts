@@ -367,4 +367,21 @@ export const taskRouter = createTRPCRouter({
         take: 10,
       });
     }),
+
+  getRelatedTasks: protectedProcedure
+    .input(z.object({ taskId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const task = await ctx.db.task.findUnique({
+        where: { task_id: input.taskId },
+        include: {
+          subTasks: true,
+          parentTask: true,
+        },
+      });
+
+      return {
+        subTasks: task?.subTasks ?? [],
+        parentTask: task?.parentTask ?? null,
+      };
+    }),
 });
