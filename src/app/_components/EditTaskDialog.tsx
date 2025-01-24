@@ -1,4 +1,3 @@
-import { type Task } from "@prisma/client";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -70,18 +69,6 @@ export function EditTaskDialog() {
     return null;
   }
 
-  const fieldsToShow = [
-    "title",
-    "description",
-    "status",
-    "category",
-    "priority",
-    "duration",
-    "start_date",
-    "due_date",
-    "comments",
-  ] as const satisfies (keyof Task)[];
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <DialogContent className="max-w-2xl">
@@ -89,17 +76,72 @@ export function EditTaskDialog() {
           <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
-          {fieldsToShow.map((field) => (
+        <div className="grid grid-cols-3 gap-4 py-4">
+          {/* Full width fields */}
+          <div className="col-span-3 space-y-4">
+            <TaskField task={task} field="title" showLabel showTextLabel />
             <TaskField
-              key={field}
               task={task}
-              className="z-50 justify-start"
-              field={field as keyof typeof task}
+              field="description"
               showLabel
               showTextLabel
             />
-          ))}
+          </div>
+
+          <TaskField
+            task={task}
+            field="status"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+          <TaskField
+            task={task}
+            field="priority"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+          <TaskField
+            task={task}
+            field="category"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+
+          <TaskField
+            task={task}
+            field="duration"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+          <TaskField
+            task={task}
+            field="start_date"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+          <TaskField
+            task={task}
+            field="due_date"
+            showLabel
+            showTextLabel
+            className="z-50"
+          />
+
+          {/* Full width bottom section */}
+          <div className="col-span-2">
+            <TaskField
+              task={task}
+              field="comments"
+              showLabel
+              showTextLabel
+              className="z-50"
+            />
+          </div>
         </div>
 
         <DialogFooter>
