@@ -2,6 +2,8 @@ import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { create } from "zustand";
 
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+
 export type ViewMode =
   | "list"
   | "table"
@@ -34,6 +36,15 @@ export const useSyncViewSettingsWithUrl = () => {
   const searchParams = useSearchParams();
   const { setViewMode, setShowCompleted, setShowFieldNames } =
     useViewSettingsStore();
+
+  const { currentProject, currentWorkspace } = useCurrentProject();
+
+  // if we have a workspace only, set the view mode to summary
+  useEffect(() => {
+    if (currentWorkspace?.id && !currentProject?.id) {
+      setViewMode("summary");
+    }
+  }, [currentWorkspace, currentProject, setViewMode]);
 
   useEffect(() => {
     const viewMode = searchParams.get("view") as ViewMode;

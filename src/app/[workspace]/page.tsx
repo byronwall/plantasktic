@@ -26,11 +26,7 @@ export default async function WorkspacePage({
           </div>
         </SimpleTooltip>
       </div>
-      <TaskList
-        workspaceId={workspaceObj.id}
-        projectId={null}
-        initialView="summary"
-      />
+      <TaskList workspaceId={workspaceObj.id} projectId={null} />
     </div>
   );
 }
