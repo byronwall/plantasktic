@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
+import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
@@ -17,15 +18,10 @@ import type { Task } from "@prisma/client";
 
 interface TaskCardListProps {
   tasks: Task[];
-  selectedTasks: Set<number>;
-  onToggleSelect: (taskIds: number[]) => void;
 }
 
-export function TaskCardList({
-  tasks,
-  selectedTasks,
-  onToggleSelect,
-}: TaskCardListProps) {
+export function TaskCardList({ tasks }: TaskCardListProps) {
+  const { selectedTasks, toggleTask } = useSelectedTasksStore();
   const { AVAILABLE_COLUMNS } = useTaskColumns();
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.detailed.columns,
@@ -57,7 +53,8 @@ export function TaskCardList({
             <div className="flex items-center justify-between gap-2">
               <Checkbox
                 checked={selectedTasks.has(task.task_id)}
-                onCheckedChange={() => onToggleSelect([task.task_id])}
+                onCheckedChange={() => toggleTask(task.task_id)}
+                className="h-4 w-4"
               />
               <TaskActions task={task} />
             </div>

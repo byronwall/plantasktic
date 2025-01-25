@@ -44,8 +44,6 @@ function organizeTaskHierarchy(tasks: Task[]): TaskWithChildren[] {
 
 function renderTaskHierarchy(
   tasks: TaskWithChildren[],
-  selectedTasks: Set<number>,
-  onToggleSelect: (taskIds: number[]) => void,
   showFieldNames: boolean,
   selectedColumns: ColumnKey[],
   level = 0,
@@ -54,17 +52,13 @@ function renderTaskHierarchy(
     <TaskItem
       key={task.task_id}
       task={task}
-      isSelected={selectedTasks.has(task.task_id)}
       selectedColumns={selectedColumns}
-      onToggleSelect={onToggleSelect}
       showFieldNames={false}
       indentLevel={level}
     />,
     ...(task.children
       ? renderTaskHierarchy(
           task.children,
-          selectedTasks,
-          onToggleSelect,
           showFieldNames,
           selectedColumns,
           level + 1,
@@ -75,13 +69,9 @@ function renderTaskHierarchy(
 
 export function TaskItemList({
   tasks,
-  selectedTasks,
-  onToggleSelect,
   showFieldNames,
 }: {
   tasks: Task[];
-  selectedTasks: Set<number>;
-  onToggleSelect: (taskIds: number[]) => void;
   showFieldNames: boolean;
 }) {
   const { AVAILABLE_COLUMNS } = useTaskColumns();
@@ -133,13 +123,7 @@ export function TaskItemList({
             <div>Actions</div>
           </div>
 
-          {renderTaskHierarchy(
-            organizedTasks,
-            selectedTasks,
-            onToggleSelect,
-            showFieldNames,
-            selectedColumns,
-          )}
+          {renderTaskHierarchy(organizedTasks, showFieldNames, selectedColumns)}
         </div>
       </div>
     </div>

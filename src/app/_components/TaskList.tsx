@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 
 import { useSearch } from "~/components/SearchContext";
+import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 import {
   useSyncViewSettingsWithUrl,
   useUpdateUrlFromViewSettings,
@@ -27,9 +28,11 @@ type TaskListProps = {
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
 export function TaskList({ workspaceId, projectId }: TaskListProps) {
-  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
   const { viewMode, showCompleted, showFieldNames } = useViewSettingsStore();
   const { searchQuery } = useSearch();
+  const setAvailableTaskIds = useSelectedTasksStore(
+    (state) => state.setAvailableTaskIds,
+  );
 
   // Sync view settings with URL
   useSyncViewSettingsWithUrl();
@@ -45,109 +48,22 @@ export function TaskList({ workspaceId, projectId }: TaskListProps) {
     task.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const { data: categories = [] } = api.task.getCategories.useQuery();
-
   const tasks = searchQuery ? (searchResults ?? []) : (rawTasks ?? []);
 
-  const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
-  const bulkUpdateTaskCategoryMutation =
-    api.task.bulkUpdateTaskCategory.useMutation();
-  const bulkMoveTasksToProjectMutation =
-    api.task.bulkMoveTasksToProject.useMutation();
-
-  const toggleTaskSelection = (taskIds: number[]) => {
-    const newSelectedTasks = new Set(selectedTasks);
-
-    if (taskIds[0] === -1) {
-      // special case to clear
-      setSelectedTasks(new Set());
-      return;
-    }
-
-    // Process all IDs at once
-    taskIds.forEach((taskId) => {
-      if (newSelectedTasks.has(taskId)) {
-        newSelectedTasks.delete(taskId);
-      } else {
-        newSelectedTasks.add(taskId);
-      }
-    });
-
-    setSelectedTasks(newSelectedTasks);
-  };
-
-  const handleBulkDelete = async () => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete ${selectedTasks.size} tasks?`,
-      )
-    ) {
-      await bulkDeleteTasksMutation.mutateAsync({
-        taskIds: Array.from(selectedTasks),
-      });
-      setSelectedTasks(new Set());
-    }
-  };
-
-  const handleBulkCategoryUpdate = async (category: string) => {
-    await bulkUpdateTaskCategoryMutation.mutateAsync({
-      taskIds: Array.from(selectedTasks),
-      category,
-    });
-    setSelectedTasks(new Set());
-  };
-
-  const handleBulkMoveToProject = async (projectId: string | null) => {
-    await bulkMoveTasksToProjectMutation.mutateAsync({
-      taskIds: Array.from(selectedTasks),
-      projectId,
-    });
-    setSelectedTasks(new Set());
-  };
+  // Update available task IDs whenever the task list changes
+  useEffect(() => {
+    setAvailableTaskIds(tasks.map((task) => task.task_id));
+  }, [tasks, setAvailableTaskIds]);
 
   return (
     <div className="flex flex-col gap-4">
-      <TaskListHeader
-        selectedTasks={selectedTasks}
-        onBulkDelete={handleBulkDelete}
-        onBulkCategoryUpdate={handleBulkCategoryUpdate}
-        onBulkMoveToProject={handleBulkMoveToProject}
-        categories={categories}
-        totalTasks={tasks.length}
-        onToggleSelectAll={() => {
-          const allTaskIds = tasks.map((t) => t.task_id);
-          const isAllSelected = allTaskIds.every((id) => selectedTasks.has(id));
-
-          if (isAllSelected) {
-            toggleTaskSelection([-1]); // signal to clear
-          } else {
-            // Select all tasks that aren't currently selected
-            const unselectedTasks = allTaskIds.filter(
-              (id) => !selectedTasks.has(id),
-            );
-            toggleTaskSelection(unselectedTasks);
-          }
-        }}
-      />
+      <TaskListHeader totalTasks={tasks.length} />
       {viewMode === "list" ? (
-        <TaskItemList
-          tasks={tasks}
-          selectedTasks={selectedTasks}
-          onToggleSelect={toggleTaskSelection}
-          showFieldNames={showFieldNames}
-        />
+        <TaskItemList tasks={tasks} showFieldNames={showFieldNames} />
       ) : viewMode === "table" ? (
-        <TaskTable
-          tasks={tasks}
-          selectedTasks={selectedTasks}
-          onToggleSelect={toggleTaskSelection}
-        />
+        <TaskTable tasks={tasks} />
       ) : viewMode === "card" ? (
-        <TaskCardList
-          tasks={tasks}
-          selectedTasks={selectedTasks}
-          onToggleSelect={toggleTaskSelection}
-        />
+        <TaskCardList tasks={tasks} />
       ) : viewMode === "kanban" ? (
         <TaskKanbanView tasks={tasks} />
       ) : viewMode === "gantt" ? (

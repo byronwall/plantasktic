@@ -1,4 +1,5 @@
 import { Checkbox } from "~/components/ui/checkbox";
+import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 
 import { CreateChildTaskDialog } from "./CreateChildTaskDialog";
 import { TaskActions } from "./TaskActions";
@@ -7,19 +8,19 @@ import { type Task } from "./TaskList";
 
 export function TaskItem({
   task,
-  isSelected,
   selectedColumns,
-  onToggleSelect,
   showFieldNames,
   indentLevel = 0,
 }: {
   task: Task;
-  isSelected: boolean;
   selectedColumns: string[];
-  onToggleSelect: (taskIds: number[]) => void;
   showFieldNames: boolean;
   indentLevel?: number;
 }) {
+  const { toggleTask, selectedTasks } = useSelectedTasksStore();
+
+  const isSelected = selectedTasks.has(task.task_id);
+
   const totalColumns = 2 + selectedColumns.length + 1;
 
   return (
@@ -33,7 +34,7 @@ export function TaskItem({
       <div style={{ paddingLeft: `${indentLevel * 20}px` }}>
         <Checkbox
           checked={isSelected}
-          onCheckedChange={() => onToggleSelect([task.task_id])}
+          onCheckedChange={() => toggleTask(task.task_id)}
           className="h-4 w-4"
         />
       </div>

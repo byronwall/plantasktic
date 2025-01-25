@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 
 import { useTaskColumns } from "./hooks/useTaskColumns";
 import {
@@ -25,15 +26,12 @@ import { TaskActions } from "./TaskActions";
 import type { Task } from "@prisma/client";
 import type { TaskColumnDef } from "./hooks/useTaskColumns";
 
-export function TaskTable({
-  tasks,
-  selectedTasks,
-  onToggleSelect,
-}: {
+type TaskTableProps = {
   tasks: Task[];
-  selectedTasks: Set<number>;
-  onToggleSelect: (taskIds: number[]) => void;
-}) {
+};
+
+export function TaskTable({ tasks }: TaskTableProps) {
+  const { selectedTasks, toggleTask } = useSelectedTasksStore();
   const { AVAILABLE_COLUMNS } = useTaskColumns();
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.basic.columns,
@@ -64,7 +62,7 @@ export function TaskTable({
       cell: ({ row }: { row: Row<Task> }) => (
         <Checkbox
           checked={selectedTasks.has(row.original.task_id)}
-          onCheckedChange={() => onToggleSelect([row.original.task_id])}
+          onCheckedChange={() => toggleTask(row.original.task_id)}
           aria-label="Select row"
         />
       ),
