@@ -1,3 +1,14 @@
+import {
+  BarChart3,
+  GanttChart,
+  Grid2X2,
+  KanbanSquare,
+  LayoutGrid,
+  ListIcon,
+  Settings,
+  TableIcon,
+} from "lucide-react";
+
 import { ColorPalettePicker } from "~/components/ColorPalettePicker";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -31,8 +42,14 @@ export function TaskListHeader({
   totalTasks,
   onToggleSelectAll,
 }: TaskListHeaderProps) {
-  const { showCompleted, showFieldNames, setShowCompleted, setShowFieldNames } =
-    useViewSettingsStore();
+  const {
+    showCompleted,
+    showFieldNames,
+    setShowCompleted,
+    setShowFieldNames,
+    viewMode,
+    setViewMode,
+  } = useViewSettingsStore();
 
   return (
     <div className="flex h-8 w-full items-center justify-between gap-2">
@@ -79,17 +96,84 @@ export function TaskListHeader({
         )}
       </div>
       <div className="flex items-center gap-4">
-        <ColorPalettePicker />
         <div className="flex items-center gap-2">
-          <span className="text-sm">Show Field Names</span>
-          <Switch
-            checked={showFieldNames}
-            onCheckedChange={setShowFieldNames}
-          />
+          <Button
+            variant={viewMode === "summary" ? "default" : "outline"}
+            onClick={() => setViewMode("summary")}
+            size="sm"
+          >
+            <BarChart3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            onClick={() => setViewMode("list")}
+            size="sm"
+          >
+            <ListIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "outline"}
+            onClick={() => setViewMode("table")}
+            size="sm"
+          >
+            <TableIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "card" ? "default" : "outline"}
+            onClick={() => setViewMode("card")}
+            size="sm"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "kanban" ? "default" : "outline"}
+            onClick={() => setViewMode("kanban")}
+            size="sm"
+          >
+            <KanbanSquare className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "gantt" ? "default" : "outline"}
+            onClick={() => setViewMode("gantt")}
+            size="sm"
+          >
+            <GanttChart className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "matrix" ? "default" : "outline"}
+            onClick={() => setViewMode("matrix")}
+            size="sm"
+          >
+            <Grid2X2 className="h-4 w-4" />
+          </Button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm">Show Completed Tasks</span>
-          <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+          <ColorPalettePicker />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px]">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Show Field Names</span>
+                  <Switch
+                    checked={showFieldNames}
+                    onCheckedChange={setShowFieldNames}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Show Completed Tasks</span>
+                  <Switch
+                    checked={showCompleted}
+                    onCheckedChange={setShowCompleted}
+                  />
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>

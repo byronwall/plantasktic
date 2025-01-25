@@ -1,18 +1,8 @@
 "use client";
 
-import {
-  BarChart3,
-  GanttChart,
-  Grid2X2,
-  KanbanSquare,
-  LayoutGrid,
-  ListIcon,
-  TableIcon,
-} from "lucide-react";
 import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
-import { Button } from "~/components/ui/button";
 import {
   useSyncViewSettingsWithUrl,
   useUpdateUrlFromViewSettings,
@@ -38,8 +28,7 @@ export type Task = RouterOutputs["task"]["getTasks"][number];
 
 export function TaskList({ workspaceId, projectId }: TaskListProps) {
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const { viewMode, showCompleted, showFieldNames, setViewMode } =
-    useViewSettingsStore();
+  const { viewMode, showCompleted, showFieldNames } = useViewSettingsStore();
   const { searchQuery } = useSearch();
 
   // Sync view settings with URL
@@ -118,52 +107,6 @@ export function TaskList({ workspaceId, projectId }: TaskListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === "summary" ? "default" : "outline"}
-            onClick={() => setViewMode("summary")}
-          >
-            <BarChart3 className="h-4 w-4" /> Summary
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            onClick={() => setViewMode("list")}
-          >
-            <ListIcon className="h-4 w-4" /> List
-          </Button>
-          <Button
-            variant={viewMode === "table" ? "default" : "outline"}
-            onClick={() => setViewMode("table")}
-          >
-            <TableIcon className="h-4 w-4" /> Table
-          </Button>
-          <Button
-            variant={viewMode === "card" ? "default" : "outline"}
-            onClick={() => setViewMode("card")}
-          >
-            <LayoutGrid className="h-4 w-4" /> Cards
-          </Button>
-          <Button
-            variant={viewMode === "kanban" ? "default" : "outline"}
-            onClick={() => setViewMode("kanban")}
-          >
-            <KanbanSquare className="h-4 w-4" /> Kanban
-          </Button>
-          <Button
-            variant={viewMode === "gantt" ? "default" : "outline"}
-            onClick={() => setViewMode("gantt")}
-          >
-            <GanttChart className="h-4 w-4" /> Gantt
-          </Button>
-          <Button
-            variant={viewMode === "matrix" ? "default" : "outline"}
-            onClick={() => setViewMode("matrix")}
-          >
-            <Grid2X2 className="h-4 w-4" /> Matrix
-          </Button>
-        </div>
-      </div>
       <TaskListHeader
         selectedTasks={selectedTasks}
         onBulkDelete={handleBulkDelete}
