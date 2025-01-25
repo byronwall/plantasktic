@@ -1,8 +1,8 @@
 "use client";
 
-import { type Row, type Table } from "@tanstack/react-table";
+import { type Row } from "@tanstack/react-table";
 import { MoreVertical } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -31,11 +31,17 @@ type TaskTableProps = {
 };
 
 export function TaskTable({ tasks }: TaskTableProps) {
-  const { selectedTasks, toggleTask } = useSelectedTasksStore();
+  const { selectedTasks, toggleTask, toggleAllTasks, setAvailableTaskIds } =
+    useSelectedTasksStore();
   const { AVAILABLE_COLUMNS } = useTaskColumns();
   const [selectedColumns, setSelectedColumns] = useState<ColumnKey[]>([
     ...COLUMN_PRESETS.basic.columns,
   ]);
+
+  // Set available task IDs whenever tasks change
+  useEffect(() => {
+    setAvailableTaskIds(tasks.map((task) => task.task_id));
+  }, [tasks, setAvailableTaskIds]);
 
   const handleColumnToggle = (columns: ColumnKey[]) => {
     // Ensure at least one column is selected
@@ -52,10 +58,13 @@ export function TaskTable({ tasks }: TaskTableProps) {
   const columns: TaskColumnDef[] = [
     {
       id: "select",
-      header: ({ table }: { table: Table<Task> }) => (
+      header: () => (
         <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          checked={
+            tasks.length > 0 &&
+            tasks.every((task) => selectedTasks.has(task.task_id))
+          }
+          onCheckedChange={() => toggleAllTasks()}
           aria-label="Select all"
         />
       ),
