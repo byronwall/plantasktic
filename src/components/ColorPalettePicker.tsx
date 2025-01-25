@@ -1,4 +1,4 @@
-import { Palette } from "lucide-react";
+import { ChevronDown, Palette } from "lucide-react";
 
 import {
   colorPalettes,
@@ -32,8 +32,9 @@ export function ColorPalettePicker() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="h-8 w-8">
+        <Button variant="outline" size="sm">
           <Palette className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px]">
