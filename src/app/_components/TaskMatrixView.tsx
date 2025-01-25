@@ -128,15 +128,7 @@ function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
           key={task.task_id}
           className="max-w-sm text-wrap break-words text-base"
         >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              open(task);
-            }}
-            className="rounded-full hover:ring-2 hover:ring-primary"
-          >
-            <TaskAvatar title={task.title} size={32} />
-          </button>
+          <TaskAvatar title={task.title} task={task} size={24} />
         </SimpleTooltip>
       ))}
     </div>
@@ -337,7 +329,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                         open(task);
                       }}
                     >
-                      <TaskAvatar title={task.title} size={24} />
+                      <TaskAvatar title={task.title} task={task} size={24} />
                       <span>{task.title}</span>
                     </li>
                   ))}
@@ -358,7 +350,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                       open(task);
                     }}
                   >
-                    <TaskAvatar title={task.title} size={24} />
+                    <TaskAvatar title={task.title} task={task} size={24} />
                     <span>{task.title}</span>
                   </li>
                 ))}

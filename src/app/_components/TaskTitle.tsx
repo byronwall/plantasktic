@@ -6,16 +6,20 @@ import { api } from "~/trpc/react";
 import { SimpleMarkdown } from "./SimpleMarkdown";
 import { TaskAvatar } from "./TaskAvatar";
 
+import type { Task } from "./TaskList";
+
 type TaskTitleProps = {
   taskId: number;
   title: string;
   isReadOnly?: boolean;
+  task?: Task;
 };
 
 export function TaskTitle({
   taskId,
   title,
   isReadOnly = false,
+  task,
 }: TaskTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(title);
@@ -73,7 +77,30 @@ export function TaskTitle({
         />
       ) : (
         <div className="flex items-center gap-2">
-          <TaskAvatar title={title} />
+          {task ? (
+            <TaskAvatar title={title} task={task} />
+          ) : (
+            <TaskAvatar
+              title={title}
+              task={{
+                task_id: taskId,
+                title,
+                status: "open",
+                description: null,
+                comments: null,
+                category: null,
+                priority: null,
+                duration: null,
+                start_date: null,
+                due_date: null,
+                created_at: new Date(),
+                updated_at: new Date(),
+                userId: null,
+                projectId: null,
+                parentTaskId: null,
+              }}
+            />
+          )}
           <SimpleMarkdown text={title} />
         </div>
       )}

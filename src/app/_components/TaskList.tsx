@@ -13,6 +13,11 @@ import { useState } from "react";
 
 import { useSearch } from "~/components/SearchContext";
 import { Button } from "~/components/ui/button";
+import {
+  useSyncViewSettingsWithUrl,
+  useUpdateUrlFromViewSettings,
+  useViewSettingsStore,
+} from "~/stores/useViewSettingsStore";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 import { TaskCardList } from "./TaskCardList";
@@ -27,30 +32,25 @@ import { TaskTable } from "./TaskTable";
 type TaskListProps = {
   workspaceId: string | null;
   projectId: string | null;
-  initialView?: ViewMode;
 };
-
-type ViewMode =
-  | "list"
-  | "table"
-  | "kanban"
-  | "gantt"
-  | "matrix"
-  | "card"
-  | "summary";
 
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
-export function TaskList({
-  workspaceId,
-  projectId,
-  initialView = "list",
-}: TaskListProps) {
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [showFieldNames, setShowFieldNames] = useState(true);
+export function TaskList({ workspaceId, projectId }: TaskListProps) {
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+  const {
+    viewMode,
+    showCompleted,
+    showFieldNames,
+    setViewMode,
+    setShowCompleted,
+    setShowFieldNames,
+  } = useViewSettingsStore();
   const { searchQuery } = useSearch();
+
+  // Sync view settings with URL
+  useSyncViewSettingsWithUrl();
+  useUpdateUrlFromViewSettings();
 
   const { data: rawTasks } = api.task.getTasks.useQuery({
     showCompleted,
