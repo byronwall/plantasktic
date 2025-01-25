@@ -18,7 +18,6 @@ import {
   COLUMN_PRESETS,
   type ColumnKey,
   ColumnSelector,
-  type PresetKey,
 } from "./tables/ColumnSelector";
 import { GenericTable } from "./tables/GenericTable";
 import { TaskActions } from "./TaskActions";
@@ -49,10 +48,6 @@ export function TaskTable({ tasks }: TaskTableProps) {
       columns = ["title" as const];
     }
     setSelectedColumns(columns);
-  };
-
-  const handlePresetClick = (preset: PresetKey) => {
-    setSelectedColumns([...COLUMN_PRESETS[preset].columns]);
   };
 
   const columns: TaskColumnDef[] = [
@@ -113,7 +108,6 @@ export function TaskTable({ tasks }: TaskTableProps) {
           selectedColumns={selectedColumns}
           onColumnToggle={handleColumnToggle}
           availableColumns={AVAILABLE_COLUMNS}
-          onPresetClick={handlePresetClick}
         />
       </div>
       <div className="w-fit max-w-full">

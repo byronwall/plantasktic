@@ -65,16 +65,14 @@ export interface ColumnSelectorProps {
   availableColumns: { value: string; label: string }[];
   selectedColumns: ColumnKey[];
   onColumnToggle: (columns: ColumnKey[]) => void;
-  onPresetClick?: (preset: PresetKey) => void;
 }
 
 export function ColumnSelector({
   availableColumns,
   selectedColumns,
   onColumnToggle,
-  onPresetClick,
 }: ColumnSelectorProps) {
-  const presetPopover = onPresetClick && (
+  const presetPopover = (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" className="h-auto">
@@ -89,7 +87,7 @@ export function ColumnSelector({
               key={key}
               variant="ghost"
               className="justify-start"
-              onClick={() => onPresetClick(key as PresetKey)}
+              onClick={() => onColumnToggle([...preset.columns])}
             >
               {preset.label}
             </Button>
@@ -99,7 +97,7 @@ export function ColumnSelector({
     </Popover>
   );
   return (
-    <div className="flex max-w-[640px] items-stretch gap-2">
+    <div className="flex items-stretch gap-2">
       <MultipleSelector
         options={availableColumns}
         value={selectedColumns.map((col) => ({

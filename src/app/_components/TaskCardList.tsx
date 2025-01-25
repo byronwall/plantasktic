@@ -37,13 +37,12 @@ export function TaskCardList({ tasks }: TaskCardListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <ColumnSelector
-          selectedColumns={selectedColumns}
-          onColumnToggle={handleColumnToggle}
-          availableColumns={AVAILABLE_COLUMNS}
-        />
-      </div>
+      <ColumnSelector
+        selectedColumns={selectedColumns}
+        onColumnToggle={handleColumnToggle}
+        availableColumns={AVAILABLE_COLUMNS}
+      />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {tasks.map((task) => (
           <div

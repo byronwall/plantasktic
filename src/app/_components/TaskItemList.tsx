@@ -5,7 +5,6 @@ import {
   COLUMN_PRESETS,
   type ColumnKey,
   ColumnSelector,
-  type PresetKey,
 } from "./tables/ColumnSelector";
 import { TaskItem } from "./TaskItem";
 import { type Task } from "./TaskList";
@@ -79,10 +78,6 @@ export function TaskItemList({
     ...COLUMN_PRESETS.basic.columns,
   ]);
 
-  const handlePresetClick = (preset: PresetKey) => {
-    setSelectedColumns([...COLUMN_PRESETS[preset].columns]);
-  };
-
   const handleColumnToggle = (columns: ColumnKey[]) => {
     setSelectedColumns(columns);
   };
@@ -92,15 +87,13 @@ export function TaskItemList({
   const totalColumns = 2 + selectedColumns.length + 1;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end">
-        <ColumnSelector
-          availableColumns={AVAILABLE_COLUMNS}
-          selectedColumns={selectedColumns}
-          onColumnToggle={handleColumnToggle}
-          onPresetClick={handlePresetClick}
-        />
-      </div>
+    <div className="flex w-full flex-col gap-4">
+      <ColumnSelector
+        availableColumns={AVAILABLE_COLUMNS}
+        selectedColumns={selectedColumns}
+        onColumnToggle={handleColumnToggle}
+      />
+
       <div className="w-full overflow-x-auto">
         <div
           className="gap-1"
