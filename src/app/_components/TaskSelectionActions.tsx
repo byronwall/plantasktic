@@ -1,18 +1,27 @@
-import { FolderInput, Tag, Trash2 } from "lucide-react";
+import {
+  FolderInput,
+  MoreHorizontal,
+  PlusCircle,
+  Tag,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Label } from "~/components/ui/label";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Label } from "~/components/ui/label";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 import { api } from "~/trpc/react";
-
-import { ComboBox } from "./ComboBox";
-import { ProjectSelector } from "./ProjectSelector";
 
 type TaskSelectionActionsProps = {
   totalTasks: number;
@@ -25,6 +34,8 @@ export const TaskSelectionActions = ({
     useSelectedTasksStore();
 
   const { data: categories = [] } = api.task.getCategories.useQuery();
+
+  const { workspaceProjects } = useCurrentProject();
 
   const bulkDeleteTasksMutation = api.task.bulkDeleteTasks.useMutation();
   const bulkUpdateTaskCategoryMutation =
@@ -74,37 +85,72 @@ export const TaskSelectionActions = ({
       {selectedTasks.size > 0 && (
         <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-2 py-1">
           <span className="text-sm">{selectedTasks.size} selected</span>
-          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-            <Trash2 className="mr-1 h-4 w-4" />
-            Delete
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <Tag className="mr-1 h-4 w-4" />
-                Set Category
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <ComboBox
-                options={categories}
-                value=""
-                onChange={(value) => handleBulkCategoryUpdate(value ?? "")}
-                placeholder="Select category..."
-              />
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FolderInput className="mr-1 h-4 w-4" />
-                Move to Project
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <ProjectSelector onProjectSelect={handleBulkMoveToProject} />
-            </PopoverContent>
-          </Popover>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleBulkDelete}
+                className="text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Tag className="mr-2 h-4 w-4" />
+                  Set Category
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() => handleBulkCategoryUpdate("")}
+                  >
+                    <span className="mr-2">None</span>
+                  </DropdownMenuItem>
+                  {categories.map((category) => (
+                    <DropdownMenuItem
+                      key={category}
+                      onClick={() => handleBulkCategoryUpdate(category)}
+                    >
+                      <span className="mr-2">{category}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const newCategory = window.prompt("Enter new category:");
+                      if (newCategory) {
+                        void handleBulkCategoryUpdate(newCategory);
+                      }
+                    }}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Category
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FolderInput className="mr-2 h-4 w-4" />
+                  Move to Project
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {workspaceProjects.map((project) => (
+                    <DropdownMenuItem
+                      key={project.id}
+                      onClick={() => handleBulkMoveToProject(project.id)}
+                    >
+                      <span className="mr-2">{project.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </>
