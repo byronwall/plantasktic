@@ -8,7 +8,7 @@ import { AppSidebar } from "~/components/AppSidebar";
 import { CommandMenu } from "~/components/CommandMenu";
 import { TaskInput } from "~/components/TaskInput";
 import { TopNavSelectors } from "~/components/TopNavSelectors";
-import { SidebarProvider } from "~/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import { WorkspaceProjectProvider } from "~/hooks/useWorkspaceProject";
 import { auth } from "~/server/auth";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -38,6 +38,7 @@ export default async function RootLayout({
                   <main className="relative min-h-screen w-full p-1">
                     <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
                       <div className="flex items-center gap-2">
+                        <SidebarTrigger />
                         <div className="flex w-[360px] gap-2">
                           <TopNavSelectors />
                         </div>
@@ -45,7 +46,7 @@ export default async function RootLayout({
                         <TaskInput />
                       </div>
                     </div>
-                    <div className="mx-auto p-2">{children}</div>
+                    <div className="mx-auto w-full p-2">{children}</div>
                     <GlobalModals />
                     <CommandMenu />
                   </main>

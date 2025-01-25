@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function TimeBlocksPage() {
   return (
-    <div className="container mx-auto p-4">
+    <div className="mx-auto p-4">
       <WeeklyCalendar />
     </div>
   );

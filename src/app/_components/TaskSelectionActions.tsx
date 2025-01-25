@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Label } from "~/components/ui/label";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { cn } from "~/lib/utils";
 import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 import { api } from "~/trpc/react";
 
@@ -73,7 +74,11 @@ export const TaskSelectionActions = ({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={cn("flex items-center gap-2", {
+        "border p-1": selectedTasks.size > 0,
+      })}
+    >
       <div className="flex items-center gap-2">
         <Label className="flex cursor-pointer items-center gap-2">
           <Checkbox

@@ -15,7 +15,7 @@ export default async function WorkspacePage({
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="mx-auto">
       <TaskList />
     </div>
   );

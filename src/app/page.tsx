@@ -38,7 +38,7 @@ export default async function HomePage() {
 
   return (
     <HydrateClient>
-      <div className="container mx-auto flex flex-col gap-4 p-4">
+      <div className="mx-auto flex flex-col gap-4 p-4">
         <div>
           <h2 className="mb-4 text-2xl font-bold">Workspaces</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">

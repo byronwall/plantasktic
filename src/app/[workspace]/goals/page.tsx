@@ -25,7 +25,7 @@ export default function WorkspaceGoalsPage() {
   });
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="mx-auto p-4">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Goals Dashboard</h1>
         <Button onClick={() => setIsCreateOpen(true)}>Create Goal</Button>

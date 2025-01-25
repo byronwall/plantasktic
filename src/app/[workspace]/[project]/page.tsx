@@ -17,7 +17,7 @@ export default async function ProjectPage({
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="mx-auto">
       <TaskList />
     </div>
   );

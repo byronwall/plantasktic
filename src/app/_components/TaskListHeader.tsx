@@ -86,7 +86,7 @@ export function TaskListHeader({ totalTasks }: TaskListHeaderProps) {
 
   return (
     <div className="flex w-full items-center justify-between gap-2 border-b pb-2">
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(350px,1fr))] items-center justify-between gap-4">
         <div className="flex max-w-lg items-center gap-2">
           <h1
             className={cn("text-2xl font-bold", {
@@ -152,110 +152,110 @@ export function TaskListHeader({ totalTasks }: TaskListHeaderProps) {
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {viewMode !== "summary" && (
             <TaskSelectionActions totalTasks={totalTasks} />
           )}
-        </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <SimpleTooltip content="Summary View">
-              <Button
-                variant={viewMode === "summary" ? "default" : "outline"}
-                onClick={() => setViewMode("summary")}
-                size="sm"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="List View">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                onClick={() => setViewMode("list")}
-                size="sm"
-              >
-                <ListIcon className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="Table View">
-              <Button
-                variant={viewMode === "table" ? "default" : "outline"}
-                onClick={() => setViewMode("table")}
-                size="sm"
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="Card View">
-              <Button
-                variant={viewMode === "card" ? "default" : "outline"}
-                onClick={() => setViewMode("card")}
-                size="sm"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="Kanban View">
-              <Button
-                variant={viewMode === "kanban" ? "default" : "outline"}
-                onClick={() => setViewMode("kanban")}
-                size="sm"
-              >
-                <KanbanSquare className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="Gantt View">
-              <Button
-                variant={viewMode === "gantt" ? "default" : "outline"}
-                onClick={() => setViewMode("gantt")}
-                size="sm"
-              >
-                <GanttChart className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-            <SimpleTooltip content="Matrix View">
-              <Button
-                variant={viewMode === "matrix" ? "default" : "outline"}
-                onClick={() => setViewMode("matrix")}
-                size="sm"
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-            </SimpleTooltip>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ColorPalettePicker />
-
-            <Popover>
-              <SimpleTooltip content="View Settings">
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="h-4 w-4" />
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
+          <div className="flex items-center gap-4">
+            <div className="flex basis-[400px] flex-wrap items-center gap-2">
+              <SimpleTooltip content="Summary View">
+                <Button
+                  variant={viewMode === "summary" ? "default" : "outline"}
+                  onClick={() => setViewMode("summary")}
+                  size="sm"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
               </SimpleTooltip>
-              <PopoverContent className="w-[200px]">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Show Field Names</span>
-                    <Switch
-                      checked={showFieldNames}
-                      onCheckedChange={setShowFieldNames}
-                    />
+              <SimpleTooltip content="List View">
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  onClick={() => setViewMode("list")}
+                  size="sm"
+                >
+                  <ListIcon className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+              <SimpleTooltip content="Table View">
+                <Button
+                  variant={viewMode === "table" ? "default" : "outline"}
+                  onClick={() => setViewMode("table")}
+                  size="sm"
+                >
+                  <TableIcon className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+              <SimpleTooltip content="Card View">
+                <Button
+                  variant={viewMode === "card" ? "default" : "outline"}
+                  onClick={() => setViewMode("card")}
+                  size="sm"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+              <SimpleTooltip content="Kanban View">
+                <Button
+                  variant={viewMode === "kanban" ? "default" : "outline"}
+                  onClick={() => setViewMode("kanban")}
+                  size="sm"
+                >
+                  <KanbanSquare className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+              <SimpleTooltip content="Gantt View">
+                <Button
+                  variant={viewMode === "gantt" ? "default" : "outline"}
+                  onClick={() => setViewMode("gantt")}
+                  size="sm"
+                >
+                  <GanttChart className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+              <SimpleTooltip content="Matrix View">
+                <Button
+                  variant={viewMode === "matrix" ? "default" : "outline"}
+                  onClick={() => setViewMode("matrix")}
+                  size="sm"
+                >
+                  <Grid2X2 className="h-4 w-4" />
+                </Button>
+              </SimpleTooltip>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ColorPalettePicker />
+
+              <Popover>
+                <SimpleTooltip content="View Settings">
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4" />
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </SimpleTooltip>
+                <PopoverContent className="w-[200px]">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Show Field Names</span>
+                      <Switch
+                        checked={showFieldNames}
+                        onCheckedChange={setShowFieldNames}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Show Completed Tasks</span>
+                      <Switch
+                        checked={showCompleted}
+                        onCheckedChange={setShowCompleted}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Show Completed Tasks</span>
-                    <Switch
-                      checked={showCompleted}
-                      onCheckedChange={setShowCompleted}
-                    />
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
       </div>
