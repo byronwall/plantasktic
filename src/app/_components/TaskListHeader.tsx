@@ -86,8 +86,8 @@ export function TaskListHeader({ totalTasks }: TaskListHeaderProps) {
 
   return (
     <div className="flex w-full items-center justify-between gap-2 border-b pb-2">
-      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(350px,1fr))] items-center justify-between gap-4">
-        <div className="flex max-w-lg items-center gap-2">
+      <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(350px,1fr))] items-center gap-2">
+        <div className="flex max-w-lg flex-1 items-center gap-2">
           <h1
             className={cn("text-2xl font-bold", {
               "text-lg font-semibold": projectId !== null,
@@ -152,13 +152,13 @@ export function TaskListHeader({ totalTasks }: TaskListHeaderProps) {
             </>
           )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-end gap-4">
           {viewMode !== "summary" && (
             <TaskSelectionActions totalTasks={totalTasks} />
           )}
 
           <div className="flex items-center gap-4">
-            <div className="flex basis-[400px] flex-wrap items-center gap-2">
+            <div className="flex basis-[500px] flex-wrap items-center gap-2">
               <SimpleTooltip content="Summary View">
                 <Button
                   variant={viewMode === "summary" ? "default" : "outline"}
