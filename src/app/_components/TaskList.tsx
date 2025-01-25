@@ -38,14 +38,8 @@ export type Task = RouterOutputs["task"]["getTasks"][number];
 
 export function TaskList({ workspaceId, projectId }: TaskListProps) {
   const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
-  const {
-    viewMode,
-    showCompleted,
-    showFieldNames,
-    setViewMode,
-    setShowCompleted,
-    setShowFieldNames,
-  } = useViewSettingsStore();
+  const { viewMode, showCompleted, showFieldNames, setViewMode } =
+    useViewSettingsStore();
   const { searchQuery } = useSearch();
 
   // Sync view settings with URL
@@ -172,10 +166,6 @@ export function TaskList({ workspaceId, projectId }: TaskListProps) {
       </div>
       <TaskListHeader
         selectedTasks={selectedTasks}
-        showCompleted={showCompleted}
-        setShowCompleted={setShowCompleted}
-        showFieldNames={showFieldNames}
-        setShowFieldNames={setShowFieldNames}
         onBulkDelete={handleBulkDelete}
         onBulkCategoryUpdate={handleBulkCategoryUpdate}
         onBulkMoveToProject={handleBulkMoveToProject}

@@ -7,16 +7,13 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
+import { useViewSettingsStore } from "~/stores/useViewSettingsStore";
 
 import { ComboBox } from "./ComboBox";
 import { ProjectSelector } from "./ProjectSelector";
 
 type TaskListHeaderProps = {
   selectedTasks: Set<number>;
-  showCompleted: boolean;
-  setShowCompleted: (show: boolean) => void;
-  showFieldNames: boolean;
-  setShowFieldNames: (show: boolean) => void;
   onBulkDelete: () => void;
   onBulkCategoryUpdate: (category: string) => void;
   onBulkMoveToProject: (projectId: string | null) => void;
@@ -27,10 +24,6 @@ type TaskListHeaderProps = {
 
 export function TaskListHeader({
   selectedTasks,
-  showCompleted,
-  setShowCompleted,
-  showFieldNames,
-  setShowFieldNames,
   onBulkDelete,
   onBulkCategoryUpdate,
   onBulkMoveToProject,
@@ -38,6 +31,9 @@ export function TaskListHeader({
   totalTasks,
   onToggleSelectAll,
 }: TaskListHeaderProps) {
+  const { showCompleted, showFieldNames, setShowCompleted, setShowFieldNames } =
+    useViewSettingsStore();
+
   return (
     <div className="flex h-8 w-full items-center justify-between gap-2">
       <div className="flex items-center gap-4">
