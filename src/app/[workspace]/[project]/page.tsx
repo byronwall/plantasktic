@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 
 import { TaskList } from "~/app/_components/TaskList";
-import { ProjectHeader } from "~/components/ProjectHeader";
 import { getCurrentProjectServer } from "~/hooks/getCurrentProjectParams";
 
 export default async function ProjectPage({
@@ -19,11 +18,7 @@ export default async function ProjectPage({
 
   return (
     <div className="container mx-auto">
-      <ProjectHeader
-        workspaceName={workspaceObj.name}
-        projectId={projectObj.id}
-      />
-      <TaskList workspaceId={workspaceObj.id} projectId={projectObj.id} />
+      <TaskList />
     </div>
   );
 }

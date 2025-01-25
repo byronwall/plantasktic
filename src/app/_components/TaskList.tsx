@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { useSearch } from "~/components/SearchContext";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { useSelectedTasksStore } from "~/stores/useSelectedTasksStore";
 import {
   useSyncViewSettingsWithUrl,
@@ -20,19 +21,17 @@ import { TaskMatrixView } from "./TaskMatrixView";
 import { TaskSummaryView } from "./TaskSummaryView";
 import { TaskTable } from "./TaskTable";
 
-type TaskListProps = {
-  workspaceId: string | null;
-  projectId: string | null;
-};
-
 export type Task = RouterOutputs["task"]["getTasks"][number];
 
-export function TaskList({ workspaceId, projectId }: TaskListProps) {
+export function TaskList() {
   const { viewMode, showCompleted, showFieldNames } = useViewSettingsStore();
   const { searchQuery } = useSearch();
   const setAvailableTaskIds = useSelectedTasksStore(
     (state) => state.setAvailableTaskIds,
   );
+
+  const { currentWorkspaceId: workspaceId, currentProjectId: projectId } =
+    useCurrentProject();
 
   // Sync view settings with URL
   useSyncViewSettingsWithUrl();
