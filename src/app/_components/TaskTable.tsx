@@ -83,7 +83,7 @@ export function TaskTable({ tasks }: TaskTableProps) {
       cell: ({ row }: { row: Row<Task> }) => {
         return (
           <Popover>
-            <PopoverTrigger>
+            <PopoverTrigger asChild>
               <Button variant="ghost" size="icon">
                 <MoreVertical />
               </Button>
