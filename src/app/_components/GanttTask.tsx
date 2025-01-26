@@ -2,11 +2,32 @@
 
 import { differenceInDays, startOfDay } from "date-fns";
 
+import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { cn } from "~/lib/utils";
+import { useColorPaletteStore } from "~/stores/useColorPaletteStore";
 
 import { TaskAvatar } from "./TaskAvatar";
 
 import type { Task } from "@prisma/client";
+
+// Function to select a color from the current palette based on string input
+const getColorFromString = (str: string, index: number): string => {
+  const selectedColors = useColorPaletteStore.getState().selectedColors;
+
+  // Return a default color if no colors are selected
+  if (selectedColors.length === 0) {
+    return "#6366f1";
+  }
+
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Use the hash to select a color from the palette
+  const colorIndex = Math.abs(hash + index * 137) % selectedColors.length;
+  return selectedColors[colorIndex]!;
+};
 
 type GanttTaskProps = {
   task: Task;
@@ -84,22 +105,32 @@ export function GanttTask({
 
   return (
     <div
-      style={{
-        width: `${width}px`,
-        left: `${leftOffset}px`,
-      }}
+      style={
+        {
+          width: `${width}px`,
+          left: `${leftOffset}px`,
+        } as React.CSSProperties
+      }
       onMouseDown={handleMouseDown}
       className={cn(
-        "absolute flex h-full select-none items-center px-2 text-white shadow-sm",
-        isUpdating ? "cursor-wait bg-blue-400/70" : "cursor-grab bg-blue-500",
-        isEndVisible ? "rounded-r-md" : "",
-        isStartVisible ? "rounded-l-md" : "",
+        "absolute flex h-full select-none items-center border border-gray-700 bg-white p-0.5 shadow-sm",
+        isUpdating ? "cursor-wait text-gray-600" : "cursor-grab text-gray-900",
+        isStartVisible ? "rounded-l-lg" : "",
+        isEndVisible ? "rounded-r-lg" : "",
       )}
     >
       <TaskAvatar title={task.title} task={task} size={20} />
-      <div className="ml-2 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
-        {task.title}
-      </div>
+      <SimpleTooltip
+        content={task.title}
+        className="max-w-lg"
+        contentProps={{
+          align: "start",
+        }}
+      >
+        <div className="ml-2 h-full flex-1 overflow-hidden text-ellipsis whitespace-break-spaces text-wrap break-words">
+          {task.title}
+        </div>
+      </SimpleTooltip>
       {!isUpdating && (
         <>
           {isStartVisible && (
