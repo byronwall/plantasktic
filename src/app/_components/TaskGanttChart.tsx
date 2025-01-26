@@ -167,12 +167,21 @@ function GanttHeader({
   daysToShow,
   dayWidth,
   timeRange,
+  previewDates,
 }: {
   startDate: Date;
   daysToShow: number;
   dayWidth: number;
   timeRange: TimeRange;
+  previewDates?: {
+    type: "move" | "resize";
+    edge?: "left" | "right";
+    startDate?: Date;
+    endDate?: Date;
+  };
 }) {
+  console.log("previewDates", previewDates);
+
   const interval = getGridInterval(timeRange);
   const numIntervals = Math.ceil(daysToShow / interval);
 
@@ -199,6 +208,34 @@ function GanttHeader({
           </div>
         );
       })}
+
+      {/* Preview markers */}
+      {previewDates && (
+        <>
+          {previewDates.startDate &&
+            (previewDates.type === "move" || previewDates.edge === "left") && (
+              <div
+                className="absolute bottom-0 h-4 w-1 animate-pulse bg-red-500"
+                style={{
+                  left:
+                    differenceInDays(previewDates.startDate, startDate) *
+                    dayWidth,
+                }}
+              />
+            )}
+          {previewDates.endDate &&
+            (previewDates.type === "move" || previewDates.edge === "right") && (
+              <div
+                className="absolute bottom-0 h-4 w-1 animate-pulse bg-red-500"
+                style={{
+                  left:
+                    differenceInDays(previewDates.endDate, startDate) *
+                    dayWidth,
+                }}
+              />
+            )}
+        </>
+      )}
 
       {/* Sub-markers for days/weeks */}
       {timeRange !== "days" && (
@@ -282,6 +319,12 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
   const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
   const [previewState, setPreviewState] = useState<PreviewState>(null);
+  const [previewDates, setPreviewDates] = useState<{
+    type: "move" | "resize";
+    edge?: "left" | "right";
+    startDate?: Date;
+    endDate?: Date;
+  } | null>(null);
 
   const updateTask = api.task.updateTask.useMutation({
     onMutate: ({ taskId }) => {
@@ -311,11 +354,11 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         setDayWidth(80);
         break;
       case "weeks":
-        setDaysToShow(14 * 7);
+        setDaysToShow(8 * 7);
         setDayWidth(20);
         break;
       case "months":
-        setDaysToShow(14 * 30);
+        setDaysToShow(5 * 30);
         setDayWidth(8);
         break;
     }
@@ -368,6 +411,15 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           return;
         }
 
+        const newStartDate = addDays(dragState.initialTaskDate, daysMoved);
+        const newEndDate = addDays(newStartDate, task.duration ?? 1);
+
+        setPreviewDates({
+          type: "move",
+          startDate: newStartDate,
+          endDate: newEndDate,
+        });
+
         setPreviewState({
           taskId,
           updatedAt: task.updated_at,
@@ -405,6 +457,17 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         setDragState({
           ...dragState,
           currentPosition: { x: e.pageX, y: e.pageY },
+        });
+
+        const newStartDate =
+          edge === "left" ? addDays(taskStartDate, daysDelta) : taskStartDate;
+        const newEndDate = addDays(newStartDate, newDuration);
+
+        setPreviewDates({
+          type: "resize",
+          edge,
+          startDate: edge === "left" ? newStartDate : undefined,
+          endDate: newEndDate,
         });
 
         setPreviewState({
@@ -480,6 +543,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       }
     }
 
+    setPreviewDates(null);
     setDragState({ type: "idle" });
   };
 
@@ -540,16 +604,14 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
             variant={timeRange === "weeks" ? "default" : "outline"}
             size="sm"
           >
-            <Calendar className="mr-2 h-4 w-4" />
-            14 Weeks
+            <Calendar className="mr-2 h-4 w-4" />8 Weeks
           </Button>
           <Button
             onClick={() => handleTimeRangeChange("months")}
             variant={timeRange === "months" ? "default" : "outline"}
             size="sm"
           >
-            <Calendar className="mr-2 h-4 w-4" />
-            14 Months
+            <Calendar className="mr-2 h-4 w-4" />5 Months
           </Button>
         </div>
         <div className="flex items-center gap-2">
@@ -588,6 +650,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           if (updatingTaskId === null) {
             setDragState({ type: "idle" });
             setPreviewState(null);
+            setPreviewDates(null);
           }
         }}
       >
@@ -596,6 +659,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           daysToShow={daysToShow}
           dayWidth={dayWidth}
           timeRange={timeRange}
+          previewDates={previewDates ?? undefined}
         />
 
         <GanttGrid
