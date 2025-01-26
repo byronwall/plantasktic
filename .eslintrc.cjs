@@ -11,6 +11,7 @@ const config = {
     "plugin:@typescript-eslint/stylistic-type-checked",
     "plugin:import/recommended",
     "plugin:import/typescript",
+    "plugin:react-server-components/recommended",
   ],
   rules: {
     "@typescript-eslint/array-type": "off",
