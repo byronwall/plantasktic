@@ -1,4 +1,4 @@
-import { addDays, differenceInDays, format } from "date-fns";
+import { addDays, differenceInDays, format, startOfDay } from "date-fns";
 
 import { cn } from "~/lib/utils";
 
@@ -37,6 +37,13 @@ export function GanttHeader({
   const interval = getGridInterval(timeRange);
   const numIntervals = Math.ceil(daysToShow / interval);
 
+  const today = startOfDay(new Date());
+  const todayOffset = differenceInDays(today, startDate) * dayWidth;
+
+  // Only show if today is within the visible range
+  const showTodayLine =
+    todayOffset >= 0 && todayOffset <= daysToShow * dayWidth;
+
   return (
     <div className="relative h-12 border-b">
       {/* Main interval labels */}
@@ -60,6 +67,14 @@ export function GanttHeader({
           </div>
         );
       })}
+
+      {/* Today line */}
+      {showTodayLine && (
+        <div
+          className="absolute bottom-0 h-4 w-0.5 bg-blue-400/50"
+          style={{ left: todayOffset }}
+        />
+      )}
 
       {/* Preview markers */}
       {previewDates && (

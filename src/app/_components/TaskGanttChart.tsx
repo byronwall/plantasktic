@@ -2,7 +2,7 @@
 
 import { addDays, differenceInDays, startOfDay } from "date-fns";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Button } from "~/components/ui/button";
@@ -13,10 +13,12 @@ import { api } from "~/trpc/react";
 import { GanttGrid } from "./GanttGrid";
 import { GanttHeader } from "./GanttHeader";
 import { GanttTask } from "./GanttTask";
+import { GanttTaskOverflow } from "./GanttTaskOverflow";
 
 import type { Task } from "@prisma/client";
 
 export type TimeRange = "days" | "weeks" | "months";
+export type RowHeight = "small" | "medium" | "large";
 
 type DragState =
   | { type: "idle" }
@@ -45,8 +47,6 @@ type PreviewState = {
   duration?: number;
 } | null;
 
-type RowHeight = "small" | "medium" | "large";
-
 export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
   const [timeRange, setTimeRange] = useState<TimeRange>("days");
@@ -62,6 +62,15 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
     startDate?: Date;
     endDate?: Date;
   } | null>(null);
+
+  // Calculate visible date range
+  const visibleDateRange = useMemo(() => {
+    const endDate = addDays(startDate, daysToShow);
+    return {
+      start: startDate,
+      end: endDate,
+    };
+  }, [startDate, daysToShow]);
 
   const updateTask = api.task.updateTask.useMutation({
     onMutate: ({ taskId }) => {
@@ -432,9 +441,24 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           daysToShow={daysToShow}
           dayWidth={dayWidth}
           timeRange={timeRange}
+          startDate={startDate}
         >
           <div className="relative mt-4">
             {[...tasks]
+              // Filter out tasks that are completely outside the visible range
+              .filter((task) => {
+                const taskStartDate = task.start_date
+                  ? startOfDay(task.start_date)
+                  : startOfDay(new Date());
+                const taskDuration = task.duration ?? 1;
+                const taskEndDate = addDays(taskStartDate, taskDuration);
+
+                return !(
+                  taskEndDate < visibleDateRange.start ||
+                  taskStartDate > visibleDateRange.end
+                );
+              })
+              // Sort remaining tasks by start date
               .sort((a, b) => {
                 const aDate = a.start_date
                   ? startOfDay(a.start_date)
@@ -472,10 +496,18 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                       previewDuration={preview?.duration}
                       isUpdating={isUpdating}
                       size={rowHeight}
+                      visibleDateRange={visibleDateRange}
                     />
                   </div>
                 );
               })}
+            <GanttTaskOverflow
+              tasks={tasks}
+              startDate={startDate}
+              daysToShow={daysToShow}
+              dayWidth={dayWidth}
+              rowHeight={rowHeight}
+            />
           </div>
         </GanttGrid>
       </div>

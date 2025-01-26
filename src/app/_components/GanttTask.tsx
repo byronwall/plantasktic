@@ -1,6 +1,6 @@
 "use client";
 
-import { differenceInDays, startOfDay } from "date-fns";
+import { addDays, differenceInDays, startOfDay } from "date-fns";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { cn } from "~/lib/utils";
@@ -26,6 +26,10 @@ type GanttTaskProps = {
   previewDuration?: number;
   isUpdating?: boolean;
   size: "small" | "medium" | "large";
+  visibleDateRange?: {
+    start: Date;
+    end: Date;
+  };
 };
 
 export function GanttTask({
@@ -39,15 +43,19 @@ export function GanttTask({
   previewDuration,
   isUpdating,
   size,
+  visibleDateRange,
 }: GanttTaskProps) {
   const taskStartDate = task.start_date
     ? startOfDay(task.start_date)
     : startOfDay(new Date());
   const taskDuration = task.duration ?? 1;
+  const taskEndDate = addDays(taskStartDate, taskDuration);
 
-  const leftOffset =
-    Math.max(0, differenceInDays(taskStartDate, startDate)) * dayWidth +
+  const _leftOffset =
+    differenceInDays(taskStartDate, startDate) * dayWidth +
     (previewOffset ?? 0);
+
+  const leftOffset = Math.max(0, _leftOffset);
 
   const width = Math.min(
     (previewDuration ?? taskDuration) * dayWidth,
@@ -56,9 +64,16 @@ export function GanttTask({
 
   const expectedWidth = (previewDuration ?? taskDuration) * dayWidth;
 
-  // Calculate visibility states
-  const isStartVisible = leftOffset >= 0 && leftOffset < daysToShow * dayWidth;
-  const isEndVisible = expectedWidth < daysToShow * dayWidth - leftOffset;
+  // Calculate visibility states using date ranges if provided
+  const isStartVisible = visibleDateRange
+    ? taskStartDate >= visibleDateRange.start &&
+      taskStartDate <= visibleDateRange.end
+    : leftOffset >= 0 && leftOffset < daysToShow * dayWidth;
+
+  const isEndVisible = visibleDateRange
+    ? taskEndDate >= visibleDateRange.start &&
+      taskEndDate <= visibleDateRange.end
+    : expectedWidth < daysToShow * dayWidth - leftOffset;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isUpdating) {
@@ -83,9 +98,21 @@ export function GanttTask({
   };
 
   // Don't render if completely outside view
-  if (leftOffset > daysToShow * dayWidth || leftOffset + width < 0) {
+  if (visibleDateRange) {
+    const taskEndDate = addDays(taskStartDate, previewDuration ?? taskDuration);
+    if (
+      taskEndDate < visibleDateRange.start ||
+      taskStartDate > visibleDateRange.end
+    ) {
+      console.log("not rendering", task.title);
+      return null;
+    }
+  } else if (leftOffset > daysToShow * dayWidth || leftOffset + width < 0) {
+    console.log("not rendering", task.title);
     return null;
   }
+
+  console.log("rendering", task.title, leftOffset, width);
 
   return (
     <div
