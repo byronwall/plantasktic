@@ -4,30 +4,12 @@ import { differenceInDays, startOfDay } from "date-fns";
 
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { cn } from "~/lib/utils";
-import { useColorPaletteStore } from "~/stores/useColorPaletteStore";
 
 import { TaskAvatar } from "./TaskAvatar";
 
 import type { Task } from "@prisma/client";
 
 // Function to select a color from the current palette based on string input
-const getColorFromString = (str: string, index: number): string => {
-  const selectedColors = useColorPaletteStore.getState().selectedColors;
-
-  // Return a default color if no colors are selected
-  if (selectedColors.length === 0) {
-    return "#6366f1";
-  }
-
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  // Use the hash to select a color from the palette
-  const colorIndex = Math.abs(hash + index * 137) % selectedColors.length;
-  return selectedColors[colorIndex]!;
-};
 
 type GanttTaskProps = {
   task: Task;
@@ -43,6 +25,7 @@ type GanttTaskProps = {
   previewOffset?: number;
   previewDuration?: number;
   isUpdating?: boolean;
+  size: "small" | "medium" | "large";
 };
 
 export function GanttTask({
@@ -55,6 +38,7 @@ export function GanttTask({
   previewOffset,
   previewDuration,
   isUpdating,
+  size,
 }: GanttTaskProps) {
   const taskStartDate = task.start_date
     ? startOfDay(task.start_date)
@@ -127,7 +111,16 @@ export function GanttTask({
           align: "start",
         }}
       >
-        <div className="ml-2 h-full flex-1 overflow-hidden text-ellipsis whitespace-break-spaces text-wrap break-words">
+        <div
+          className={cn(
+            "ml-2 h-full flex-1 text-wrap [overflow-wrap:anywhere]",
+            {
+              "line-clamp-1": size === "small",
+              "line-clamp-2": size === "medium",
+              "line-clamp-3": size === "large",
+            },
+          )}
+        >
           {task.title}
         </div>
       </SimpleTooltip>

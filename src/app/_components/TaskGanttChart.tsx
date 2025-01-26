@@ -471,6 +471,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                       previewOffset={preview?.offset}
                       previewDuration={preview?.duration}
                       isUpdating={isUpdating}
+                      size={rowHeight}
                     />
                   </div>
                 );
