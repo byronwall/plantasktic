@@ -49,6 +49,7 @@ type GanttTaskProps = {
   onMoveStart: (taskId: number, offset: { x: number; y: number }) => void;
   previewOffset?: number;
   previewDuration?: number;
+  isUpdating?: boolean;
 };
 
 function GanttTask({
@@ -60,6 +61,7 @@ function GanttTask({
   onMoveStart,
   previewOffset,
   previewDuration,
+  isUpdating,
 }: GanttTaskProps) {
   const taskStartDate = task.start_date
     ? startOfDay(task.start_date)
@@ -75,6 +77,10 @@ function GanttTask({
   );
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isUpdating) {
+      return;
+    }
+
     e.stopPropagation();
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -98,14 +104,20 @@ function GanttTask({
         left: `${leftOffset}px`,
       }}
       onMouseDown={handleMouseDown}
-      className="absolute flex h-8 cursor-grab items-center rounded-md bg-blue-500 px-2 text-white shadow-sm"
+      className={`absolute flex h-8 items-center rounded-md px-2 text-white shadow-sm ${
+        isUpdating ? "cursor-wait bg-blue-500/70" : "cursor-grab bg-blue-500"
+      }`}
     >
       <TaskAvatar title={task.title} task={task} size={20} />
       <div className="ml-2 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
         {task.title}
       </div>
-      <div className="absolute left-0 top-0 h-full w-2 cursor-ew-resize" />
-      <div className="absolute right-0 top-0 h-full w-2 cursor-ew-resize" />
+      {!isUpdating && (
+        <>
+          <div className="absolute left-0 top-0 h-full w-2 cursor-ew-resize" />
+          <div className="absolute right-0 top-0 h-full w-2 cursor-ew-resize" />
+        </>
+      )}
     </div>
   );
 }
@@ -200,14 +212,40 @@ function GanttGrid({
   );
 }
 
+type PreviewState = {
+  taskId: number;
+  updatedAt: Date;
+  offset?: number;
+  duration?: number;
+} | null;
+
 export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
   const [timeRange, setTimeRange] = useState<TimeRange>("days");
   const [daysToShow, setDaysToShow] = useState(14);
   const [dayWidth, setDayWidth] = useState(80);
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
+  const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
+  const [previewState, setPreviewState] = useState<PreviewState>(null);
 
-  const updateTask = api.task.updateTask.useMutation();
+  const updateTask = api.task.updateTask.useMutation({
+    onMutate: ({ taskId }) => {
+      const task = tasks.find((t) => t.task_id === taskId);
+      if (task) {
+        setUpdatingTaskId(taskId);
+        // Update the preview state with the current task's updatedAt
+        setPreviewState((prev) =>
+          prev?.taskId === taskId
+            ? { ...prev, updatedAt: task.updated_at }
+            : prev,
+        );
+      }
+    },
+    onSettled: () => {
+      setUpdatingTaskId(null);
+      setPreviewState(null);
+    },
+  });
 
   const handleTimeRangeChange = (newRange: TimeRange) => {
     setTimeRange(newRange);
@@ -243,7 +281,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragState.type === "idle") {
+    if (dragState.type === "idle" || updatingTaskId !== null) {
       return;
     }
 
@@ -255,7 +293,6 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           return;
         }
 
-        // Calculate movement since last position
         const dx = e.pageX - (startOffset.x || e.pageX);
         const newMovement = totalMovement + Math.abs(dx);
 
@@ -263,6 +300,13 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           ...dragState,
           currentPosition: { x: e.pageX, y: e.pageY },
           totalMovement: newMovement,
+        });
+
+        const daysMoved = Math.round((e.pageX - startOffset.x) / dayWidth);
+        setPreviewState({
+          taskId,
+          updatedAt: task.updated_at,
+          offset: daysMoved * dayWidth,
         });
         break;
       }
@@ -273,20 +317,24 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           return;
         }
 
-        // Calculate days delta based on relative position
         const daysDelta = Math.round(
           (e.pageX - dragState.startOffset.x) / dayWidth,
         );
 
-        // Calculate new duration based on edge
         const newDuration =
           edge === "left" ? duration - daysDelta : duration + daysDelta;
 
-        // Only update state if duration is valid
         if (newDuration >= 1) {
           setDragState({
             ...dragState,
             currentPosition: { x: e.pageX, y: e.pageY },
+          });
+
+          setPreviewState({
+            taskId,
+            updatedAt: task.updated_at,
+            offset: edge === "left" ? daysDelta * dayWidth : 0,
+            duration: newDuration,
           });
         }
         break;
@@ -295,7 +343,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   };
 
   const handleMouseUp = () => {
-    if (dragState.type === "idle") {
+    if (dragState.type === "idle" || updatingTaskId !== null) {
       return;
     }
 
@@ -307,13 +355,12 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
 
     switch (dragState.type) {
       case "move": {
-        const MOVEMENT_THRESHOLD = 5; // pixels
+        const MOVEMENT_THRESHOLD = 5;
 
         if (dragState.totalMovement < MOVEMENT_THRESHOLD) {
           break;
         }
 
-        // Calculate days moved based on total mouse movement
         const daysMoved = Math.round(
           (dragState.currentPosition.x - dragState.startOffset.x) / dayWidth,
         );
@@ -339,7 +386,6 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           (currentPosition.x - dragState.startOffset.x) / dayWidth,
         );
 
-        // Calculate new values based on edge
         const newDuration =
           edge === "left" ? duration - daysDelta : duration + daysDelta;
         const newStartDate =
@@ -454,7 +500,12 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         style={{ width: `${daysToShow * dayWidth}px` }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => setDragState({ type: "idle" })}
+        onMouseLeave={() => {
+          if (updatingTaskId === null) {
+            setDragState({ type: "idle" });
+            setPreviewState(null);
+          }
+        }}
       >
         <GanttHeader
           startDate={startDate}
@@ -470,35 +521,13 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         >
           <div className="relative mt-4">
             {tasks.map((task) => {
-              let previewOffset =
-                dragState.type !== "idle" && dragState.taskId === task.task_id
-                  ? Math.round(
-                      (dragState.currentPosition.x - dragState.startOffset.x) /
-                        dayWidth,
-                    ) * dayWidth
-                  : undefined;
+              const isUpdating = updatingTaskId === task.task_id;
+              const preview =
+                previewState?.taskId === task.task_id &&
+                previewState.updatedAt.getTime() === task.updated_at.getTime()
+                  ? previewState
+                  : null;
 
-              if (dragState.type === "resize") {
-                if (dragState.edge === "right") {
-                  previewOffset = 0;
-                }
-              }
-
-              const previewDuration =
-                dragState.type === "resize" && dragState.taskId === task.task_id
-                  ? dragState.duration +
-                    (dragState.edge === "left"
-                      ? -Math.round(
-                          (dragState.currentPosition.x -
-                            dragState.startOffset.x) /
-                            dayWidth,
-                        )
-                      : Math.round(
-                          (dragState.currentPosition.x -
-                            dragState.startOffset.x) /
-                            dayWidth,
-                        ))
-                  : undefined;
               return (
                 <div key={task.task_id} className="relative mb-2 h-8">
                   <GanttTask
@@ -508,8 +537,9 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                     dayWidth={dayWidth}
                     onResizeStart={handleResizeStart}
                     onMoveStart={handleMoveStart}
-                    previewOffset={previewOffset}
-                    previewDuration={previewDuration}
+                    previewOffset={preview?.offset}
+                    previewDuration={preview?.duration}
+                    isUpdating={isUpdating}
                   />
                 </div>
               );
