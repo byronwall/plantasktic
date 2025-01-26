@@ -8,6 +8,7 @@ import {
 } from "date-fns";
 import { useState } from "react";
 
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 import { TaskAvatar } from "./TaskAvatar";
@@ -71,10 +72,17 @@ function GanttTask({
   const leftOffset =
     Math.max(0, differenceInDays(taskStartDate, startDate)) * dayWidth +
     (previewOffset ?? 0);
+
   const width = Math.min(
     (previewDuration ?? taskDuration) * dayWidth,
     daysToShow * dayWidth - leftOffset,
   );
+
+  const expectedWidth = (previewDuration ?? taskDuration) * dayWidth;
+
+  // Calculate visibility states
+  const isStartVisible = leftOffset >= 0 && leftOffset < daysToShow * dayWidth;
+  const isEndVisible = expectedWidth < daysToShow * dayWidth - leftOffset;
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isUpdating) {
@@ -87,15 +95,21 @@ function GanttTask({
     const offsetX = e.pageX;
     const localOffsetX = offsetX - rect.left;
 
-    // Check if clicking on resize handles
-    if (localOffsetX < 8) {
+    // Check if clicking on resize handles - only allow if that edge is visible
+    if (localOffsetX < 8 && isStartVisible) {
       onResizeStart(task.task_id, "left", { x: e.pageX, y: e.pageY });
-    } else if (localOffsetX > rect.width - 8) {
+    } else if (localOffsetX > rect.width - 8 && isEndVisible) {
       onResizeStart(task.task_id, "right", { x: e.pageX, y: e.pageY });
     } else {
+      // Always allow moving, even if not fully visible
       onMoveStart(task.task_id, { x: offsetX, y: 0 });
     }
   };
+
+  // Don't render if completely outside view
+  if (leftOffset > daysToShow * dayWidth || leftOffset + width < 0) {
+    return null;
+  }
 
   return (
     <div
@@ -104,9 +118,12 @@ function GanttTask({
         left: `${leftOffset}px`,
       }}
       onMouseDown={handleMouseDown}
-      className={`absolute flex h-8 select-none items-center rounded-md px-2 text-white shadow-sm ${
-        isUpdating ? "cursor-wait bg-blue-500/70" : "cursor-grab bg-blue-500"
-      }`}
+      className={cn(
+        "absolute flex h-8 select-none items-center px-2 text-white shadow-sm",
+        isUpdating ? "cursor-wait bg-blue-400/70" : "cursor-grab bg-blue-500",
+        isEndVisible ? "rounded-r-md" : "",
+        isStartVisible ? "rounded-l-md" : "",
+      )}
     >
       <TaskAvatar title={task.title} task={task} size={20} />
       <div className="ml-2 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -114,8 +131,12 @@ function GanttTask({
       </div>
       {!isUpdating && (
         <>
-          <div className="absolute left-0 top-0 h-full w-2 cursor-ew-resize" />
-          <div className="absolute right-0 top-0 h-full w-2 cursor-ew-resize" />
+          {isStartVisible && (
+            <div className="absolute left-0 top-0 h-full w-2 cursor-ew-resize" />
+          )}
+          {isEndVisible && (
+            <div className="absolute right-0 top-0 h-full w-2 cursor-ew-resize" />
+          )}
         </>
       )}
     </div>
@@ -303,15 +324,25 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         });
 
         const daysMoved = Math.round((e.pageX - startOffset.x) / dayWidth);
+        const newOffset = daysMoved * dayWidth;
+
+        // Prevent dragging too far left
+        if (
+          newOffset <
+          -differenceInDays(task.start_date ?? new Date(), startDate) * dayWidth
+        ) {
+          return;
+        }
+
         setPreviewState({
           taskId,
           updatedAt: task.updated_at,
-          offset: daysMoved * dayWidth,
+          offset: newOffset,
         });
         break;
       }
       case "resize": {
-        const { taskId, edge, duration } = dragState;
+        const { taskId, edge, duration, startDate: taskStartDate } = dragState;
         const task = tasks.find((t) => t.task_id === taskId);
         if (!task) {
           return;
@@ -324,19 +355,30 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         const newDuration =
           edge === "left" ? duration - daysDelta : duration + daysDelta;
 
-        if (newDuration >= 1) {
-          setDragState({
-            ...dragState,
-            currentPosition: { x: e.pageX, y: e.pageY },
-          });
-
-          setPreviewState({
-            taskId,
-            updatedAt: task.updated_at,
-            offset: edge === "left" ? daysDelta * dayWidth : 0,
-            duration: newDuration,
-          });
+        // Prevent invalid resizing operations
+        if (newDuration < 1) {
+          return;
         }
+
+        // For left edge, prevent resizing beyond view start
+        if (edge === "left") {
+          const taskOffset = differenceInDays(taskStartDate, startDate);
+          if (taskOffset + daysDelta < 0) {
+            return;
+          }
+        }
+
+        setDragState({
+          ...dragState,
+          currentPosition: { x: e.pageX, y: e.pageY },
+        });
+
+        setPreviewState({
+          taskId,
+          updatedAt: task.updated_at,
+          offset: edge === "left" ? daysDelta * dayWidth : 0,
+          duration: newDuration,
+        });
         break;
       }
     }
