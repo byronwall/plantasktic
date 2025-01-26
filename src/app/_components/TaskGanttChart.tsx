@@ -104,7 +104,7 @@ function GanttTask({
         left: `${leftOffset}px`,
       }}
       onMouseDown={handleMouseDown}
-      className={`absolute flex h-8 items-center rounded-md px-2 text-white shadow-sm ${
+      className={`absolute flex h-8 select-none items-center rounded-md px-2 text-white shadow-sm ${
         isUpdating ? "cursor-wait bg-blue-500/70" : "cursor-grab bg-blue-500"
       }`}
     >
@@ -520,30 +520,40 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           timeRange={timeRange}
         >
           <div className="relative mt-4">
-            {tasks.map((task) => {
-              const isUpdating = updatingTaskId === task.task_id;
-              const preview =
-                previewState?.taskId === task.task_id &&
-                previewState.updatedAt.getTime() === task.updated_at.getTime()
-                  ? previewState
-                  : null;
+            {[...tasks]
+              .sort((a, b) => {
+                const aDate = a.start_date
+                  ? startOfDay(a.start_date)
+                  : startOfDay(new Date());
+                const bDate = b.start_date
+                  ? startOfDay(b.start_date)
+                  : startOfDay(new Date());
+                return aDate.getTime() - bDate.getTime();
+              })
+              .map((task) => {
+                const isUpdating = updatingTaskId === task.task_id;
+                const preview =
+                  previewState?.taskId === task.task_id &&
+                  previewState.updatedAt.getTime() === task.updated_at.getTime()
+                    ? previewState
+                    : null;
 
-              return (
-                <div key={task.task_id} className="relative mb-2 h-8">
-                  <GanttTask
-                    task={task}
-                    startDate={startDate}
-                    daysToShow={daysToShow}
-                    dayWidth={dayWidth}
-                    onResizeStart={handleResizeStart}
-                    onMoveStart={handleMoveStart}
-                    previewOffset={preview?.offset}
-                    previewDuration={preview?.duration}
-                    isUpdating={isUpdating}
-                  />
-                </div>
-              );
-            })}
+                return (
+                  <div key={task.task_id} className="relative mb-2 h-8">
+                    <GanttTask
+                      task={task}
+                      startDate={startDate}
+                      daysToShow={daysToShow}
+                      dayWidth={dayWidth}
+                      onResizeStart={handleResizeStart}
+                      onMoveStart={handleMoveStart}
+                      previewOffset={preview?.offset}
+                      previewDuration={preview?.duration}
+                      isUpdating={isUpdating}
+                    />
+                  </div>
+                );
+              })}
           </div>
         </GanttGrid>
       </div>
