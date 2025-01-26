@@ -6,8 +6,12 @@ import {
   isSameDay,
   startOfDay,
 } from "date-fns";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
+import { SimpleTooltip } from "~/components/SimpleTooltip";
+import { Button } from "~/components/ui/button";
+import { DateInput } from "~/components/ui/date-input";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -491,50 +495,58 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
 
   return (
     <div className="flex flex-col gap-4 overflow-x-auto">
-      <div className="flex items-center gap-4 p-2">
-        <button
-          onClick={() => handleTimeRangeChange("days")}
-          className={`rounded-md px-3 py-1 ${
-            timeRange === "days"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
-        >
-          14 Days
-        </button>
-        <button
-          onClick={() => handleTimeRangeChange("weeks")}
-          className={`rounded-md px-3 py-1 ${
-            timeRange === "weeks"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
-        >
-          14 Weeks
-        </button>
-        <button
-          onClick={() => handleTimeRangeChange("months")}
-          className={`rounded-md px-3 py-1 ${
-            timeRange === "months"
-              ? "bg-blue-500 text-white"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
-        >
-          14 Months
-        </button>
+      <div className="flex items-center gap-2 p-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={handlePanLeft}
-            className="rounded-md bg-gray-100 px-3 py-1 hover:bg-gray-200"
+          <Button
+            onClick={() => handleTimeRangeChange("days")}
+            variant={timeRange === "days" ? "default" : "outline"}
+            size="sm"
           >
-            ← Pan Left
-          </button>
-          <button
-            onClick={handlePanRight}
-            className="rounded-md bg-gray-100 px-3 py-1 hover:bg-gray-200"
+            <Calendar className="mr-2 h-4 w-4" />
+            14 Days
+          </Button>
+          <Button
+            onClick={() => handleTimeRangeChange("weeks")}
+            variant={timeRange === "weeks" ? "default" : "outline"}
+            size="sm"
           >
-            Pan Right →
-          </button>
+            <Calendar className="mr-2 h-4 w-4" />
+            14 Weeks
+          </Button>
+          <Button
+            onClick={() => handleTimeRangeChange("months")}
+            variant={timeRange === "months" ? "default" : "outline"}
+            size="sm"
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            14 Months
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <SimpleTooltip content="Pan Left">
+            <Button
+              onClick={handlePanLeft}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </SimpleTooltip>
+          <DateInput
+            value={startDate}
+            onChange={(date) => setStartDate(date ?? new Date())}
+          />
+          <SimpleTooltip content="Pan Right">
+            <Button
+              onClick={handlePanRight}
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </SimpleTooltip>
         </div>
       </div>
       <div
