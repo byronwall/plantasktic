@@ -1,11 +1,4 @@
-import {
-  addDays,
-  differenceInDays,
-  format,
-  isFirstDayOfMonth,
-  isSameDay,
-  startOfDay,
-} from "date-fns";
+import { addDays, differenceInDays, format, startOfDay } from "date-fns";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
@@ -152,9 +145,9 @@ function getDateFormat(timeRange: TimeRange, date: Date): string {
     case "days":
       return "MMM d";
     case "weeks":
-      return isSameDay(date, startOfDay(date)) ? "MMM d" : "";
+      return "MMM d";
     case "months":
-      return isFirstDayOfMonth(date) ? "MMM yyyy" : "";
+      return "MMM yyyy";
   }
 }
 
@@ -165,7 +158,7 @@ function getGridInterval(timeRange: TimeRange): number {
     case "weeks":
       return 7;
     case "months":
-      return 7;
+      return 30;
   }
 }
 
@@ -184,7 +177,8 @@ function GanttHeader({
   const numIntervals = Math.ceil(daysToShow / interval);
 
   return (
-    <div className="relative h-8 border-b">
+    <div className="relative h-12 border-b">
+      {/* Main interval labels */}
       {Array.from({ length: numIntervals }).map((_, index) => {
         const date = addDays(startDate, index * interval);
         const dateFormat = getDateFormat(timeRange, date);
@@ -205,6 +199,42 @@ function GanttHeader({
           </div>
         );
       })}
+
+      {/* Sub-markers for days/weeks */}
+      {timeRange !== "days" && (
+        <div className="absolute bottom-0 h-4 w-full">
+          {Array.from({ length: daysToShow }).map((_, index) => {
+            const date = addDays(startDate, index);
+            const isWeekStart = timeRange === "months" && date.getDay() === 0;
+            const shouldShowMarker = timeRange === "weeks" || isWeekStart;
+
+            if (!shouldShowMarker) {
+              return null;
+            }
+
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "absolute bottom-0 border-r",
+                  timeRange === "weeks"
+                    ? "h-2 border-gray-300"
+                    : "h-3 border-gray-400",
+                )}
+                style={{
+                  left: index * dayWidth,
+                }}
+              >
+                {timeRange === "weeks" && (
+                  <div className="absolute -top-3 -translate-x-1/2 text-[10px] text-gray-500">
+                    {format(date, "d")}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
