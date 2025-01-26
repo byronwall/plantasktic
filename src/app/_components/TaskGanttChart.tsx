@@ -23,7 +23,6 @@ type DragState =
       taskId: number;
       startOffset: { x: number; y: number };
       currentPosition: { x: number; y: number };
-      startPosition: { x: number; y: number };
       initialTaskDate: Date;
       totalMovement: number;
     }
@@ -34,6 +33,7 @@ type DragState =
       startDate: Date;
       duration: number;
       currentPosition: { x: number; y: number };
+      startOffset: { x: number; y: number };
     };
 
 type GanttTaskProps = {
@@ -41,7 +41,11 @@ type GanttTaskProps = {
   startDate: Date;
   daysToShow: number;
   dayWidth: number;
-  onResizeStart: (taskId: number, edge: "left" | "right") => void;
+  onResizeStart: (
+    taskId: number,
+    edge: "left" | "right",
+    offset: { x: number; y: number },
+  ) => void;
   onMoveStart: (taskId: number, offset: { x: number; y: number }) => void;
   previewOffset?: number;
   previewDuration?: number;
@@ -57,11 +61,6 @@ function GanttTask({
   previewOffset,
   previewDuration,
 }: GanttTaskProps) {
-  console.log("task preview", {
-    previewOffset,
-    previewDuration,
-  });
-
   const taskStartDate = task.start_date
     ? startOfDay(task.start_date)
     : startOfDay(new Date());
@@ -82,17 +81,11 @@ function GanttTask({
     const offsetX = e.pageX;
     const localOffsetX = offsetX - rect.left;
 
-    console.log("Mouse Down Event:", {
-      taskId: task.task_id,
-      offsetX,
-      rectWidth: rect.width,
-    });
-
     // Check if clicking on resize handles
     if (localOffsetX < 8) {
-      onResizeStart(task.task_id, "left");
+      onResizeStart(task.task_id, "left", { x: e.pageX, y: e.pageY });
     } else if (localOffsetX > rect.width - 8) {
-      onResizeStart(task.task_id, "right");
+      onResizeStart(task.task_id, "right", { x: e.pageX, y: e.pageY });
     } else {
       onMoveStart(task.task_id, { x: offsetX, y: 0 });
     }
@@ -236,19 +229,15 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   };
 
   const handlePanLeft = () => {
-    console.log("Panning left from", startDate);
     setStartDate((prev) => {
       const newDate = addDays(prev, -daysToShow);
-      console.log("New start date:", newDate);
       return newDate;
     });
   };
 
   const handlePanRight = () => {
-    console.log("Panning right from", startDate);
     setStartDate((prev) => {
       const newDate = addDays(prev, daysToShow);
-      console.log("New start date:", newDate);
       return newDate;
     });
   };
@@ -258,24 +247,11 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       return;
     }
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.pageX - rect.left;
-
-    console.log("Mouse Move Event:", {
-      type: dragState.type,
-      taskId: dragState.taskId,
-      pageX: e.pageX,
-      pageY: e.pageY,
-      relativeX: x,
-      rectLeft: rect.left,
-    });
-
     switch (dragState.type) {
       case "move": {
         const { taskId, totalMovement, startOffset } = dragState;
         const task = tasks.find((t) => t.task_id === taskId);
         if (!task) {
-          console.log("Move: Task not found", { taskId });
           return;
         }
 
@@ -283,77 +259,35 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
         const dx = e.pageX - (startOffset.x || e.pageX);
         const newMovement = totalMovement + Math.abs(dx);
 
-        // Calculate days moved based on mouse movement
-        const daysMoved = Math.round(dx / dayWidth);
-
-        console.log("Move Calculations:", {
-          dx,
-          newMovement,
-          daysMoved,
-          dayWidth,
-          taskTitle: task.title,
-        });
-
         setDragState({
           ...dragState,
           currentPosition: { x: e.pageX, y: e.pageY },
-          startPosition: { x: e.pageX, y: e.pageY },
           totalMovement: newMovement,
         });
         break;
       }
       case "resize": {
-        const { taskId, edge, startDate: taskStartDate, duration } = dragState;
+        const { taskId, edge, duration } = dragState;
         const task = tasks.find((t) => t.task_id === taskId);
         if (!task) {
-          console.log("Resize: Task not found", { taskId });
           return;
         }
 
-        const daysDelta = Math.round(x / dayWidth);
+        // Calculate days delta based on relative position
+        const daysDelta = Math.round(
+          (e.pageX - dragState.startOffset.x) / dayWidth,
+        );
 
-        console.log("Resize State:", {
-          edge,
-          taskId,
-          daysDelta,
-          currentDuration: duration,
-          taskTitle: task.title,
-        });
+        // Calculate new duration based on edge
+        const newDuration =
+          edge === "left" ? duration - daysDelta : duration + daysDelta;
 
-        if (edge === "left") {
-          const newStartDate = addDays(taskStartDate, daysDelta);
-          const newDuration = duration - daysDelta;
-          console.log("Resize Left:", {
-            newStartDate,
-            newDuration,
-            originalStartDate: taskStartDate,
-            daysDelta,
+        // Only update state if duration is valid
+        if (newDuration >= 1) {
+          setDragState({
+            ...dragState,
+            currentPosition: { x: e.pageX, y: e.pageY },
           });
-
-          if (newDuration >= 1) {
-            setDragState({
-              ...dragState,
-              currentPosition: { x: e.pageX, y: e.pageY },
-            });
-          } else {
-            console.log("Resize Left: Invalid duration", { newDuration });
-          }
-        } else {
-          const newDuration = duration + daysDelta;
-          console.log("Resize Right:", {
-            newDuration,
-            originalDuration: duration,
-            daysDelta,
-          });
-
-          if (newDuration >= 1) {
-            setDragState({
-              ...dragState,
-              currentPosition: { x: e.pageX, y: e.pageY },
-            });
-          } else {
-            console.log("Resize Right: Invalid duration", { newDuration });
-          }
         }
         break;
       }
@@ -365,15 +299,8 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       return;
     }
 
-    console.log("Mouse Up Event:", {
-      type: dragState.type,
-      taskId: dragState.taskId,
-      finalPosition: dragState.currentPosition,
-    });
-
     const task = tasks.find((t) => t.task_id === dragState.taskId);
     if (!task) {
-      console.log("Mouse Up: Task not found", { taskId: dragState.taskId });
       setDragState({ type: "idle" });
       return;
     }
@@ -382,15 +309,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       case "move": {
         const MOVEMENT_THRESHOLD = 5; // pixels
 
-        console.log("Move End State:", {
-          totalMovement: dragState.totalMovement,
-          threshold: MOVEMENT_THRESHOLD,
-          currentPosition: dragState.currentPosition,
-          startPosition: dragState.startPosition,
-        });
-
         if (dragState.totalMovement < MOVEMENT_THRESHOLD) {
-          console.log("Move: Below threshold - treating as click");
           break;
         }
 
@@ -399,14 +318,6 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           (dragState.currentPosition.x - dragState.startOffset.x) / dayWidth,
         );
         const newStartDate = addDays(dragState.initialTaskDate, daysMoved);
-
-        console.log("Move Final Update:", {
-          taskId: task.task_id,
-          taskTitle: task.title,
-          daysMoved,
-          oldStartDate: task.start_date,
-          newStartDate,
-        });
 
         updateTask.mutate({
           taskId: task.task_id,
@@ -423,57 +334,25 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           startDate: taskStartDate,
           duration,
         } = dragState;
-        const daysDelta = Math.round(currentPosition.x / dayWidth);
 
-        console.log("Resize End State:", {
-          edge,
-          daysDelta,
-          taskStartDate,
-          duration,
-          currentPosition,
-        });
+        const daysDelta = Math.round(
+          (currentPosition.x - dragState.startOffset.x) / dayWidth,
+        );
 
-        if (edge === "left") {
-          const newStartDate = addDays(taskStartDate, daysDelta);
-          const newDuration = duration - daysDelta;
-          console.log("Resize Left Final:", {
-            newStartDate,
-            newDuration,
-            taskId: task.task_id,
-            taskTitle: task.title,
+        // Calculate new values based on edge
+        const newDuration =
+          edge === "left" ? duration - daysDelta : duration + daysDelta;
+        const newStartDate =
+          edge === "left" ? addDays(taskStartDate, daysDelta) : taskStartDate;
+
+        if (newDuration >= 1) {
+          updateTask.mutate({
+            taskId: dragState.taskId,
+            data: {
+              ...(edge === "left" && { start_date: newStartDate }),
+              duration: newDuration,
+            },
           });
-
-          if (newDuration >= 1) {
-            updateTask.mutate({
-              taskId: task.task_id,
-              data: {
-                start_date: newStartDate,
-                duration: newDuration,
-              },
-            });
-          } else {
-            console.log("Resize Left: Final duration invalid", { newDuration });
-          }
-        } else {
-          const newDuration = duration + daysDelta;
-          console.log("Resize Right Final:", {
-            newDuration,
-            taskId: task.task_id,
-            taskTitle: task.title,
-          });
-
-          if (newDuration >= 1) {
-            updateTask.mutate({
-              taskId: task.task_id,
-              data: {
-                duration: newDuration,
-              },
-            });
-          } else {
-            console.log("Resize Right: Final duration invalid", {
-              newDuration,
-            });
-          }
         }
         break;
       }
@@ -491,37 +370,25 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       return;
     }
 
-    console.log("Move Start:", {
-      taskId,
-      offset,
-      task: task.title,
-    });
-
     setDragState({
       type: "move",
       taskId,
       startOffset: offset,
       currentPosition: offset,
-      startPosition: offset,
       initialTaskDate: task.start_date ?? new Date(),
       totalMovement: 0,
     });
   };
 
-  const handleResizeStart = (taskId: number, edge: "left" | "right") => {
+  const handleResizeStart = (
+    taskId: number,
+    edge: "left" | "right",
+    offset: { x: number; y: number },
+  ) => {
     const task = tasks.find((t) => t.task_id === taskId);
     if (!task) {
-      console.log("Resize Start: Task not found", { taskId });
       return;
     }
-
-    console.log("Resize Start:", {
-      taskId,
-      edge,
-      taskTitle: task.title,
-      startDate: task.start_date,
-      duration: task.duration,
-    });
 
     setDragState({
       type: "resize",
@@ -529,7 +396,8 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
       edge,
       startDate: task.start_date ?? new Date(),
       duration: task.duration ?? 1,
-      currentPosition: { x: 0, y: 0 },
+      currentPosition: offset,
+      startOffset: offset,
     });
   };
 
@@ -601,37 +469,51 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           timeRange={timeRange}
         >
           <div className="relative mt-4">
-            {tasks.map((task) => (
-              <div key={task.task_id} className="relative mb-2 h-8">
-                <GanttTask
-                  task={task}
-                  startDate={startDate}
-                  daysToShow={daysToShow}
-                  dayWidth={dayWidth}
-                  onResizeStart={handleResizeStart}
-                  onMoveStart={handleMoveStart}
-                  previewOffset={
-                    dragState.type !== "idle" &&
-                    dragState.taskId === task.task_id
-                      ? Math.round(
+            {tasks.map((task) => {
+              let previewOffset =
+                dragState.type !== "idle" && dragState.taskId === task.task_id
+                  ? Math.round(
+                      (dragState.currentPosition.x - dragState.startOffset.x) /
+                        dayWidth,
+                    ) * dayWidth
+                  : undefined;
+
+              if (dragState.type === "resize") {
+                if (dragState.edge === "right") {
+                  previewOffset = 0;
+                }
+              }
+
+              const previewDuration =
+                dragState.type === "resize" && dragState.taskId === task.task_id
+                  ? dragState.duration +
+                    (dragState.edge === "left"
+                      ? -Math.round(
                           (dragState.currentPosition.x -
-                            (dragState.type === "move"
-                              ? dragState.startOffset.x
-                              : 0)) /
+                            dragState.startOffset.x) /
                             dayWidth,
-                        ) * dayWidth
-                      : undefined
-                  }
-                  previewDuration={
-                    dragState.type === "resize" &&
-                    dragState.taskId === task.task_id
-                      ? dragState.duration +
-                        Math.round(dragState.currentPosition.x / dayWidth)
-                      : undefined
-                  }
-                />
-              </div>
-            ))}
+                        )
+                      : Math.round(
+                          (dragState.currentPosition.x -
+                            dragState.startOffset.x) /
+                            dayWidth,
+                        ))
+                  : undefined;
+              return (
+                <div key={task.task_id} className="relative mb-2 h-8">
+                  <GanttTask
+                    task={task}
+                    startDate={startDate}
+                    daysToShow={daysToShow}
+                    dayWidth={dayWidth}
+                    onResizeStart={handleResizeStart}
+                    onMoveStart={handleMoveStart}
+                    previewOffset={previewOffset}
+                    previewDuration={previewDuration}
+                  />
+                </div>
+              );
+            })}
           </div>
         </GanttGrid>
       </div>
