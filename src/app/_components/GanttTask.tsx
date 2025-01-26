@@ -8,6 +8,22 @@ import { TaskAvatar } from "./TaskAvatar";
 
 import type { Task } from "@prisma/client";
 
+type GanttTaskProps = {
+  task: Task;
+  startDate: Date;
+  daysToShow: number;
+  dayWidth: number;
+  onResizeStart: (
+    taskId: number,
+    edge: "left" | "right",
+    offset: { x: number; y: number },
+  ) => void;
+  onMoveStart: (taskId: number, offset: { x: number; y: number }) => void;
+  previewOffset?: number;
+  previewDuration?: number;
+  isUpdating?: boolean;
+};
+
 export function GanttTask({
   task,
   startDate,
@@ -74,7 +90,7 @@ export function GanttTask({
       }}
       onMouseDown={handleMouseDown}
       className={cn(
-        "absolute flex h-8 select-none items-center px-2 text-white shadow-sm",
+        "absolute flex h-full select-none items-center px-2 text-white shadow-sm",
         isUpdating ? "cursor-wait bg-blue-400/70" : "cursor-grab bg-blue-500",
         isEndVisible ? "rounded-r-md" : "",
         isStartVisible ? "rounded-l-md" : "",
@@ -97,18 +113,3 @@ export function GanttTask({
     </div>
   );
 }
-export type GanttTaskProps = {
-  task: Task;
-  startDate: Date;
-  daysToShow: number;
-  dayWidth: number;
-  onResizeStart: (
-    taskId: number,
-    edge: "left" | "right",
-    offset: { x: number; y: number },
-  ) => void;
-  onMoveStart: (taskId: number, offset: { x: number; y: number }) => void;
-  previewOffset?: number;
-  previewDuration?: number;
-  isUpdating?: boolean;
-};

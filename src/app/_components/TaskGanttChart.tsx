@@ -7,6 +7,7 @@ import { useState } from "react";
 import { SimpleTooltip } from "~/components/SimpleTooltip";
 import { Button } from "~/components/ui/button";
 import { DateInput } from "~/components/ui/date-input";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 import { GanttGrid } from "./GanttGrid";
@@ -44,11 +45,14 @@ type PreviewState = {
   duration?: number;
 } | null;
 
+type RowHeight = "small" | "medium" | "large";
+
 export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   const [startDate, setStartDate] = useState(() => startOfDay(new Date()));
   const [timeRange, setTimeRange] = useState<TimeRange>("days");
   const [daysToShow, setDaysToShow] = useState(14);
   const [dayWidth, setDayWidth] = useState(80);
+  const [rowHeight, setRowHeight] = useState<RowHeight>("small");
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
   const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
   const [previewState, setPreviewState] = useState<PreviewState>(null);
@@ -347,6 +351,35 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
             <Calendar className="mr-2 h-4 w-4" />5 Months
           </Button>
         </div>
+        <div className="flex items-center gap-2 rounded-md border p-1">
+          <SimpleTooltip content="Small Row Height">
+            <Button
+              onClick={() => setRowHeight("small")}
+              variant={rowHeight === "small" ? "default" : "outline"}
+              size="sm"
+            >
+              S
+            </Button>
+          </SimpleTooltip>
+          <SimpleTooltip content="Medium Row Height">
+            <Button
+              onClick={() => setRowHeight("medium")}
+              variant={rowHeight === "medium" ? "default" : "outline"}
+              size="sm"
+            >
+              M
+            </Button>
+          </SimpleTooltip>
+          <SimpleTooltip content="Large Row Height">
+            <Button
+              onClick={() => setRowHeight("large")}
+              variant={rowHeight === "large" ? "default" : "outline"}
+              size="sm"
+            >
+              L
+            </Button>
+          </SimpleTooltip>
+        </div>
         <div className="flex items-center gap-2">
           <SimpleTooltip content="Pan Left">
             <Button
@@ -420,7 +453,14 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                     : null;
 
                 return (
-                  <div key={task.task_id} className="relative mb-2 h-8">
+                  <div
+                    key={task.task_id}
+                    className={cn("relative mb-2", {
+                      "h-8": rowHeight === "small",
+                      "h-12": rowHeight === "medium",
+                      "h-24": rowHeight === "large",
+                    })}
+                  >
                     <GanttTask
                       task={task}
                       startDate={startDate}
