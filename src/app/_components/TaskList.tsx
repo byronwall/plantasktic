@@ -57,6 +57,7 @@ export function TaskList() {
   return (
     <div className="flex flex-col gap-4">
       <TaskListHeader totalTasks={tasks.length} />
+
       {viewMode === "list" ? (
         <TaskItemList tasks={tasks} showFieldNames={showFieldNames} />
       ) : viewMode === "table" ? (

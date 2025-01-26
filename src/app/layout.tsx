@@ -33,9 +33,9 @@ export default async function RootLayout({
           <SessionProvider>
             {session ? (
               <WorkspaceProjectProvider>
-                <SidebarProvider>
+                <SidebarProvider className="max-w-[100vw]">
                   <AppSidebar />
-                  <main className="relative min-h-screen w-full p-1">
+                  <main className="relative min-h-screen min-w-0 flex-1 p-1">
                     <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
                       <div className="flex items-center gap-2">
                         <SidebarTrigger />
@@ -46,7 +46,7 @@ export default async function RootLayout({
                         <TaskInput />
                       </div>
                     </div>
-                    <div className="mx-auto w-full p-2">{children}</div>
+                    <div className="mx-auto p-2">{children}</div>
                     <GlobalModals />
                     <CommandMenu />
                   </main>
