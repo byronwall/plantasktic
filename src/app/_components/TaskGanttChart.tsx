@@ -14,6 +14,7 @@ import { GanttGrid } from "./GanttGrid";
 import { GanttHeader } from "./GanttHeader";
 import { GanttTask } from "./GanttTask";
 import { GanttTaskOverflow } from "./GanttTaskOverflow";
+import { UnscheduledTasks } from "./UnscheduledTasks";
 
 import type { Task } from "@prisma/client";
 
@@ -62,6 +63,10 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
     startDate?: Date;
     endDate?: Date;
   } | null>(null);
+
+  // Separate tasks into scheduled and unscheduled
+  const scheduledTasks = tasks.filter((task) => task.start_date !== null);
+  const unscheduledTasks = tasks.filter((task) => task.start_date === null);
 
   // Calculate visible date range
   const visibleDateRange = useMemo(() => {
@@ -334,7 +339,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 overflow-x-auto">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 p-2">
         <div className="flex items-center gap-2">
           <Button
@@ -444,8 +449,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           startDate={startDate}
         >
           <div className="relative mt-4">
-            {[...tasks]
-              // Filter out tasks that are completely outside the visible range
+            {[...scheduledTasks]
               .filter((task) => {
                 const taskStartDate = task.start_date
                   ? startOfDay(task.start_date)
@@ -458,7 +462,6 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                   taskStartDate > visibleDateRange.end
                 );
               })
-              // Sort remaining tasks by start date
               .sort((a, b) => {
                 const aDate = a.start_date
                   ? startOfDay(a.start_date)
@@ -502,7 +505,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
                 );
               })}
             <GanttTaskOverflow
-              tasks={tasks}
+              tasks={scheduledTasks}
               startDate={startDate}
               daysToShow={daysToShow}
               dayWidth={dayWidth}
@@ -512,6 +515,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
           </div>
         </GanttGrid>
       </div>
+      <UnscheduledTasks tasks={unscheduledTasks} />
     </div>
   );
 }
