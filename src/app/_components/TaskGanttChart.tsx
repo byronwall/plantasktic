@@ -507,6 +507,7 @@ export function TaskGanttChart({ tasks }: { tasks: Task[] }) {
               daysToShow={daysToShow}
               dayWidth={dayWidth}
               rowHeight={rowHeight}
+              onNavigateToTask={(date) => setStartDate(date)}
             />
           </div>
         </GanttGrid>
