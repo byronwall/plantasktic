@@ -1,8 +1,7 @@
 "use client";
 
-import { Check } from "lucide-react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -33,7 +32,12 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>
             <Link href="/" className="flex items-center text-xl font-bold">
-              <Check className="mr-2 h-4 w-4" /> Task Manager
+              <img
+                src="/favicon-32x32.png"
+                alt="Logo"
+                className="mr-2 h-4 w-4"
+              />
+              Plan•Task•Tic
             </Link>
           </SidebarGroupLabel>
         </SidebarGroup>

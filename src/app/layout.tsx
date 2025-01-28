@@ -16,9 +16,9 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { GlobalModals } from "./_components/GlobalModals";
 
 export const metadata: Metadata = {
-  title: "Task Manager",
-  description: "A simple task management application",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  title: "Plan•Task•Tic",
+  description: "Your intelligent task planning and management solution",
+  icons: [{ rel: "icon", url: "/favicon-32x32.png" }],
 };
 
 export default async function RootLayout({
@@ -28,6 +28,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={GeistSans.variable}>
+      <head>
+        <script
+          defer
+          src="https://as8ws0w.apps.byroni.us/script.js"
+          data-website-id="43c38633-4fdf-4c81-aff6-3b993a3d7f3e"
+        ></script>
+      </head>
       <body className="min-h-screen bg-background">
         <TRPCReactProvider>
           <SessionProvider>
