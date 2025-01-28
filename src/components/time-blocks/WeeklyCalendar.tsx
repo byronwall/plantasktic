@@ -88,6 +88,7 @@ export function WeeklyCalendar({
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startHour, setStartHour] = useState(defaultStartHour);
   const [endHour, setEndHour] = useState(defaultEndHour);
+  const [snapMinutes, setSnapMinutes] = useState(15);
   const weekStart = startOfWeek(selectedDate);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -212,13 +213,20 @@ export function WeeklyCalendar({
     const adjustedX = relativeX;
     const day = Math.max(0, Math.min(6, Math.floor(adjustedX / dayWidth)));
     const rawHour = relativeY / hourHeight + startHour;
-    const hour = Math.max(startHour, Math.min(endHour, Math.floor(rawHour)));
-    const minute = Math.floor((rawHour % 1) * 60);
+    const hour = Math.floor(rawHour);
+
+    // Calculate minutes and snap to interval
+    const rawMinutes = (rawHour % 1) * 60;
+    const snappedMinutes = Math.round(rawMinutes / snapMinutes) * snapMinutes;
+
+    // Adjust hour if minutes wrap around
+    const finalHour = snappedMinutes === 60 ? hour + 1 : hour;
+    const finalMinutes = snappedMinutes === 60 ? 0 : snappedMinutes;
 
     return {
       day,
-      hour,
-      minute: Math.max(0, Math.min(59, minute)),
+      hour: Math.max(startHour, Math.min(endHour, finalHour)),
+      minute: Math.max(0, Math.min(59, finalMinutes)),
     };
   };
 
@@ -684,6 +692,23 @@ export function WeeklyCalendar({
                 max={23}
                 value={endHour}
                 onChange={(e) => setEndHour(Number(e.target.value))}
+                className="w-20"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Snap (min)</span>
+              <Input
+                type="number"
+                min={1}
+                max={60}
+                value={snapMinutes}
+                onChange={(e) => {
+                  const value = Math.max(
+                    1,
+                    Math.min(60, Number(e.target.value)),
+                  );
+                  setSnapMinutes(value);
+                }}
                 className="w-20"
               />
             </div>
