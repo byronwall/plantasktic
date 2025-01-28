@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
+import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -31,14 +32,26 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            <Link href="/" className="flex items-center text-xl font-bold">
-              <img
-                src="/favicon-32x32.png"
-                alt="Logo"
-                className="mr-2 h-4 w-4"
-              />
-              Plan•Task•Tic
-            </Link>
+            <div className="mt-2 flex flex-col items-center">
+              <Link href="/" className="flex items-center text-xl font-bold">
+                <Image
+                  src="/favicon-32x32.png"
+                  alt="Logo"
+                  className="mr-2 h-4 w-4"
+                  width={16}
+                  height={16}
+                />
+                Plan•Task•Tic
+              </Link>
+              <Link
+                href="https://byroni.us"
+                className="mt-1 block text-xs text-muted-foreground hover:text-foreground"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                created by Byron Wall
+              </Link>
+            </div>
           </SidebarGroupLabel>
         </SidebarGroup>
 
