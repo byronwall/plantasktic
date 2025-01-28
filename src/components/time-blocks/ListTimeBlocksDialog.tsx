@@ -2,6 +2,7 @@
 
 import { endOfDay, format, startOfDay } from "date-fns";
 import { Edit, Trash } from "lucide-react";
+import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -14,22 +15,26 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
+import { TimeBlockDialog } from "./TimeBlockDialog";
+
 import type { TimeBlock } from "./WeeklyCalendar";
 
 interface ListTimeBlocksDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onEditBlock: (block: TimeBlock) => void;
   weekStart: Date;
 }
 
 export function ListTimeBlocksDialog({
   isOpen,
   onClose,
-  onEditBlock,
   weekStart,
 }: ListTimeBlocksDialogProps) {
   const { currentWorkspaceId } = useCurrentProject();
+  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
+    null,
+  );
+
   const { data: timeBlocks } = api.timeBlock.getWeeklyBlocks.useQuery({
     weekStart,
     workspaceId: currentWorkspaceId,
@@ -103,94 +108,108 @@ export function ListTimeBlocksDialog({
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[80vh] max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Time Blocks</DialogTitle>
-        </DialogHeader>
-        <ScrollArea className="h-[60vh] pr-4">
-          <div className="space-y-6">
-            {weekDates.map((date, index) => {
-              const blocks = groupedBlocks?.[index] ?? [];
-              if (blocks.length === 0) {
-                return null;
-              }
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-h-[80vh] max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Time Blocks</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6">
+              {weekDates.map((date) => {
+                const blocks = groupedBlocks?.[date.getDay()] ?? [];
+                if (blocks.length === 0) {
+                  return null;
+                }
 
-              return (
-                <div key={date.toISOString()} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">
-                      {format(date, "EEEE, MMMM d")}
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleBulkDelete(date)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {blocks.map((block) => (
-                      <div
-                        key={block.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                        style={{
-                          borderLeftColor: block.color || "#3b82f6",
-                          borderLeftWidth: "4px",
-                        }}
+                return (
+                  <div key={date.toISOString()} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">
+                        {format(date, "EEEE, MMMM d")}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleBulkDelete(date)}
                       >
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {block.title || "Untitled Block"}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {format(new Date(block.startTime), "h:mm a")} -{" "}
-                            {format(new Date(block.endTime), "h:mm a")}
-                          </div>
-                          {block.taskAssignments?.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              <div className="text-xs font-medium text-muted-foreground">
-                                Linked Tasks:
-                              </div>
-                              <ul className="space-y-1">
-                                {block.taskAssignments.map((assignment) => (
-                                  <li
-                                    key={assignment.task.task_id}
-                                    className="text-sm text-muted-foreground"
-                                  >
-                                    • {assignment.task.title}
-                                  </li>
-                                ))}
-                              </ul>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {blocks.map((block) => (
+                        <div
+                          key={block.id}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                          style={{
+                            borderLeftColor: block.color || "#3b82f6",
+                            borderLeftWidth: "4px",
+                          }}
+                        >
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {block.title || "Untitled Block"}
                             </div>
-                          )}
+                            <div className="text-sm text-muted-foreground">
+                              {format(new Date(block.startTime), "h:mm a")} -{" "}
+                              {format(new Date(block.endTime), "h:mm a")}
+                            </div>
+                            {block.taskAssignments?.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Linked Tasks:
+                                </div>
+                                <ul className="space-y-1">
+                                  {block.taskAssignments.map((assignment) => (
+                                    <li
+                                      key={assignment.task.task_id}
+                                      className="text-sm text-muted-foreground"
+                                    >
+                                      • {assignment.task.title}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setSelectedTimeBlock(block)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(block.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onEditBlock(block)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(block.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {selectedTimeBlock && (
+        <TimeBlockDialog
+          isOpen={!!selectedTimeBlock}
+          onClose={() => setSelectedTimeBlock(null)}
+          workspaceId={currentWorkspaceId || ""}
+          startTime={selectedTimeBlock.startTime}
+          endTime={selectedTimeBlock.endTime}
+          dayOfWeek={new Date(selectedTimeBlock.startTime).getDay()}
+          timeBlockId={selectedTimeBlock.id}
+        />
+      )}
+    </>
   );
 }

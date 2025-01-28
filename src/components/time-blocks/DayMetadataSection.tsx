@@ -140,7 +140,7 @@ export function DayMetadataSection({
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium">{format(date, "EEE MMM d")}</div>
         <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger>
+          <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="h-6 w-6">
               <Plus className="h-4 w-4" />
             </Button>

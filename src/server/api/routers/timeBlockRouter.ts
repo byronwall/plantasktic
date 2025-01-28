@@ -281,4 +281,12 @@ export const timeBlockRouter = createTRPCRouter({
         },
       });
     }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.timeBlock.findUnique({
+        where: { id: input.id },
+      });
+    }),
 });

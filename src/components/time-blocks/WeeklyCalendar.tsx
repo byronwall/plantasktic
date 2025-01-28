@@ -2,7 +2,7 @@
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 import { Link, List, Plus, Table } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
@@ -10,12 +10,11 @@ import { cn } from "~/lib/utils";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
-import { CreateTimeBlockDialog } from "./CreateTimeBlockDialog";
 import { DayMetadataSection } from "./DayMetadataSection";
-import { EditTimeBlockDialog } from "./EditTimeBlockDialog";
 import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
 import { MetadataSummaryDialog } from "./MetadataSummaryDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
+import { TimeBlockDialog } from "./TimeBlockDialog";
 
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
@@ -261,10 +260,15 @@ export function WeeklyCalendar({
   );
 
   // Fetch time blocks for the current week
-  const { data: timeBlocks } = api.timeBlock.getWeeklyBlocks.useQuery({
-    workspaceId: currentWorkspaceId,
-    weekStart,
-  });
+  const { data: timeBlocks = [] } = api.timeBlock.getWeeklyBlocks.useQuery(
+    {
+      weekStart,
+      workspaceId: currentWorkspaceId,
+    },
+    {
+      enabled: !!currentWorkspaceId,
+    },
+  );
 
   // Add mutation
   const updateTimeBlockMutation = api.timeBlock.update.useMutation();
@@ -740,6 +744,17 @@ export function WeeklyCalendar({
     );
   };
 
+  // Add proper typing for the overlapping groups calculation
+  const overlappingGroups = useMemo(() => {
+    return Object.values(getOverlappingGroups(timeBlocks) || {})
+      .flat()
+      .map((block) => ({
+        ...block,
+        startTime: new Date(block.startTime),
+        endTime: new Date(block.endTime),
+      }));
+  }, [timeBlocks]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -859,18 +874,16 @@ export function WeeklyCalendar({
                 </div>
               ))}
               {timeBlocks &&
-                getOverlappingGroups(timeBlocks)
-                  .flat()
-                  .map((block) => (
-                    <TimeBlock
-                      key={block.id}
-                      block={block}
-                      onDragStart={handleBlockDragStart}
-                      onResizeStart={handleBlockResizeStart}
-                      startHour={startHour}
-                      gridRef={gridRef}
-                    />
-                  ))}
+                overlappingGroups.map((block) => (
+                  <TimeBlock
+                    key={block.id}
+                    block={block}
+                    onDragStart={handleBlockDragStart}
+                    onResizeStart={handleBlockResizeStart}
+                    startHour={startHour}
+                    gridRef={gridRef}
+                  />
+                ))}
               {renderDragPreview()}
             </div>
           </div>
@@ -902,7 +915,7 @@ export function WeeklyCalendar({
       </div>
 
       {currentWorkspaceId && newBlockStart && newBlockEnd && (
-        <CreateTimeBlockDialog
+        <TimeBlockDialog
           isOpen={isDialogOpen}
           onClose={() => {
             setIsDialogOpen(false);
@@ -918,17 +931,20 @@ export function WeeklyCalendar({
       )}
 
       {selectedTimeBlock && (
-        <EditTimeBlockDialog
+        <TimeBlockDialog
           isOpen={!!selectedTimeBlock}
           onClose={() => setSelectedTimeBlock(null)}
-          timeBlock={selectedTimeBlock}
+          workspaceId={currentWorkspaceId || ""}
+          startTime={selectedTimeBlock.startTime}
+          endTime={selectedTimeBlock.endTime}
+          dayOfWeek={new Date(selectedTimeBlock.startTime).getDay()}
+          timeBlockId={selectedTimeBlock.id}
         />
       )}
 
       <ListTimeBlocksDialog
         isOpen={isListDialogOpen}
         onClose={() => setIsListDialogOpen(false)}
-        onEditBlock={setSelectedTimeBlock}
         weekStart={weekStart}
       />
 
