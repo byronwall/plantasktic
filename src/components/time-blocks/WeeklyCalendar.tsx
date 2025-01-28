@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
-import { List, Plus, Table } from "lucide-react";
+import { List, Table } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -658,11 +658,6 @@ export function WeeklyCalendar({
           <Button variant="outline" onClick={() => setIsListDialogOpen(true)}>
             <List className="mr-2 h-4 w-4" />
             List View
-          </Button>
-
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Block
           </Button>
         </div>
       </div>
