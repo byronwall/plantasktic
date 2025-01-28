@@ -2,7 +2,7 @@
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
 import { List, Table } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
@@ -53,6 +53,7 @@ type DragState =
       currentPosition: { x: number; y: number };
       startPosition: { x: number; y: number };
       totalMovement: number;
+      shouldDuplicate: boolean;
     }
   | {
       type: "resize_block_top";
@@ -120,6 +121,9 @@ export function WeeklyCalendar({
   // Add mutation
   const updateTimeBlockMutation = api.timeBlock.update.useMutation();
 
+  // Add mutation for duplication
+  const duplicateTimeBlockMutation = api.timeBlock.duplicate.useMutation();
+
   // Add metadata query
   const { data: weekMetadata = [] as DayMetadataItem[] } =
     api.timeBlock.getWeekMetadata.useQuery(
@@ -131,6 +135,34 @@ export function WeeklyCalendar({
         enabled: !!currentWorkspaceId,
       },
     );
+
+  // Track control key state
+  const [isControlPressed, setIsControlPressed] = useState(false);
+
+  // Add keyboard event handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dragState.type !== "idle") {
+        setDragState({ type: "idle" });
+      } else if (e.key === "Control" || e.key === "Meta") {
+        setIsControlPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Control" || e.key === "Meta") {
+        setIsControlPressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [dragState.type]);
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
@@ -235,12 +267,10 @@ export function WeeklyCalendar({
           return;
         }
 
-        // Calculate movement since last position
         const dx = e.pageX - (startPosition.x || e.pageX);
         const dy = e.pageY - (startPosition.y || e.pageY);
         const newMovement = totalMovement + Math.sqrt(dx * dx + dy * dy);
 
-        // Get the time from the adjusted position
         const adjustedTime = getTimeFromGridPosition(
           e.pageX,
           e.pageY - startOffset.y,
@@ -257,6 +287,7 @@ export function WeeklyCalendar({
           },
           startPosition: { x: e.pageX, y: e.pageY },
           totalMovement: newMovement,
+          shouldDuplicate: isControlPressed,
         });
         break;
       }
@@ -308,7 +339,8 @@ export function WeeklyCalendar({
         break;
       }
       case "drag_existing": {
-        const { blockId, currentPosition, totalMovement } = dragState;
+        const { blockId, currentPosition, totalMovement, shouldDuplicate } =
+          dragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           return null;
@@ -348,14 +380,23 @@ export function WeeklyCalendar({
           newEnd.setHours(endHour);
         }
 
-        updateTimeBlockMutation.mutate({
-          id: blockId,
-          startTime: newStart,
-          endTime: newEnd,
-          dayOfWeek: time.day,
-          ...(block.title && { title: block.title }),
-          ...(block.color && { color: block.color }),
-        });
+        if (shouldDuplicate) {
+          duplicateTimeBlockMutation.mutate({
+            id: blockId,
+            startTime: newStart,
+            endTime: newEnd,
+            dayOfWeek: time.day,
+          });
+        } else {
+          updateTimeBlockMutation.mutate({
+            id: blockId,
+            startTime: newStart,
+            endTime: newEnd,
+            dayOfWeek: time.day,
+            ...(block.title && { title: block.title }),
+            ...(block.color && { color: block.color }),
+          });
+        }
         break;
       }
       case "resize_block_top":
@@ -423,6 +464,7 @@ export function WeeklyCalendar({
       currentPosition: { x: 0, y: 0 },
       startPosition: { x: 0, y: 0 },
       totalMovement: 0,
+      shouldDuplicate: isControlPressed,
     });
   };
 
@@ -699,6 +741,12 @@ export function WeeklyCalendar({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={() => setDragState({ type: "idle" })}
+              style={{
+                cursor:
+                  dragState.type === "drag_existing" && isControlPressed
+                    ? "copy"
+                    : undefined,
+              }}
             >
               {DAYS.map((dayOffset) => (
                 <div

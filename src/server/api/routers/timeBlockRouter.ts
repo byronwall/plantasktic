@@ -289,4 +289,49 @@ export const timeBlockRouter = createTRPCRouter({
         where: { id: input.id },
       });
     }),
+
+  duplicate: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        startTime: z.date(),
+        endTime: z.date(),
+        dayOfWeek: z.number().min(0).max(6),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existingBlock = await ctx.db.timeBlock.findUnique({
+        where: { id: input.id },
+        include: {
+          taskAssignments: true,
+        },
+      });
+
+      if (!existingBlock) {
+        throw new Error("Time block not found");
+      }
+
+      const { id, startTime, endTime, dayOfWeek, ...rest } = existingBlock;
+
+      return ctx.db.timeBlock.create({
+        data: {
+          ...rest,
+          startTime: input.startTime,
+          endTime: input.endTime,
+          dayOfWeek: input.dayOfWeek,
+          taskAssignments: {
+            create: existingBlock.taskAssignments.map((assignment) => ({
+              taskId: assignment.taskId,
+            })),
+          },
+        },
+        include: {
+          taskAssignments: {
+            include: {
+              task: true,
+            },
+          },
+        },
+      });
+    }),
 });
