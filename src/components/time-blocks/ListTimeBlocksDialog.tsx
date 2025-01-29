@@ -206,7 +206,6 @@ export function ListTimeBlocksDialog({
           workspaceId={currentWorkspaceId || ""}
           startTime={selectedTimeBlock.startTime}
           endTime={selectedTimeBlock.endTime}
-          dayOfWeek={new Date(selectedTimeBlock.startTime).getDay()}
           timeBlockId={selectedTimeBlock.id}
         />
       )}

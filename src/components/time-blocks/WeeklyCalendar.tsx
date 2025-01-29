@@ -494,14 +494,12 @@ export function WeeklyCalendar({
             id: blockId,
             startTime: newStart,
             endTime: newEnd,
-            dayOfWeek: time.day,
           });
         } else {
           updateTimeBlockMutation.mutate({
             id: blockId,
             startTime: newStart,
             endTime: newEnd,
-            dayOfWeek: time.day,
             ...(block.title && { title: block.title }),
             ...(block.color && { color: block.color }),
           });
@@ -553,7 +551,6 @@ export function WeeklyCalendar({
           id: blockId,
           startTime: newStart,
           endTime: newEnd,
-          dayOfWeek: dayOffset,
         });
         break;
       }
@@ -638,7 +635,6 @@ export function WeeklyCalendar({
           endTime: endDate,
           title: "New Block",
           workspaceId: currentWorkspaceId || "",
-          dayOfWeek: startTime.day,
           color: null,
           created_at: now,
           updated_at: now,
@@ -688,7 +684,6 @@ export function WeeklyCalendar({
           ...block,
           startTime: previewStart,
           endTime: previewEnd,
-          dayOfWeek: time.day,
         };
         break;
       }
@@ -867,7 +862,7 @@ export function WeeklyCalendar({
   const correctOverlappingBlocks = (dayOffset: number) => {
     const date = addDays(weekStart, dayOffset);
     const dayBlocks = timeBlocks?.filter(
-      (block) => block.dayOfWeek === dayOffset,
+      (block) => block.startTime.getDay() === dayOffset,
     );
 
     if (!dayBlocks?.length) {
@@ -919,7 +914,7 @@ export function WeeklyCalendar({
   // Function to check if a day has overlapping blocks
   const hasDayOverlaps = (dayOffset: number) => {
     const dayBlocks = timeBlocks?.filter(
-      (block) => block.dayOfWeek === dayOffset,
+      (block) => block.startTime.getDay() === dayOffset,
     );
 
     if (!dayBlocks?.length) {
@@ -1245,7 +1240,6 @@ export function WeeklyCalendar({
           workspaceId={currentWorkspaceId}
           startTime={newBlockStart}
           endTime={newBlockEnd}
-          dayOfWeek={newBlockDay}
         />
       )}
 
@@ -1256,7 +1250,6 @@ export function WeeklyCalendar({
           workspaceId={currentWorkspaceId || ""}
           startTime={selectedTimeBlock.startTime}
           endTime={selectedTimeBlock.endTime}
-          dayOfWeek={new Date(selectedTimeBlock.startTime).getDay()}
           timeBlockId={selectedTimeBlock.id}
         />
       )}

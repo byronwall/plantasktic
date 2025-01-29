@@ -66,7 +66,6 @@ export const timeBlockRouter = createTRPCRouter({
         title: z.string().optional(),
         startTime: z.date(),
         endTime: z.date(),
-        dayOfWeek: z.number().min(0).max(6),
         color: z.string().optional(),
       }),
     )
@@ -85,7 +84,6 @@ export const timeBlockRouter = createTRPCRouter({
         title: z.string().optional(),
         startTime: z.date(),
         endTime: z.date(),
-        dayOfWeek: z.number().min(0).max(6),
         color: z.string().optional(),
       }),
     )
@@ -296,7 +294,6 @@ export const timeBlockRouter = createTRPCRouter({
         id: z.string(),
         startTime: z.date(),
         endTime: z.date(),
-        dayOfWeek: z.number().min(0).max(6),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -311,14 +308,13 @@ export const timeBlockRouter = createTRPCRouter({
         throw new Error("Time block not found");
       }
 
-      const { id, startTime, endTime, dayOfWeek, ...rest } = existingBlock;
+      const { id, startTime, endTime, ...rest } = existingBlock;
 
       return ctx.db.timeBlock.create({
         data: {
           ...rest,
           startTime: input.startTime,
           endTime: input.endTime,
-          dayOfWeek: input.dayOfWeek,
           taskAssignments: {
             create: existingBlock.taskAssignments.map((assignment) => ({
               taskId: assignment.taskId,

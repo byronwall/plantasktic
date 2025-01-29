@@ -30,7 +30,6 @@ interface TimeBlockDialogProps {
   workspaceId: string;
   startTime: Date;
   endTime: Date;
-  dayOfWeek: number;
   timeBlockId?: string;
   position?: { x: number; y: number };
 }
@@ -46,7 +45,6 @@ export function TimeBlockDialog({
   workspaceId,
   startTime,
   endTime,
-  dayOfWeek,
   timeBlockId,
   position,
 }: TimeBlockDialogProps) {
@@ -119,7 +117,6 @@ export function TimeBlockDialog({
         title: title || "Untitled Block",
         startTime: finalStartTime,
         endTime: finalEndTime,
-        dayOfWeek: finalStartTime.getDay(),
         color,
       });
     } else {
@@ -129,7 +126,6 @@ export function TimeBlockDialog({
         title: title || "Untitled Block",
         startTime: finalStartTime,
         endTime: finalEndTime,
-        dayOfWeek,
         color,
       });
 

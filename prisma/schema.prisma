@@ -215,11 +215,13 @@ model GoalComment {
 }
 
 model TimeBlock {
-    id         String   @id @default(cuid())
-    title      String?
-    startTime  DateTime
-    endTime    DateTime
-    dayOfWeek  Int // 0-6 for Sunday-Saturday
+    id String @id @default(cuid())
+
+    title String?
+
+    startTime DateTime
+    endTime   DateTime
+
     color      String? // For visual customization
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
