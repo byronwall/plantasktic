@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
-import { List, Table } from "lucide-react";
+import { List, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -862,6 +862,91 @@ export function WeeklyCalendar({
     setEndHour(Math.min(23, blockStartHour + 1));
   };
 
+  const bulkUpdateMutation = api.timeBlock.bulkUpdate.useMutation();
+
+  const correctOverlappingBlocks = (dayOffset: number) => {
+    const date = addDays(weekStart, dayOffset);
+    const dayBlocks = timeBlocks?.filter(
+      (block) => block.dayOfWeek === dayOffset,
+    );
+
+    if (!dayBlocks?.length) {
+      return;
+    }
+
+    // Sort blocks by start time
+    const sortedBlocks = [...dayBlocks].sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+
+    const updates: { id: string; startTime: Date; endTime: Date }[] = [];
+
+    // Iterate through blocks and adjust times
+    sortedBlocks.forEach((block, index) => {
+      if (index === 0) {
+        // Keep first block as is
+        updates.push({
+          id: block.id,
+          startTime: new Date(block.startTime),
+          endTime: new Date(block.endTime),
+        });
+        return;
+      }
+
+      const previousBlock = updates[index - 1];
+      if (!previousBlock) {
+        return;
+      }
+
+      const blockDuration =
+        new Date(block.endTime).getTime() - new Date(block.startTime).getTime();
+
+      // Set new start time to previous block's end time
+      const newStartTime = new Date(previousBlock.endTime);
+      const newEndTime = new Date(newStartTime.getTime() + blockDuration);
+
+      updates.push({
+        id: block.id,
+        startTime: newStartTime,
+        endTime: newEndTime,
+      });
+    });
+
+    bulkUpdateMutation.mutate(updates);
+  };
+
+  // Function to check if a day has overlapping blocks
+  const hasDayOverlaps = (dayOffset: number) => {
+    const dayBlocks = timeBlocks?.filter(
+      (block) => block.dayOfWeek === dayOffset,
+    );
+
+    if (!dayBlocks?.length) {
+      return false;
+    }
+
+    const sortedBlocks = [...dayBlocks].sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+
+    for (let i = 1; i < sortedBlocks.length; i++) {
+      const currentBlock = sortedBlocks[i];
+      const previousBlock = sortedBlocks[i - 1];
+
+      if (!currentBlock || !previousBlock) {
+        continue;
+      }
+
+      if (new Date(currentBlock.startTime) < new Date(previousBlock.endTime)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -949,9 +1034,22 @@ export function WeeklyCalendar({
               return (
                 <div
                   key={dayOffset}
-                  className={`p-2 text-center font-medium ${index < DAYS.length - 1 ? "border-r" : ""}`}
+                  className={`flex items-center justify-between p-2 ${index < DAYS.length - 1 ? "border-r" : ""}`}
                 >
-                  {format(date, "EEE MMM d")}
+                  <span className="font-medium">
+                    {format(date, "EEE MMM d")}
+                  </span>
+                  {hasDayOverlaps(dayOffset) && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => correctOverlappingBlocks(dayOffset)}
+                      title="Fix overlapping blocks"
+                    >
+                      <Wand2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               );
             })}

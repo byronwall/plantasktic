@@ -334,4 +334,29 @@ export const timeBlockRouter = createTRPCRouter({
         },
       });
     }),
+
+  bulkUpdate: protectedProcedure
+    .input(
+      z.array(
+        z.object({
+          id: z.string(),
+          startTime: z.date(),
+          endTime: z.date(),
+        }),
+      ),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Use a transaction to ensure all updates succeed or none do
+      return ctx.db.$transaction(
+        input.map((update) =>
+          ctx.db.timeBlock.update({
+            where: { id: update.id },
+            data: {
+              startTime: update.startTime,
+              endTime: update.endTime,
+            },
+          }),
+        ),
+      );
+    }),
 });
