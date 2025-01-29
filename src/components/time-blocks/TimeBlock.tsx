@@ -116,7 +116,7 @@ export function TimeBlock({
         </>
       )}
       <div className="flex items-center gap-2">
-        <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+        <span className="flex-1 text-wrap">
           {block.title || "Untitled Block"}
         </span>
         {block.taskAssignments?.length > 0 && (
