@@ -1,5 +1,6 @@
 "use client";
 import { Link } from "lucide-react";
+import { type RefObject, useMemo } from "react";
 
 import { cn } from "~/lib/utils";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
@@ -17,7 +18,9 @@ export type TimeBlockProps = {
   ) => void;
   isPreview?: boolean;
   startHour: number;
-  gridRef: React.RefObject<HTMLDivElement>;
+  gridRef: RefObject<HTMLDivElement>;
+  isClipped?: boolean;
+  topOffset?: number;
 };
 
 export function TimeBlock({
@@ -27,60 +30,71 @@ export function TimeBlock({
   isPreview = false,
   startHour,
   gridRef,
+  isClipped = false,
+  topOffset = 0,
 }: TimeBlockProps) {
   const openEditDialog = useEditTaskStore((state) => state.open);
   const blockStart = new Date(block.startTime);
   const blockEnd = new Date(block.endTime);
 
-  const dayOffset = blockStart.getDay();
-  const startHourOffset = blockStart.getHours() - startHour;
-  const startMinuteOffset = blockStart.getMinutes() / 60;
-  const duration =
-    (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
+  const style = useMemo(() => {
+    if (!gridRef.current) {
+      return {};
+    }
 
-  const baseWidth = 100 / 7;
-  const width =
-    block.totalOverlaps && block.totalOverlaps > 1
-      ? baseWidth / Math.min(block.totalOverlaps, 3)
-      : baseWidth;
+    const startTime = new Date(block.startTime);
+    const endTime = new Date(block.endTime);
+    const dayOfWeek = startTime.getDay();
 
-  // Calculate the actual width in pixels to subtract 2px from each side
-  const gridWidth = gridRef.current?.clientWidth ?? 0;
-  const adjustedWidth = gridWidth ? width - (4 / gridWidth) * 100 : width;
+    const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
+    const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
+    const duration = endHourDecimal - startHourDecimal;
 
-  const leftOffset =
-    block.totalOverlaps && block.totalOverlaps <= 3 && block.index
-      ? dayOffset * baseWidth + width * (block.index || 0)
-      : dayOffset * baseWidth;
+    const top = (startHourDecimal - startHour) * 64 + topOffset;
+    const height = duration * 64;
 
-  // Add 2px margin to center the block
-  const adjustedLeftOffset = gridWidth
-    ? leftOffset + (2 / gridWidth) * 100
-    : leftOffset;
+    const width =
+      (block.totalOverlaps ?? 1) > 1
+        ? `${100 / (block.totalOverlaps ?? 1)}%`
+        : "100%";
+    const left =
+      block.index !== undefined && block.totalOverlaps
+        ? `${(block.index * 100) / block.totalOverlaps}%`
+        : "0%";
 
-  const style = {
-    position: "absolute" as const,
-    left: `${adjustedLeftOffset}%`,
-    top: `${(startHourOffset + startMinuteOffset) * 64}px`,
-    height: `${duration * 64}px`,
-    width: `${adjustedWidth}%`,
-    backgroundColor: block.color || "#3b82f6",
-    opacity: isPreview ? 0.4 : 0.8,
-    borderRadius: "0.375rem",
-    padding: "0.5rem",
-    color: "white",
-    overflow: "hidden",
-    whiteSpace: "nowrap" as const,
-    textOverflow: "ellipsis",
-    cursor: isPreview ? "default" : "grab",
-    zIndex:
-      block.totalOverlaps && block.totalOverlaps > 3
-        ? (block.index || 0) + 1
-        : 1,
-    pointerEvents: (isPreview
-      ? "none"
-      : "auto") as React.CSSProperties["pointerEvents"],
-  };
+    return {
+      top: `${top}px`,
+      height: `${height}px`,
+      left: `${(dayOfWeek * 100) / 7 + parseFloat(left) / 7}%`,
+      width: `${parseFloat(width) / 7}%`,
+      backgroundColor: block.color || "#3b82f6",
+      opacity: isPreview ? 0.4 : 0.8,
+      borderRadius: "0.375rem",
+      padding: "0.5rem",
+      color: "white",
+      overflow: "hidden",
+      whiteSpace: "nowrap" as const,
+      textOverflow: "ellipsis",
+      cursor: isPreview ? "default" : "grab",
+      zIndex:
+        block.totalOverlaps && block.totalOverlaps > 3
+          ? (block.index || 0) + 1
+          : 1,
+      pointerEvents: (isPreview
+        ? "none"
+        : "auto") as React.CSSProperties["pointerEvents"],
+    };
+  }, [
+    gridRef,
+    block.startTime,
+    block.endTime,
+    block.totalOverlaps,
+    block.index,
+    block.color,
+    startHour,
+    topOffset,
+    isPreview,
+  ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isPreview) {
@@ -104,10 +118,16 @@ export function TimeBlock({
 
   return (
     <div
-      style={style}
       data-time-block="true"
+      className={cn(
+        "group absolute z-10 rounded-md border p-2 text-sm",
+        isPreview
+          ? "border-dashed border-gray-400 bg-gray-100/50"
+          : "border-solid bg-card shadow-sm hover:shadow-md",
+        isClipped && "border-dashed",
+      )}
+      style={style}
       onMouseDown={handleMouseDown}
-      className={cn("group relative select-none")}
     >
       {!isPreview && (
         <>

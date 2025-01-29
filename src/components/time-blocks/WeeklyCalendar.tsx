@@ -37,6 +37,7 @@ export type TimeBlock = PrismaTimeBlock & {
 export type TimeBlockWithPosition = TimeBlock & {
   index?: number;
   totalOverlaps?: number;
+  isClipped?: boolean;
 };
 
 type DragState =
@@ -766,6 +767,101 @@ export function WeeklyCalendar({
       }));
   }, [timeBlocks]);
 
+  // Helper function to categorize blocks based on visibility
+  const categorizedBlocks = useMemo(() => {
+    if (!timeBlocks) {
+      return { before: [], after: [], visible: [] };
+    }
+
+    const startOfDay = new Date(weekStart);
+    startOfDay.setHours(startHour, 0, 0, 0);
+
+    const endOfDay = new Date(weekStart);
+    endOfDay.setHours(endHour, 59, 59, 999);
+
+    return overlappingGroups.reduce(
+      (
+        acc: {
+          before: TimeBlockWithPosition[];
+          after: TimeBlockWithPosition[];
+          visible: TimeBlockWithPosition[];
+        },
+        block,
+      ) => {
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+
+        // Normalize times to the same day for comparison
+        const normalizedStart = new Date(blockStart);
+        normalizedStart.setFullYear(startOfDay.getFullYear());
+        normalizedStart.setMonth(startOfDay.getMonth());
+        normalizedStart.setDate(startOfDay.getDate());
+
+        const normalizedEnd = new Date(blockEnd);
+        normalizedEnd.setFullYear(startOfDay.getFullYear());
+        normalizedEnd.setMonth(startOfDay.getMonth());
+        normalizedEnd.setDate(startOfDay.getDate());
+
+        if (normalizedEnd <= startOfDay) {
+          acc.before.push(block);
+        } else if (normalizedStart >= endOfDay) {
+          acc.after.push(block);
+        } else {
+          // For visible blocks, clip the times to the visible range
+          const clippedBlock = {
+            ...block,
+            startTime: normalizedStart < startOfDay ? startOfDay : blockStart,
+            endTime: normalizedEnd > endOfDay ? endOfDay : blockEnd,
+            isClipped: normalizedStart < startOfDay || normalizedEnd > endOfDay,
+          };
+          acc.visible.push(clippedBlock);
+        }
+        return acc;
+      },
+      { before: [], after: [], visible: [] },
+    );
+  }, [timeBlocks, weekStart, startHour, endHour, overlappingGroups]);
+
+  const handleBeforeClick = () => {
+    if (categorizedBlocks.before.length === 0) {
+      return;
+    }
+
+    // Find the latest block that's before the current view
+    const latestBefore = categorizedBlocks.before.reduce((latest, current) => {
+      return new Date(current.endTime) > new Date(latest.endTime)
+        ? current
+        : latest;
+    });
+
+    // Get the hour from the block's end time
+    const blockEndHour = new Date(latestBefore.endTime).getHours();
+
+    // Adjust start hour to show this block
+    setStartHour(Math.max(0, blockEndHour - 1));
+  };
+
+  const handleAfterClick = () => {
+    if (categorizedBlocks.after.length === 0) {
+      return;
+    }
+
+    // Find the earliest block that's after the current view
+    const earliestAfter = categorizedBlocks.after.reduce(
+      (earliest, current) => {
+        return new Date(current.startTime) < new Date(earliest.startTime)
+          ? current
+          : earliest;
+      },
+    );
+
+    // Get the hour from the block's start time
+    const blockStartHour = new Date(earliestAfter.startTime).getHours();
+
+    // Adjust end hour to show this block
+    setEndHour(Math.min(23, blockStartHour + 1));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -864,6 +960,17 @@ export function WeeklyCalendar({
           <div className="grid grid-cols-[auto_repeat(7,1fr)]">
             {/* Time labels */}
             <div className="relative w-16 select-none">
+              {/* Show count of blocks before visible area */}
+              {categorizedBlocks.before.length > 0 && (
+                <div
+                  className="h-8 cursor-pointer border-b border-r bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
+                  onClick={handleBeforeClick}
+                  title="Click to adjust view to show earlier blocks"
+                >
+                  {categorizedBlocks.before.length} before
+                </div>
+              )}
+
               {displayedHours.map((hour, index) => (
                 <div
                   key={hour}
@@ -872,6 +979,17 @@ export function WeeklyCalendar({
                   {format(new Date().setHours(hour, 0), "h a")}
                 </div>
               ))}
+
+              {/* Show count of blocks after visible area */}
+              {categorizedBlocks.after.length > 0 && (
+                <div
+                  className="h-8 cursor-pointer border-r border-t bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
+                  onClick={handleAfterClick}
+                  title="Click to adjust view to show later blocks"
+                >
+                  {categorizedBlocks.after.length} after
+                </div>
+              )}
 
               {/* Drag operation indicators */}
               {(() => {
@@ -915,6 +1033,11 @@ export function WeeklyCalendar({
                     : undefined,
               }}
             >
+              {/* Add spacer for blocks before */}
+              {categorizedBlocks.before.length > 0 && (
+                <div className="absolute left-0 h-8 w-full border-b bg-muted/50" />
+              )}
+
               {/* Current time indicator */}
               {(() => {
                 const position = getCurrentTimePosition();
@@ -926,7 +1049,9 @@ export function WeeklyCalendar({
                   <div
                     className="absolute z-10 h-0.5 bg-blue-500"
                     style={{
-                      top: position.top,
+                      top:
+                        position.top +
+                        (categorizedBlocks.before.length > 0 ? 32 : 0),
                       left: position.left,
                       width: position.width,
                     }}
@@ -941,7 +1066,10 @@ export function WeeklyCalendar({
                   style={{
                     left: `${(dayOffset * 100) / 7}%`,
                     width: `${100 / 7}%`,
-                    height: "100%",
+                    height: `calc(100% - ${categorizedBlocks.before.length > 0 ? "32px" : "0px"} - ${
+                      categorizedBlocks.after.length > 0 ? "32px" : "0px"
+                    })`,
+                    top: categorizedBlocks.before.length > 0 ? "32px" : "0px",
                   }}
                 >
                   {displayedHours.map((hour, hourIndex) => (
@@ -952,17 +1080,29 @@ export function WeeklyCalendar({
                   ))}
                 </div>
               ))}
-              {timeBlocks &&
-                overlappingGroups.map((block) => (
-                  <TimeBlock
-                    key={block.id}
-                    block={block}
-                    onDragStart={handleBlockDragStart}
-                    onResizeStart={handleBlockResizeStart}
-                    startHour={startHour}
-                    gridRef={gridRef}
-                  />
-                ))}
+
+              {/* Add spacer for blocks after */}
+              {categorizedBlocks.after.length > 0 && (
+                <div
+                  className="absolute left-0 h-8 w-full border-t bg-muted/50"
+                  style={{
+                    bottom: "0",
+                  }}
+                />
+              )}
+
+              {categorizedBlocks.visible.map((block) => (
+                <TimeBlock
+                  key={block.id}
+                  block={block}
+                  onDragStart={handleBlockDragStart}
+                  onResizeStart={handleBlockResizeStart}
+                  startHour={startHour}
+                  gridRef={gridRef}
+                  isClipped={block.isClipped}
+                  topOffset={categorizedBlocks.before.length > 0 ? 32 : 0}
+                />
+              ))}
               {renderDragPreview()}
             </div>
           </div>
