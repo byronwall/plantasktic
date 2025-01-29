@@ -43,8 +43,8 @@ type DragState =
   | { type: "idle" }
   | {
       type: "drag_new";
-      startTime: { hour: number; day: number };
-      currentTime: { hour: number; day: number };
+      startTime: { hour: number; day: number; minute: number };
+      currentTime: { hour: number; day: number; minute: number };
     }
   | {
       type: "drag_existing";
@@ -183,12 +183,27 @@ export function WeeklyCalendar({
     switch (dragState.type) {
       case "drag_new": {
         const { startTime, currentTime } = dragState;
-        const startPos = getPosition(
-          Math.min(startTime.hour, currentTime.hour),
-        );
-        const endPos = getPosition(
-          Math.max(startTime.hour, currentTime.hour) + 1,
-        );
+
+        function getLaterTime(time: { hour: number; minute: number }) {
+          if (time.hour === currentTime.hour) {
+            return time.minute > currentTime.minute ? time : currentTime;
+          }
+          return time.hour > currentTime.hour ? time : currentTime;
+        }
+
+        function getEarlierTime(time: { hour: number; minute: number }) {
+          if (time.hour === currentTime.hour) {
+            return time.minute < currentTime.minute ? time : currentTime;
+          }
+          return time.hour < currentTime.hour ? time : currentTime;
+        }
+
+        const laterTime = getLaterTime(startTime);
+        const earlierTime = getEarlierTime(startTime);
+
+        const startPos = getPosition(earlierTime.hour, earlierTime.minute);
+        const endPos = getPosition(laterTime.hour, laterTime.minute);
+
         return { startPos, endPos };
       }
       case "drag_existing": {
@@ -211,16 +226,7 @@ export function WeeklyCalendar({
         const endPos = getPosition(time.hour + duration, time.minute);
         return { startPos, endPos };
       }
-      case "resize_block_top": {
-        const time = getTimeFromGridPosition(
-          dragState.currentPosition.x,
-          dragState.currentPosition.y,
-        );
-        if (!time) {
-          return null;
-        }
-        return { startPos: getPosition(time.hour, time.minute) };
-      }
+      case "resize_block_top":
       case "resize_block_bottom": {
         const time = getTimeFromGridPosition(
           dragState.currentPosition.x,
@@ -229,7 +235,7 @@ export function WeeklyCalendar({
         if (!time) {
           return null;
         }
-        return { endPos: getPosition(time.hour, time.minute) };
+        return { startPos: getPosition(time.hour, time.minute) };
       }
     }
   };
@@ -337,8 +343,8 @@ export function WeeklyCalendar({
 
     setDragState({
       type: "drag_new",
-      startTime: { hour: time.hour, day: time.day },
-      currentTime: { hour: time.hour, day: time.day },
+      startTime: { hour: time.hour, day: time.day, minute: time.minute },
+      currentTime: { hour: time.hour, day: time.day, minute: time.minute },
     });
   };
 
@@ -357,7 +363,7 @@ export function WeeklyCalendar({
       case "drag_new": {
         setDragState({
           ...dragState,
-          currentTime: { hour: time.hour, day: time.day },
+          currentTime: { hour: time.hour, day: time.day, minute: time.minute },
         });
         break;
       }
@@ -416,22 +422,22 @@ export function WeeklyCalendar({
         const startDate = addDays(weekStart, startTime.day);
         startDate.setHours(
           Math.min(Math.max(startTime.hour, startHour), endHour),
-          0,
+          Math.round(startTime.minute / snapMinutes) * snapMinutes,
           0,
           0,
         );
 
         const endDate = addDays(weekStart, currentTime.day);
         endDate.setHours(
-          Math.min(Math.max(currentTime.hour + 1, startHour), endHour),
-          0,
+          Math.min(Math.max(currentTime.hour, startHour), endHour),
+          Math.round(currentTime.minute / snapMinutes) * snapMinutes,
           0,
           0,
         );
 
         // Ensure end time is after start time and within bounds
         if (endDate.getTime() <= startDate.getTime()) {
-          endDate.setTime(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
+          endDate.setTime(startDate.getTime() + snapMinutes * 60 * 1000); // Add one snap interval
         }
 
         setNewBlockStart(startDate);
@@ -600,7 +606,7 @@ export function WeeklyCalendar({
           endHour,
         );
         const previewEndHour = Math.min(
-          Math.max(Math.max(startTime.hour, currentTime.hour) + 1, startHour),
+          Math.max(Math.max(startTime.hour, currentTime.hour), startHour),
           endHour,
         );
 
@@ -609,6 +615,20 @@ export function WeeklyCalendar({
 
         const endDate = addDays(weekStart, startTime.day);
         endDate.setHours(previewEndHour, 0, 0, 0);
+
+        // Add minutes to respect snap schedule
+        const startMinutes =
+          Math.round((startTime.minute || 0) / snapMinutes) * snapMinutes;
+        const endMinutes =
+          Math.round((currentTime.minute || 0) / snapMinutes) * snapMinutes;
+
+        startDate.setMinutes(startMinutes);
+        endDate.setMinutes(endMinutes);
+
+        // Ensure minimum block size of one snap interval
+        if (endDate.getTime() <= startDate.getTime()) {
+          endDate.setTime(startDate.getTime() + snapMinutes * 60 * 1000);
+        }
 
         const now = new Date();
         previewBlock = {
