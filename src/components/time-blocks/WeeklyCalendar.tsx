@@ -140,6 +140,100 @@ export function WeeklyCalendar({
   // Track control key state
   const [isControlPressed, setIsControlPressed] = useState(false);
 
+  // Add current time state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Calculate current time position
+  const getCurrentTimePosition = () => {
+    const now = currentTime;
+    const hour = now.getHours();
+    const minutes = now.getMinutes();
+    const dayOfWeek = now.getDay();
+
+    if (hour < startHour || hour > endHour) {
+      return null;
+    }
+
+    const top = (hour - startHour + minutes / 60) * 64;
+    const left = `${(dayOfWeek * 100) / 7}%`;
+    const width = `${100 / 7}%`;
+
+    return { top, left, width };
+  };
+
+  // Get drag indicator positions
+  const getDragIndicatorPositions = () => {
+    if (dragState.type === "idle") {
+      return null;
+    }
+
+    const getPosition = (hour: number, minute = 0) => {
+      return (hour - startHour + minute / 60) * 64;
+    };
+
+    switch (dragState.type) {
+      case "drag_new": {
+        const { startTime, currentTime } = dragState;
+        const startPos = getPosition(
+          Math.min(startTime.hour, currentTime.hour),
+        );
+        const endPos = getPosition(
+          Math.max(startTime.hour, currentTime.hour) + 1,
+        );
+        return { startPos, endPos };
+      }
+      case "drag_existing": {
+        const time = getTimeFromGridPosition(
+          dragState.currentPosition.x,
+          dragState.currentPosition.y,
+        );
+        if (!time) {
+          return null;
+        }
+        const block = timeBlocks?.find((b) => b.id === dragState.blockId);
+        if (!block) {
+          return null;
+        }
+        const duration =
+          (new Date(block.endTime).getTime() -
+            new Date(block.startTime).getTime()) /
+          (1000 * 60 * 60);
+        const startPos = getPosition(time.hour, time.minute);
+        const endPos = getPosition(time.hour + duration, time.minute);
+        return { startPos, endPos };
+      }
+      case "resize_block_top": {
+        const time = getTimeFromGridPosition(
+          dragState.currentPosition.x,
+          dragState.currentPosition.y,
+        );
+        if (!time) {
+          return null;
+        }
+        return { startPos: getPosition(time.hour, time.minute) };
+      }
+      case "resize_block_bottom": {
+        const time = getTimeFromGridPosition(
+          dragState.currentPosition.x,
+          dragState.currentPosition.y,
+        );
+        if (!time) {
+          return null;
+        }
+        return { endPos: getPosition(time.hour, time.minute) };
+      }
+    }
+  };
+
   // Add keyboard event handlers
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -734,12 +828,12 @@ export function WeeklyCalendar({
           {/* Header with days */}
           <div className="grid select-none grid-cols-[auto_repeat(7,1fr)] border-b">
             <div className="w-16 border-r p-2" /> {/* Time column header */}
-            {DAYS.map((dayOffset) => {
+            {DAYS.map((dayOffset, index) => {
               const date = addDays(weekStart, dayOffset);
               return (
                 <div
                   key={dayOffset}
-                  className="border-r p-2 text-center font-medium last:border-r-0"
+                  className={`p-2 text-center font-medium ${index < DAYS.length - 1 ? "border-r" : ""}`}
                 >
                   {format(date, "EEE MMM d")}
                 </div>
@@ -749,12 +843,40 @@ export function WeeklyCalendar({
 
           <div className="grid grid-cols-[auto_repeat(7,1fr)]">
             {/* Time labels */}
-            <div className="select-none space-y-[1px]">
-              {displayedHours.map((hour) => (
-                <div key={hour} className="h-16 border-r p-2 text-sm">
+            <div className="relative w-16 select-none">
+              {displayedHours.map((hour, index) => (
+                <div
+                  key={hour}
+                  className={`h-16 border-r pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
+                >
                   {format(new Date().setHours(hour, 0), "h a")}
                 </div>
               ))}
+
+              {/* Drag operation indicators */}
+              {(() => {
+                const positions = getDragIndicatorPositions();
+                if (!positions) {
+                  return null;
+                }
+
+                return (
+                  <>
+                    {positions.startPos !== undefined && (
+                      <div
+                        className="absolute right-0 h-0.5 w-4 bg-red-500"
+                        style={{ top: positions.startPos }}
+                      />
+                    )}
+                    {positions.endPos !== undefined && (
+                      <div
+                        className="absolute right-0 h-0.5 w-4 bg-red-500"
+                        style={{ top: positions.endPos }}
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Time slots for each day */}
@@ -773,18 +895,40 @@ export function WeeklyCalendar({
                     : undefined,
               }}
             >
-              {DAYS.map((dayOffset) => (
+              {/* Current time indicator */}
+              {(() => {
+                const position = getCurrentTimePosition();
+                if (!position) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    className="absolute z-10 h-0.5 bg-blue-500"
+                    style={{
+                      top: position.top,
+                      left: position.left,
+                      width: position.width,
+                    }}
+                  />
+                );
+              })()}
+
+              {DAYS.map((dayOffset, index) => (
                 <div
                   key={dayOffset}
-                  className="absolute border-r"
+                  className={`absolute ${index < DAYS.length - 1 ? "border-r" : ""}`}
                   style={{
                     left: `${(dayOffset * 100) / 7}%`,
                     width: `${100 / 7}%`,
                     height: "100%",
                   }}
                 >
-                  {displayedHours.map((hour) => (
-                    <div key={hour} className="h-16 border-b" />
+                  {displayedHours.map((hour, hourIndex) => (
+                    <div
+                      key={hour}
+                      className={`h-16 ${hourIndex < displayedHours.length - 1 ? "border-b" : ""}`}
+                    />
                   ))}
                 </div>
               ))}
@@ -806,7 +950,9 @@ export function WeeklyCalendar({
 
         {/* Day Metadata Section */}
         {currentWorkspaceId && (
-          <div className="grid grid-cols-7 gap-4 rounded-lg border bg-card p-4">
+          <div className="grid grid-cols-[auto_repeat(7,1fr)] gap-4 rounded-lg border bg-card">
+            <div className="w-16 border-r" />
+
             {DAYS.map((dayOffset) => {
               const date = addDays(weekStart, dayOffset);
               const dayMetadata = weekMetadata.filter(
@@ -816,7 +962,7 @@ export function WeeklyCalendar({
               );
 
               return (
-                <div key={dayOffset}>
+                <div key={dayOffset} className="border-r p-1">
                   <DayMetadataSection
                     workspaceId={currentWorkspaceId}
                     date={date}
