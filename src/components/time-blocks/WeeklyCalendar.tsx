@@ -1,6 +1,13 @@
 "use client";
 
-import { addDays, addWeeks, format, startOfWeek, subWeeks } from "date-fns";
+import {
+  addDays,
+  addWeeks,
+  format,
+  startOfDay,
+  startOfWeek,
+  subWeeks,
+} from "date-fns";
 import { List, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -99,7 +106,6 @@ export function WeeklyCalendar({
   const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
   const [newBlockStart, setNewBlockStart] = useState<Date | null>(null);
   const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
-  const [newBlockDay, setNewBlockDay] = useState<number>(0);
 
   // State machine for drag operations
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
@@ -443,7 +449,6 @@ export function WeeklyCalendar({
 
         setNewBlockStart(startDate);
         setNewBlockEnd(endDate);
-        setNewBlockDay(startTime.day);
         setIsDialogOpen(true);
         break;
       }
@@ -1216,8 +1221,8 @@ export function WeeklyCalendar({
               const date = addDays(weekStart, dayOffset);
               const dayMetadata = weekMetadata.filter(
                 (meta) =>
-                  format(meta.date, "yyyy-MM-dd") ===
-                  format(date, "yyyy-MM-dd"),
+                  format(startOfDay(meta.date), "yyyy-MM-dd") ===
+                  format(startOfDay(date), "yyyy-MM-dd"),
               );
 
               return (
@@ -1241,7 +1246,6 @@ export function WeeklyCalendar({
             setIsDialogOpen(false);
             setNewBlockStart(null);
             setNewBlockEnd(null);
-            setNewBlockDay(0);
           }}
           workspaceId={currentWorkspaceId}
           startTime={newBlockStart}

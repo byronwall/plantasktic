@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,8 @@ import {
 } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+
+import { Label } from "../ui/label";
 
 type DayMetadataItem = {
   id: string;
@@ -82,7 +84,7 @@ export function DayMetadataSection({
   const onSubmit = async (data: MetadataFormData) => {
     await upsertMutation.mutateAsync({
       workspaceId,
-      date,
+      date: startOfDay(date),
       key: data.key,
       value: data.value,
     });
@@ -94,7 +96,7 @@ export function DayMetadataSection({
   const handleDelete = (key: string) => {
     deleteMutation.mutate({
       workspaceId,
-      date,
+      date: startOfDay(date),
       key,
     });
     setEditingMetadata(null);
@@ -103,7 +105,7 @@ export function DayMetadataSection({
   const handleBooleanChange = (key: string, checked: boolean) => {
     upsertMutation.mutate({
       workspaceId,
-      date,
+      date: startOfDay(date),
       key,
       value: checked.toString(),
     });
@@ -207,20 +209,17 @@ export function DayMetadataSection({
           </PopoverContent>
         </Popover>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="shutdown"
-          checked={shutdownValue}
-          onCheckedChange={(checked: boolean) =>
-            handleBooleanChange("shutdown", checked)
-          }
-        />
-        <label
-          htmlFor="shutdown"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
+      <div>
+        <Label className="flex cursor-pointer items-center gap-2 text-sm hover:underline">
+          <Checkbox
+            checked={shutdownValue}
+            onCheckedChange={(checked: boolean) =>
+              handleBooleanChange("shutdown", checked)
+            }
+            disabled={upsertMutation.isPending}
+          />
           Shutdown
-        </label>
+        </Label>
       </div>
       <div
         className={cn(

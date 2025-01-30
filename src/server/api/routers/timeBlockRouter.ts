@@ -246,13 +246,12 @@ export const timeBlockRouter = createTRPCRouter({
         where: {
           workspaceId_date_key: {
             workspaceId: input.workspaceId,
-            date: startOfDay(input.date),
+            date: input.date,
             key: input.key,
           },
         },
         create: {
           ...input,
-          date: startOfDay(input.date),
         },
         update: {
           value: input.value,
