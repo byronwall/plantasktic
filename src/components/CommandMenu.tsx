@@ -57,6 +57,41 @@ export function CommandMenu() {
     },
   );
 
+  const createWorkspace = api.workspace.create.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
+    },
+  });
+
+  const createProject = api.project.create.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
+    },
+  });
+
+  const handleCreateWorkspace = () => {
+    const name = window.prompt("Enter workspace name:");
+    if (name?.trim()) {
+      createWorkspace.mutate({ name: name.trim() });
+    }
+  };
+
+  const handleCreateProject = () => {
+    if (!currentWorkspaceId) {
+      return;
+    }
+
+    const name = window.prompt("Enter project name:");
+    if (name?.trim()) {
+      createProject.mutate({
+        name: name.trim(),
+        workspaceId: currentWorkspaceId,
+      });
+    }
+  };
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -125,24 +160,38 @@ export function CommandMenu() {
           >
             Home
           </CommandItem>
+
           {currentWorkspaceId && (
-            <CommandItem
-              onSelect={() => {
-                router.push(`/${currentWorkspaceName}/goals`);
-                setOpen(false);
-              }}
-            >
-              Goals
-            </CommandItem>
+            <>
+              <CommandItem
+                onSelect={() => {
+                  router.push(`/${currentWorkspaceName}/goals`);
+                  setOpen(false);
+                }}
+              >
+                Goals
+              </CommandItem>
+              <CommandItem
+                onSelect={() => {
+                  router.push(`/${currentWorkspaceName}/time-blocks`);
+                  setOpen(false);
+                }}
+              >
+                Time Blocks
+              </CommandItem>
+            </>
           )}
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Create">
+          <CommandItem onSelect={handleCreateWorkspace}>
+            Create Workspace
+          </CommandItem>
           {currentWorkspaceId && (
-            <CommandItem
-              onSelect={() => {
-                router.push(`/${currentWorkspaceName}/time-blocks`);
-                setOpen(false);
-              }}
-            >
-              Time Blocks
+            <CommandItem onSelect={handleCreateProject}>
+              Create Project
             </CommandItem>
           )}
         </CommandGroup>
