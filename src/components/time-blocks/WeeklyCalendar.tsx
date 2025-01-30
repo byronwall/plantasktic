@@ -186,6 +186,117 @@ export function WeeklyCalendar({
     return { top, left, width };
   };
 
+  // Add keyboard event handlers
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dragState.type !== "idle") {
+        setDragState({ type: "idle" });
+      } else if (e.key === "Control" || e.key === "Meta") {
+        setIsControlPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Control" || e.key === "Meta") {
+        setIsControlPressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [dragState.type]);
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const displayedHours = Array.from(
+    { length: endHour - startHour },
+    (_, i) => i + startHour,
+  );
+
+  const handlePreviousWeek = () => {
+    setSelectedDate((prev) => subWeeks(prev, 1));
+  };
+
+  const handleNextWeek = () => {
+    setSelectedDate((prev) => addWeeks(prev, 1));
+  };
+
+  // Add proper typing for the overlapping groups calculation
+  const overlappingGroups = useMemo(() => {
+    return Object.values(getOverlappingGroups(timeBlocks) || {})
+      .flat()
+      .map((block) => ({
+        ...block,
+        startTime: new Date(block.startTime),
+        endTime: new Date(block.endTime),
+      }));
+  }, [timeBlocks]);
+
+  const categorizedBlocks = useMemo(() => {
+    if (!timeBlocks) {
+      return { before: [], after: [], visible: [] };
+    }
+
+    const startOfDay = new Date(weekStart);
+    startOfDay.setHours(startHour, 0, 0, 0);
+
+    const endOfDay = new Date(weekStart);
+    endOfDay.setHours(endHour, 59, 59, 999);
+
+    return overlappingGroups.reduce(
+      (
+        acc: {
+          before: TimeBlockWithPosition[];
+          after: TimeBlockWithPosition[];
+          visible: TimeBlockWithPosition[];
+        },
+        block,
+      ) => {
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+
+        // Normalize times to the same day for comparison
+        const normalizedStart = new Date(blockStart);
+        normalizedStart.setFullYear(startOfDay.getFullYear());
+        normalizedStart.setMonth(startOfDay.getMonth());
+        normalizedStart.setDate(startOfDay.getDate());
+
+        const normalizedEnd = new Date(blockEnd);
+        normalizedEnd.setFullYear(startOfDay.getFullYear());
+        normalizedEnd.setMonth(startOfDay.getMonth());
+        normalizedEnd.setDate(startOfDay.getDate());
+
+        if (normalizedEnd <= startOfDay) {
+          acc.before.push(block);
+        } else if (normalizedStart >= endOfDay) {
+          acc.after.push(block);
+        } else {
+          // For visible blocks, clip the times to the visible range
+          const clippedBlock = {
+            ...block,
+            startTime: normalizedStart < startOfDay ? startOfDay : blockStart,
+            endTime: normalizedEnd > endOfDay ? endOfDay : blockEnd,
+            isClipped: normalizedStart < startOfDay || normalizedEnd > endOfDay,
+          };
+          acc.visible.push(clippedBlock);
+        }
+        return acc;
+      },
+      { before: [], after: [], visible: [] },
+    );
+  }, [timeBlocks, weekStart, startHour, endHour, overlappingGroups]);
+
+  const topOffset = categorizedBlocks.before.length > 0 ? 32 : 0;
+
   // Get drag indicator positions
   const getDragIndicatorPositions = () => {
     if (dragState.type === "idle") {
@@ -193,7 +304,7 @@ export function WeeklyCalendar({
     }
 
     const getPosition = (hour: number, minute = 0) => {
-      return (hour - startHour + minute / 60) * 64;
+      return (hour - startHour + minute / 60) * 64 + topOffset;
     };
 
     switch (dragState.type) {
@@ -256,50 +367,6 @@ export function WeeklyCalendar({
     }
   };
 
-  // Add keyboard event handlers
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && dragState.type !== "idle") {
-        setDragState({ type: "idle" });
-      } else if (e.key === "Control" || e.key === "Meta") {
-        setIsControlPressed(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Control" || e.key === "Meta") {
-        setIsControlPressed(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [dragState.type]);
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date);
-    }
-  };
-
-  const displayedHours = Array.from(
-    { length: endHour - startHour },
-    (_, i) => i + startHour,
-  );
-
-  const handlePreviousWeek = () => {
-    setSelectedDate((prev) => subWeeks(prev, 1));
-  };
-
-  const handleNextWeek = () => {
-    setSelectedDate((prev) => addWeeks(prev, 1));
-  };
-
   const getTimeFromGridPosition = (x: number, y: number) => {
     if (!gridRef.current) {
       return null;
@@ -312,12 +379,16 @@ export function WeeklyCalendar({
     const relativeX = x - rect.left;
     const relativeY = y - rect.top - scrollY;
 
+    // Account for the top offset from "not shown" blocks
+    const topOffset = categorizedBlocks.before.length > 0 ? 32 : 0;
+    const adjustedY = relativeY - topOffset;
+
     // Ensure coordinates are within bounds
     if (
       relativeX < 0 ||
-      relativeY < 0 ||
+      adjustedY < 0 ||
       relativeX > rect.width ||
-      relativeY > rect.height + scrollY
+      adjustedY > rect.height + scrollY
     ) {
       return null;
     }
@@ -328,7 +399,7 @@ export function WeeklyCalendar({
     // Add 0.5 * dayWidth to center the drag point within the column
     const adjustedX = relativeX;
     const day = Math.max(0, Math.min(6, Math.floor(adjustedX / dayWidth)));
-    const rawHour = relativeY / hourHeight + startHour;
+    const rawHour = adjustedY / hourHeight + startHour;
     const hour = Math.floor(rawHour);
 
     // Calculate minutes and snap to interval
@@ -667,6 +738,7 @@ export function WeeklyCalendar({
           created_at: now,
           updated_at: now,
           taskAssignments: [],
+          isFixedTime: false,
         };
         break;
       }
@@ -775,75 +847,10 @@ export function WeeklyCalendar({
         isPreview={true}
         startHour={startHour}
         gridRef={gridRef}
+        topOffset={topOffset}
       />
     );
   };
-
-  // Add proper typing for the overlapping groups calculation
-  const overlappingGroups = useMemo(() => {
-    return Object.values(getOverlappingGroups(timeBlocks) || {})
-      .flat()
-      .map((block) => ({
-        ...block,
-        startTime: new Date(block.startTime),
-        endTime: new Date(block.endTime),
-      }));
-  }, [timeBlocks]);
-
-  // Helper function to categorize blocks based on visibility
-  const categorizedBlocks = useMemo(() => {
-    if (!timeBlocks) {
-      return { before: [], after: [], visible: [] };
-    }
-
-    const startOfDay = new Date(weekStart);
-    startOfDay.setHours(startHour, 0, 0, 0);
-
-    const endOfDay = new Date(weekStart);
-    endOfDay.setHours(endHour, 59, 59, 999);
-
-    return overlappingGroups.reduce(
-      (
-        acc: {
-          before: TimeBlockWithPosition[];
-          after: TimeBlockWithPosition[];
-          visible: TimeBlockWithPosition[];
-        },
-        block,
-      ) => {
-        const blockStart = new Date(block.startTime);
-        const blockEnd = new Date(block.endTime);
-
-        // Normalize times to the same day for comparison
-        const normalizedStart = new Date(blockStart);
-        normalizedStart.setFullYear(startOfDay.getFullYear());
-        normalizedStart.setMonth(startOfDay.getMonth());
-        normalizedStart.setDate(startOfDay.getDate());
-
-        const normalizedEnd = new Date(blockEnd);
-        normalizedEnd.setFullYear(startOfDay.getFullYear());
-        normalizedEnd.setMonth(startOfDay.getMonth());
-        normalizedEnd.setDate(startOfDay.getDate());
-
-        if (normalizedEnd <= startOfDay) {
-          acc.before.push(block);
-        } else if (normalizedStart >= endOfDay) {
-          acc.after.push(block);
-        } else {
-          // For visible blocks, clip the times to the visible range
-          const clippedBlock = {
-            ...block,
-            startTime: normalizedStart < startOfDay ? startOfDay : blockStart,
-            endTime: normalizedEnd > endOfDay ? endOfDay : blockEnd,
-            isClipped: normalizedStart < startOfDay || normalizedEnd > endOfDay,
-          };
-          acc.visible.push(clippedBlock);
-        }
-        return acc;
-      },
-      { before: [], after: [], visible: [] },
-    );
-  }, [timeBlocks, weekStart, startHour, endHour, overlappingGroups]);
 
   const handleBeforeClick = () => {
     if (categorizedBlocks.before.length === 0) {
@@ -888,7 +895,6 @@ export function WeeklyCalendar({
   const bulkUpdateMutation = api.timeBlock.bulkUpdate.useMutation();
 
   const correctOverlappingBlocks = (dayOffset: number) => {
-    const date = addDays(weekStart, dayOffset);
     const dayBlocks = timeBlocks?.filter(
       (block) => block.startTime.getDay() === dayOffset,
     );
@@ -897,7 +903,7 @@ export function WeeklyCalendar({
       return;
     }
 
-    // Sort blocks by start time
+    // Sort blocks by start time and separate fixed blocks
     const sortedBlocks = [...dayBlocks].sort(
       (a, b) =>
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -905,28 +911,121 @@ export function WeeklyCalendar({
 
     const updates: { id: string; startTime: Date; endTime: Date }[] = [];
 
-    // Iterate through blocks and adjust times
-    sortedBlocks.forEach((block, index) => {
-      if (index === 0) {
-        // Keep first block as is
+    // Helper function to check if a time range overlaps with any fixed blocks
+    const overlapsWithFixedBlock = (
+      startTime: Date,
+      endTime: Date,
+      currentBlockId: string,
+    ) => {
+      return sortedBlocks.some(
+        (block) =>
+          block.isFixedTime &&
+          block.id !== currentBlockId &&
+          new Date(startTime) < new Date(block.endTime) &&
+          new Date(endTime) > new Date(block.startTime),
+      );
+    };
+
+    // Helper function to find the next available time slot after a fixed block
+    const findNextAvailableSlot = (
+      desiredStart: Date,
+      duration: number,
+      currentBlockId: string,
+    ): Date => {
+      let candidateStart = new Date(desiredStart);
+
+      // Keep trying slots until we find one that doesn't overlap with fixed blocks
+      while (
+        overlapsWithFixedBlock(
+          candidateStart,
+          new Date(candidateStart.getTime() + duration),
+          currentBlockId,
+        )
+      ) {
+        // Find the next fixed block that we're overlapping with
+        const nextFixedBlock = sortedBlocks.find(
+          (block) =>
+            block.isFixedTime &&
+            block.id !== currentBlockId &&
+            new Date(block.endTime) > candidateStart,
+        );
+
+        if (nextFixedBlock) {
+          // Move to the end of this fixed block
+          candidateStart = new Date(nextFixedBlock.endTime);
+        } else {
+          // Shouldn't happen, but break to avoid infinite loop
+          break;
+        }
+      }
+
+      return candidateStart;
+    };
+
+    // First pass: keep fixed blocks in their original positions
+    sortedBlocks.forEach((block) => {
+      if (block.isFixedTime) {
         updates.push({
           id: block.id,
           startTime: new Date(block.startTime),
           endTime: new Date(block.endTime),
         });
-        return;
       }
+    });
 
-      const previousBlock = updates[index - 1];
-      if (!previousBlock) {
-        return;
+    // Second pass: arrange non-fixed blocks
+    sortedBlocks.forEach((block, index) => {
+      if (block.isFixedTime) {
+        return; // Skip fixed blocks as they're already handled
       }
 
       const blockDuration =
         new Date(block.endTime).getTime() - new Date(block.startTime).getTime();
 
-      // Set new start time to previous block's end time
-      const newStartTime = new Date(previousBlock.endTime);
+      let newStartTime: Date;
+
+      if (index === 0 || !updates.length) {
+        // If it's the first block or no updates yet, try to keep original start time
+        newStartTime = new Date(block.startTime);
+        if (
+          overlapsWithFixedBlock(
+            newStartTime,
+            new Date(newStartTime.getTime() + blockDuration),
+            block.id,
+          )
+        ) {
+          newStartTime = findNextAvailableSlot(
+            newStartTime,
+            blockDuration,
+            block.id,
+          );
+        }
+      } else {
+        // Find the last updated block's end time
+        const lastUpdate = updates[updates.length - 1];
+        if (!lastUpdate) {
+          // If no last update, use the block's original start time
+          newStartTime = new Date(block.startTime);
+        } else {
+          newStartTime = new Date(lastUpdate.endTime);
+        }
+
+        // Check if this position overlaps with any fixed blocks
+        if (
+          overlapsWithFixedBlock(
+            newStartTime,
+            new Date(newStartTime.getTime() + blockDuration),
+            block.id,
+          )
+        ) {
+          newStartTime = findNextAvailableSlot(
+            newStartTime,
+            blockDuration,
+            block.id,
+          );
+        }
+      }
+
       const newEndTime = new Date(newStartTime.getTime() + blockDuration);
 
       updates.push({
@@ -1227,7 +1326,7 @@ export function WeeklyCalendar({
                   startHour={startHour}
                   gridRef={gridRef}
                   isClipped={block.isClipped}
-                  topOffset={categorizedBlocks.before.length > 0 ? 32 : 0}
+                  topOffset={topOffset}
                 />
               ))}
               {renderDragPreview()}
@@ -1243,7 +1342,7 @@ export function WeeklyCalendar({
                         startHour +
                         mousePosition.minute / 60) *
                         64 +
-                      (categorizedBlocks.before.length > 0 ? 32 : 0),
+                      topOffset,
                   }}
                 />
               )}

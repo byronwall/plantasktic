@@ -222,9 +222,10 @@ model TimeBlock {
     startTime DateTime
     endTime   DateTime
 
-    color      String? // For visual customization
-    created_at DateTime @default(now())
-    updated_at DateTime @updatedAt
+    color       String? // For visual customization
+    isFixedTime Boolean  @default(false) // Whether this block has a fixed time that shouldn't be auto-adjusted
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
 
     // Relations
     workspaceId String

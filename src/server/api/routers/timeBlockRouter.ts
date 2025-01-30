@@ -67,6 +67,7 @@ export const timeBlockRouter = createTRPCRouter({
         startTime: z.date(),
         endTime: z.date(),
         color: z.string().optional(),
+        isFixedTime: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -85,6 +86,7 @@ export const timeBlockRouter = createTRPCRouter({
         startTime: z.date(),
         endTime: z.date(),
         color: z.string().optional(),
+        isFixedTime: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

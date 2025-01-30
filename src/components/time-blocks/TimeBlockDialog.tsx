@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Check, Link, Plus, Search, Trash, X } from "lucide-react";
+import { Check, Link, Lock, Plus, Search, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -22,6 +22,8 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 
 interface TimeBlockDialogProps {
@@ -50,6 +52,7 @@ export function TimeBlockDialog({
 }: TimeBlockDialogProps) {
   const [title, setTitle] = useState("");
   const [color, setColor] = useState(generateRandomHslColor());
+  const [isFixedTime, setIsFixedTime] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date>(startTime);
   const [selectedEndDate, setSelectedEndDate] = useState<Date>(endTime);
   const [startTimeStr, setStartTimeStr] = useState(format(startTime, "HH:mm"));
@@ -88,6 +91,7 @@ export function TimeBlockDialog({
     if (timeBlock) {
       setTitle(timeBlock.title || "");
       setColor(timeBlock.color || generateRandomHslColor());
+      setIsFixedTime(timeBlock.isFixedTime || false);
       setSelectedStartDate(timeBlock.startTime);
       setSelectedEndDate(timeBlock.endTime);
       setStartTimeStr(format(timeBlock.startTime, "HH:mm"));
@@ -118,6 +122,7 @@ export function TimeBlockDialog({
         startTime: finalStartTime,
         endTime: finalEndTime,
         color,
+        isFixedTime,
       });
     } else {
       // Create new time block
@@ -127,6 +132,7 @@ export function TimeBlockDialog({
         startTime: finalStartTime,
         endTime: finalEndTime,
         color,
+        isFixedTime,
       });
 
       if (selectedTaskId) {
@@ -209,6 +215,18 @@ export function TimeBlockDialog({
                 placeholder="Block title"
                 autoFocus
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="fixed-time"
+                checked={isFixedTime}
+                onCheckedChange={setIsFixedTime}
+              />
+              <Label htmlFor="fixed-time" className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Fixed Time Block
+              </Label>
             </div>
 
             <div className="space-y-2">
