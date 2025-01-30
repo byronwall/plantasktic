@@ -78,6 +78,12 @@ type DragState =
       currentPosition: { x: number; y: number };
     };
 
+type MousePosition = {
+  day: number;
+  hour: number;
+  minute: number;
+} | null;
+
 type DayMetadataItem = {
   id: string;
   date: Date;
@@ -149,6 +155,9 @@ export function WeeklyCalendar({
 
   // Add current time state
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Add mouse position state
+  const [mousePosition, setMousePosition] = useState<MousePosition>(null);
 
   // Update current time every minute
   useEffect(() => {
@@ -363,7 +372,15 @@ export function WeeklyCalendar({
     const time = getTimeFromGridPosition(e.pageX, e.pageY);
 
     if (!time) {
+      setMousePosition(null);
       return;
+    }
+
+    // Only update mouse position when not dragging
+    if (dragState.type === "idle") {
+      setMousePosition(time);
+    } else {
+      setMousePosition(null);
     }
 
     switch (dragState.type) {
@@ -415,6 +432,12 @@ export function WeeklyCalendar({
         break;
       }
     }
+  };
+
+  // Add handler to clear mouse position when leaving grid
+  const handleMouseLeave = () => {
+    setMousePosition(null);
+    setDragState({ type: "idle" });
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1129,7 +1152,7 @@ export function WeeklyCalendar({
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              onMouseLeave={() => setDragState({ type: "idle" })}
+              onMouseLeave={handleMouseLeave}
               style={{
                 cursor:
                   dragState.type === "drag_existing" && isControlPressed
@@ -1208,6 +1231,22 @@ export function WeeklyCalendar({
                 />
               ))}
               {renderDragPreview()}
+
+              {/* Mouse position indicator */}
+              {mousePosition && dragState.type === "idle" && (
+                <div
+                  className="absolute z-20 h-1 w-4 bg-red-300 opacity-50"
+                  style={{
+                    left: `${(mousePosition.day * 100) / 7}%`,
+                    top:
+                      (mousePosition.hour -
+                        startHour +
+                        mousePosition.minute / 60) *
+                        64 +
+                      (categorizedBlocks.before.length > 0 ? 32 : 0),
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
