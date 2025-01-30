@@ -165,34 +165,59 @@ export function CommandMenu() {
 
         <CommandSeparator />
 
-        {workspaces.map((workspace) => {
-          const workspaceProjects = projects.filter(
-            (project) => project.workspaceId === workspace.id,
-          );
-
-          if (workspaceProjects.length === 0) {
-            return null;
-          }
-
-          return (
+        {currentWorkspaceId && (
+          <>
             <CommandGroup
-              key={workspace.id}
-              heading={`${workspace.name} Projects`}
+              heading={`${currentWorkspaceName} Projects (Current)`}
             >
-              {workspaceProjects.map((project) => (
-                <CommandItem
-                  key={project.id}
-                  onSelect={() => {
-                    router.push(`/${workspace.name}/${project.name}`);
-                    setOpen(false);
-                  }}
-                >
-                  {project.name}
-                </CommandItem>
-              ))}
+              {projects
+                .filter((project) => project.workspaceId === currentWorkspaceId)
+                .map((project) => (
+                  <CommandItem
+                    key={project.id}
+                    onSelect={() => {
+                      router.push(`/${currentWorkspaceName}/${project.name}`);
+                      setOpen(false);
+                    }}
+                  >
+                    {project.name}
+                  </CommandItem>
+                ))}
             </CommandGroup>
-          );
-        })}
+            <CommandSeparator />
+          </>
+        )}
+
+        {workspaces
+          .filter((workspace) => workspace.id !== currentWorkspaceId)
+          .map((workspace) => {
+            const workspaceProjects = projects.filter(
+              (project) => project.workspaceId === workspace.id,
+            );
+
+            if (workspaceProjects.length === 0) {
+              return null;
+            }
+
+            return (
+              <CommandGroup
+                key={workspace.id}
+                heading={`${workspace.name} Projects`}
+              >
+                {workspaceProjects.map((project) => (
+                  <CommandItem
+                    key={project.id}
+                    onSelect={() => {
+                      router.push(`/${workspace.name}/${project.name}`);
+                      setOpen(false);
+                    }}
+                  >
+                    {project.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            );
+          })}
 
         <CommandSeparator />
 
