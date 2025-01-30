@@ -273,7 +273,7 @@ export function WeeklyCalendar({
   };
 
   const displayedHours = Array.from(
-    { length: endHour - startHour + 1 },
+    { length: endHour - startHour },
     (_, i) => i + startHour,
   );
 
@@ -978,10 +978,16 @@ export function WeeklyCalendar({
               <span className="text-sm">End</span>
               <Input
                 type="number"
-                min={0}
-                max={23}
+                min={1}
+                max={24}
                 value={endHour}
-                onChange={(e) => setEndHour(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  // Ensure end hour is greater than start hour
+                  if (value > startHour) {
+                    setEndHour(value);
+                  }
+                }}
                 className="w-20"
               />
             </div>
