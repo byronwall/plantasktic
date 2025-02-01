@@ -5,6 +5,7 @@ import {
   endOfMonth,
   endOfYear,
   format,
+  startOfDay,
   startOfMonth,
   startOfYear,
   subMonths,
@@ -99,7 +100,8 @@ export function MetadataSummaryDialog({
   // Group metadata by date
   const metadataByDate = metadata.reduce(
     (acc, item) => {
-      const dateKey = format(item.date, "yyyy-MM-dd");
+      const dateKey = format(startOfDay(item.date), "yyyy-MM-dd");
+
       if (!acc[dateKey]) {
         acc[dateKey] = {};
       }
@@ -111,7 +113,9 @@ export function MetadataSummaryDialog({
 
   // Get unique dates for rows
   const uniqueDates = Array.from(
-    new Set(metadata.map((item) => format(item.date, "yyyy-MM-dd"))),
+    new Set(
+      metadata.map((item) => format(startOfDay(item.date), "yyyy-MM-dd")),
+    ),
   ).sort();
 
   const handlePrevious = () => {
@@ -228,9 +232,7 @@ export function MetadataSummaryDialog({
                 <TableBody>
                   {uniqueDates.map((dateKey) => (
                     <TableRow key={dateKey} className="border-b">
-                      <td className="p-2">
-                        {format(new Date(dateKey), "MMM d, yyyy")}
-                      </td>
+                      <td className="p-2">{dateKey}</td>
                       {uniqueKeys.map((key) => (
                         <td key={key} className="p-2">
                           {metadataByDate[dateKey]?.[key] || "-"}
