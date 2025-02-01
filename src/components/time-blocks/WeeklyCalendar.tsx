@@ -91,6 +91,7 @@ export function WeeklyCalendar({
       {
         workspaceId: currentWorkspaceId || "",
         weekStart,
+        weekEnd: addDays(weekStart, numberOfDays),
       },
       {
         enabled: !!currentWorkspaceId,
