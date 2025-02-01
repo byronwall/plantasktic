@@ -54,6 +54,7 @@ export function useTimeBlockMouseEvents(
   timeBlocks: TimeBlock[],
   weekStart: Date,
   topOffset: number,
+  numberOfDays = 7,
 ) {
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
   const [isControlPressed, setIsControlPressed] = useState(false);
@@ -79,6 +80,7 @@ export function useTimeBlockMouseEvents(
       startHour,
       endHour,
       snapMinutes,
+      numberOfDays,
     );
     if (!time) {
       return;
@@ -104,6 +106,7 @@ export function useTimeBlockMouseEvents(
       startHour,
       endHour,
       snapMinutes,
+      numberOfDays,
     );
 
     if (!time) {
@@ -146,6 +149,7 @@ export function useTimeBlockMouseEvents(
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!adjustedTime) {
           return;
@@ -236,6 +240,7 @@ export function useTimeBlockMouseEvents(
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           return null;
@@ -293,14 +298,19 @@ export function useTimeBlockMouseEvents(
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           break;
         }
 
-        const dayOffset = new Date(block.startTime).getDay();
+        // Calculate days since week start instead of using getDay()
+        const daysDiff = Math.floor(
+          (new Date(block.startTime).getTime() - weekStart.getTime()) /
+            (1000 * 60 * 60 * 24),
+        );
         const newTime = new Date(weekStart);
-        newTime.setDate(newTime.getDate() + dayOffset);
+        newTime.setDate(newTime.getDate() + daysDiff);
         newTime.setHours(
           Math.min(Math.max(time.hour, startHour), endHour),
           time.minute,

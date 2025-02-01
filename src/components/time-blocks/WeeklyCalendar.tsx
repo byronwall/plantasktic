@@ -1,19 +1,11 @@
 "use client";
 
-import {
-  addDays,
-  addWeeks,
-  format,
-  startOfDay,
-  startOfWeek,
-  subWeeks,
-} from "date-fns";
+import { addDays, addWeeks, format, startOfDay, subWeeks } from "date-fns";
 import { List, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
-import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 import { DayMetadataSection } from "./DayMetadataSection";
@@ -30,11 +22,10 @@ import { Input } from "../ui/input";
 
 import type { TimeBlock as PrismaTimeBlock } from "@prisma/client";
 
-const DAYS = Array.from({ length: 7 }, (_, i) => i);
-
 type WeeklyCalendarProps = {
   defaultStartHour?: number;
   defaultEndHour?: number;
+  defaultNumberOfDays?: number;
 };
 
 type TimeBlockTask =
@@ -63,28 +54,31 @@ type DayMetadataItem = {
 export function WeeklyCalendar({
   defaultStartHour = 6,
   defaultEndHour = 20,
+  defaultNumberOfDays = 7,
 }: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
 
   const [startHour, setStartHour] = useState(defaultStartHour);
   const [endHour, setEndHour] = useState(defaultEndHour);
+  const [numberOfDays, setNumberOfDays] = useState(defaultNumberOfDays);
   const [snapMinutes, setSnapMinutes] = useState(15);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const weekStart = startOfWeek(selectedDate);
+  const weekStart = selectedDate;
 
   const gridRef = useRef<HTMLDivElement>(null);
 
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
   const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
 
-  const { openForTimeBlock, openForNewBlock } = useTimeBlockDialogStore();
+  const DAYS = Array.from({ length: numberOfDays }, (_, i) => i);
 
   // Fetch time blocks for the current week
   const { data: timeBlocks = [] } = api.timeBlock.getWeeklyBlocks.useQuery(
     {
       weekStart,
       workspaceId: currentWorkspaceId,
+      numberOfDays,
     },
     {
       enabled: !!currentWorkspaceId,
@@ -127,8 +121,8 @@ export function WeeklyCalendar({
     }
 
     const top = (hour - startHour + minutes / 60) * 64;
-    const left = `${(dayOfWeek * 100) / 7}%`;
-    const width = `${100 / 7}%`;
+    const left = `${(dayOfWeek * 100) / numberOfDays}%`;
+    const width = `${100 / numberOfDays}%`;
 
     return { top, left, width };
   };
@@ -264,6 +258,7 @@ export function WeeklyCalendar({
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           return null;
@@ -290,6 +285,7 @@ export function WeeklyCalendar({
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           return null;
@@ -317,14 +313,13 @@ export function WeeklyCalendar({
     timeBlocks,
     weekStart,
     topOffset,
+    numberOfDays,
   );
 
   const renderDragPreview = () => {
     if (dragState.type === "idle") {
       return null;
     }
-
-    let previewBlock: TimeBlockWithPosition | null = null;
 
     switch (dragState.type) {
       case "drag_new": {
@@ -359,19 +354,30 @@ export function WeeklyCalendar({
         }
 
         const now = new Date();
-        previewBlock = {
-          id: "preview",
-          startTime: startDate,
-          endTime: endDate,
-          title: "New Block",
-          workspaceId: currentWorkspaceId || "",
-          color: null,
-          created_at: now,
-          updated_at: now,
-          taskAssignments: [],
-          isFixedTime: false,
-        };
-        break;
+        return (
+          <TimeBlock
+            block={{
+              id: "preview",
+              startTime: startDate,
+              endTime: endDate,
+              title: "New Block",
+              workspaceId: currentWorkspaceId || "",
+              color: null,
+              created_at: now,
+              updated_at: now,
+              taskAssignments: [],
+              isFixedTime: false,
+            }}
+            onDragStart={() => undefined}
+            onResizeStart={() => undefined}
+            isPreview
+            startHour={startHour}
+            gridRef={gridRef}
+            topOffset={topOffset}
+            numberOfDays={numberOfDays}
+            weekStart={weekStart}
+          />
+        );
       }
       case "drag_existing": {
         const { blockId, currentPosition } = dragState;
@@ -388,6 +394,7 @@ export function WeeklyCalendar({
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           return null;
@@ -416,12 +423,23 @@ export function WeeklyCalendar({
           previewEnd.setHours(endHour);
         }
 
-        previewBlock = {
-          ...block,
-          startTime: previewStart,
-          endTime: previewEnd,
-        };
-        break;
+        return (
+          <TimeBlock
+            block={{
+              ...block,
+              startTime: previewStart,
+              endTime: previewEnd,
+            }}
+            onDragStart={() => undefined}
+            onResizeStart={() => undefined}
+            isPreview
+            startHour={startHour}
+            gridRef={gridRef}
+            topOffset={topOffset}
+            numberOfDays={numberOfDays}
+            weekStart={weekStart}
+          />
+        );
       }
       case "resize_block_top":
       case "resize_block_bottom": {
@@ -439,12 +457,17 @@ export function WeeklyCalendar({
           startHour,
           endHour,
           snapMinutes,
+          numberOfDays,
         );
         if (!time) {
           return null;
         }
 
-        const dayOffset = new Date(block.startTime).getDay();
+        // delta between the start of the week and the block's start time
+        const dayOffset =
+          (new Date(block.startTime).getTime() - weekStart.getTime()) /
+          (1000 * 60 * 60 * 24);
+
         const newTime = new Date(weekStart);
         newTime.setDate(newTime.getDate() + dayOffset);
         newTime.setHours(
@@ -454,6 +477,8 @@ export function WeeklyCalendar({
           0,
         );
 
+        // For top resize, update start time but keep end time
+        // For bottom resize, keep start time but update end time
         const previewStart =
           dragState.type === "resize_block_top" ? newTime : startTime;
         const previewEnd =
@@ -467,30 +492,25 @@ export function WeeklyCalendar({
           return null;
         }
 
-        previewBlock = {
-          ...block,
-          startTime: previewStart,
-          endTime: previewEnd,
-        };
-        break;
+        return (
+          <TimeBlock
+            block={{
+              ...block,
+              startTime: previewStart,
+              endTime: previewEnd,
+            }}
+            onDragStart={() => undefined}
+            onResizeStart={() => undefined}
+            isPreview
+            startHour={startHour}
+            gridRef={gridRef}
+            topOffset={topOffset}
+            numberOfDays={numberOfDays}
+            weekStart={weekStart}
+          />
+        );
       }
     }
-
-    if (!previewBlock) {
-      return null;
-    }
-
-    return (
-      <TimeBlock
-        block={previewBlock}
-        onDragStart={() => undefined}
-        onResizeStart={() => undefined}
-        isPreview={true}
-        startHour={startHour}
-        gridRef={gridRef}
-        topOffset={topOffset}
-      />
-    );
   };
 
   const handleBeforeClick = () => {
@@ -778,6 +798,21 @@ export function WeeklyCalendar({
             </div>
           </div>
 
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Days</span>
+            <Input
+              type="number"
+              min={1}
+              max={31}
+              value={numberOfDays}
+              onChange={(e) => {
+                const value = Math.max(1, Math.min(31, Number(e.target.value)));
+                setNumberOfDays(value);
+              }}
+              className="w-20"
+            />
+          </div>
+
           <Button
             variant="outline"
             onClick={() => setIsMetadataSummaryOpen(true)}
@@ -796,7 +831,12 @@ export function WeeklyCalendar({
       <div className="flex flex-col gap-4">
         <div className="rounded-lg border bg-card">
           {/* Header with days */}
-          <div className="grid select-none grid-cols-[auto_repeat(7,1fr)] border-b">
+          <div
+            className="grid select-none border-b"
+            style={{
+              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
+            }}
+          >
             <div className="w-16 border-r p-2" /> {/* Time column header */}
             {DAYS.map((dayOffset, index) => {
               const date = addDays(weekStart, dayOffset);
@@ -824,7 +864,12 @@ export function WeeklyCalendar({
             })}
           </div>
 
-          <div className="grid grid-cols-[auto_repeat(7,1fr)]">
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
+            }}
+          >
             {/* Time labels */}
             <div className="relative w-16 select-none">
               {/* Show count of blocks before visible area */}
@@ -888,12 +933,13 @@ export function WeeklyCalendar({
             <div
               id="main-grid"
               ref={gridRef}
-              className="relative col-span-7 select-none"
+              className="relative select-none"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseLeave}
               style={{
+                gridColumn: `span ${numberOfDays}`,
                 cursor:
                   dragState.type === "drag_existing" && isControlPressed
                     ? "copy"
@@ -919,8 +965,8 @@ export function WeeklyCalendar({
                       top:
                         position.top +
                         (categorizedBlocks.before.length > 0 ? 32 : 0),
-                      left: position.left,
-                      width: position.width,
+                      left: `calc(${position.left} + 1px)`,
+                      width: `calc(${position.width} - 2px)`,
                     }}
                   />
                 );
@@ -931,8 +977,8 @@ export function WeeklyCalendar({
                   key={dayOffset}
                   className={`absolute ${index < DAYS.length - 1 ? "border-r" : ""}`}
                   style={{
-                    left: `${(dayOffset * 100) / 7}%`,
-                    width: `${100 / 7}%`,
+                    left: `calc(${(dayOffset * 100) / numberOfDays}% + 1px)`,
+                    width: `calc(${100 / numberOfDays}% - 2px)`,
                     height: `calc(100% - ${categorizedBlocks.before.length > 0 ? "32px" : "0px"} - ${
                       categorizedBlocks.after.length > 0 ? "32px" : "0px"
                     })`,
@@ -968,6 +1014,8 @@ export function WeeklyCalendar({
                   gridRef={gridRef}
                   isClipped={block.isClipped}
                   topOffset={topOffset}
+                  numberOfDays={numberOfDays}
+                  weekStart={weekStart}
                 />
               ))}
               {renderDragPreview()}
@@ -977,7 +1025,7 @@ export function WeeklyCalendar({
                 <div
                   className="absolute z-20 h-1 w-4 bg-red-300 opacity-50"
                   style={{
-                    left: `${(mousePosition.day * 100) / 7}%`,
+                    left: `calc(${(mousePosition.day * 100) / numberOfDays}% + 1px)`,
                     top:
                       (mousePosition.hour -
                         startHour +
@@ -993,7 +1041,12 @@ export function WeeklyCalendar({
 
         {/* Day Metadata Section */}
         {currentWorkspaceId && (
-          <div className="grid grid-cols-[auto_repeat(7,1fr)] gap-4 rounded-lg border bg-card">
+          <div
+            className="grid gap-4 rounded-lg border bg-card"
+            style={{
+              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
+            }}
+          >
             <div className="w-16 border-r" />
 
             {DAYS.map((dayOffset) => {
@@ -1024,6 +1077,7 @@ export function WeeklyCalendar({
         isOpen={isListDialogOpen}
         onClose={() => setIsListDialogOpen(false)}
         weekStart={weekStart}
+        numberOfDays={numberOfDays}
       />
 
       <MetadataSummaryDialog

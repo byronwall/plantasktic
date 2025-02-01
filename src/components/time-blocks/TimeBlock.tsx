@@ -21,6 +21,8 @@ export type TimeBlockProps = {
   gridRef: RefObject<HTMLDivElement>;
   isClipped?: boolean;
   topOffset?: number;
+  numberOfDays?: number;
+  weekStart: Date;
 };
 
 export function TimeBlock({
@@ -32,6 +34,8 @@ export function TimeBlock({
   gridRef,
   isClipped = false,
   topOffset = 0,
+  numberOfDays = 7,
+  weekStart,
 }: TimeBlockProps) {
   const openEditDialog = useEditTaskStore((state) => state.open);
   const blockStart = new Date(block.startTime);
@@ -44,7 +48,14 @@ export function TimeBlock({
 
     const startTime = new Date(block.startTime);
     const endTime = new Date(block.endTime);
-    const dayOfWeek = startTime.getDay();
+
+    // Calculate days since week start
+    const daysDiff = Math.floor(
+      (startTime.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const dayOfWeek = Math.max(0, Math.min(numberOfDays - 1, daysDiff));
+
+    console.log(dayOfWeek, numberOfDays);
 
     const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
     const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
@@ -65,8 +76,8 @@ export function TimeBlock({
     return {
       top: `${top}px`,
       height: `${height}px`,
-      left: `${(dayOfWeek * 100) / 7 + parseFloat(left) / 7}%`,
-      width: `${parseFloat(width) / 7}%`,
+      left: `${(dayOfWeek * 100) / numberOfDays + parseFloat(left) / numberOfDays}%`,
+      width: `${parseFloat(width) / numberOfDays}%`,
       backgroundColor: block.color || "#3b82f6",
       opacity: isPreview ? 0.4 : 0.8,
       borderRadius: "0.375rem",
@@ -94,6 +105,8 @@ export function TimeBlock({
     startHour,
     topOffset,
     isPreview,
+    numberOfDays,
+    weekStart,
   ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {

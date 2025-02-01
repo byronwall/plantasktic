@@ -2,7 +2,6 @@
 
 import { endOfDay, format, startOfDay } from "date-fns";
 import { Edit, Trash } from "lucide-react";
-import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -13,6 +12,7 @@ import {
 } from "~/components/ui/dialog";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api } from "~/trpc/react";
 
 import { TimeBlockDialog } from "./TimeBlockDialog";
@@ -23,21 +23,24 @@ interface ListTimeBlocksDialogProps {
   isOpen: boolean;
   onClose: () => void;
   weekStart: Date;
+  numberOfDays: number;
 }
 
 export function ListTimeBlocksDialog({
   isOpen,
   onClose,
   weekStart,
+  numberOfDays,
 }: ListTimeBlocksDialogProps) {
   const { currentWorkspaceId } = useCurrentProject();
-  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
-    null,
+  const openTimeBlockDialog = useTimeBlockDialogStore(
+    (state) => state.openForTimeBlock,
   );
 
   const { data: timeBlocks } = api.timeBlock.getWeeklyBlocks.useQuery({
     weekStart,
     workspaceId: currentWorkspaceId,
+    numberOfDays,
   });
 
   const deleteTimeBlock = api.timeBlock.delete.useMutation();
@@ -101,7 +104,7 @@ export function ListTimeBlocksDialog({
   });
 
   // Get dates for the week
-  const weekDates = Array.from({ length: 7 }, (_, i) => {
+  const weekDates = Array.from({ length: numberOfDays }, (_, i) => {
     const date = new Date(weekStart);
     date.setDate(date.getDate() + i);
     return date;
@@ -176,7 +179,7 @@ export function ListTimeBlocksDialog({
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => setSelectedTimeBlock(block)}
+                              onClick={() => openTimeBlockDialog(block)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -199,16 +202,7 @@ export function ListTimeBlocksDialog({
         </DialogContent>
       </Dialog>
 
-      {selectedTimeBlock && (
-        <TimeBlockDialog
-          isOpen={!!selectedTimeBlock}
-          onClose={() => setSelectedTimeBlock(null)}
-          workspaceId={currentWorkspaceId || ""}
-          startTime={selectedTimeBlock.startTime}
-          endTime={selectedTimeBlock.endTime}
-          timeBlockId={selectedTimeBlock.id}
-        />
-      )}
+      <TimeBlockDialog />
     </>
   );
 }

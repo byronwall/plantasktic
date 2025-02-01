@@ -8,6 +8,7 @@ export function getTimeFromGridPosition(
   startHour: number,
   endHour: number,
   snapMinutes: number,
+  numberOfDays = 7,
 ) {
   if (!gridRef.current) {
     return null;
@@ -32,12 +33,15 @@ export function getTimeFromGridPosition(
     return null;
   }
 
-  const dayWidth = rect.width / 7;
+  const dayWidth = rect.width / numberOfDays;
   const hourHeight = 64; // matches the h-16 class
 
   // Add 0.5 * dayWidth to center the drag point within the column
   const adjustedX = relativeX;
-  const day = Math.max(0, Math.min(6, Math.floor(adjustedX / dayWidth)));
+  const day = Math.max(
+    0,
+    Math.min(numberOfDays - 1, Math.floor(adjustedX / dayWidth)),
+  );
   const rawHour = adjustedY / hourHeight + startHour;
   const hour = Math.floor(rawHour);
 

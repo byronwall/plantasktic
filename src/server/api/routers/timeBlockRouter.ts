@@ -1,4 +1,4 @@
-import { endOfDay, endOfWeek, startOfDay } from "date-fns";
+import { addDays, endOfDay, endOfWeek, startOfDay } from "date-fns";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
@@ -9,6 +9,7 @@ export const timeBlockRouter = createTRPCRouter({
       z.object({
         workspaceId: z.string().nullish(),
         weekStart: z.date(),
+        numberOfDays: z.number().min(1).max(31).default(7),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -16,14 +17,14 @@ export const timeBlockRouter = createTRPCRouter({
         return [];
       }
 
-      const weekEnd = endOfWeek(input.weekStart);
+      const weekEnd = addDays(input.weekStart, input.numberOfDays);
 
       return ctx.db.timeBlock.findMany({
         where: {
           workspaceId: input.workspaceId,
           startTime: {
             gte: input.weekStart,
-            lte: weekEnd,
+            lt: weekEnd,
           },
         },
         include: {
