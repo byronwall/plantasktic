@@ -24,39 +24,28 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api } from "~/trpc/react";
 
-interface TimeBlockDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  workspaceId: string;
-  startTime: Date;
-  endTime: Date;
-  timeBlockId?: string;
-  position?: { x: number; y: number };
-}
-
 const generateRandomHslColor = () => {
-  const hue = Math.floor(Math.random() * 360); // Random hue between 0 and 360
-  return `hsl(${hue}, 70%, 50%)`; // Fixed saturation and lightness for consistency
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 50%)`;
 };
 
-export function TimeBlockDialog({
-  isOpen,
-  onClose,
-  workspaceId,
-  startTime,
-  endTime,
-  timeBlockId,
-  position,
-}: TimeBlockDialogProps) {
+export function TimeBlockDialog() {
+  const { isOpen, selectedTimeBlock, newBlockStart, newBlockEnd, close } =
+    useTimeBlockDialogStore();
+
+  const { currentWorkspaceId: workspaceId } = useCurrentProject();
+
   const [title, setTitle] = useState("");
   const [color, setColor] = useState(generateRandomHslColor());
   const [isFixedTime, setIsFixedTime] = useState(false);
-  const [selectedStartDate, setSelectedStartDate] = useState<Date>(startTime);
-  const [selectedEndDate, setSelectedEndDate] = useState<Date>(endTime);
-  const [startTimeStr, setStartTimeStr] = useState(format(startTime, "HH:mm"));
-  const [endTimeStr, setEndTimeStr] = useState(format(endTime, "HH:mm"));
+  const [selectedStartDate, setSelectedStartDate] = useState<Date>(new Date());
+  const [selectedEndDate, setSelectedEndDate] = useState<Date>(new Date());
+  const [startTimeStr, setStartTimeStr] = useState("00:00");
+  const [endTimeStr, setEndTimeStr] = useState("00:00");
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [selectedTaskTitle, setSelectedTaskTitle] = useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -69,14 +58,14 @@ export function TimeBlockDialog({
 
   // Query for existing time block if editing
   const { data: timeBlock } = api.timeBlock.getById.useQuery(
-    { id: timeBlockId || "" },
-    { enabled: !!timeBlockId },
+    { id: selectedTimeBlock?.id || "" },
+    { enabled: !!selectedTimeBlock },
   );
 
   // Query for assigned tasks if editing
   const { data: assignedTasks } = api.timeBlock.getAssignedTasks.useQuery(
-    { timeBlockId: timeBlockId || "" },
-    { enabled: !!timeBlockId },
+    { timeBlockId: selectedTimeBlock?.id || "" },
+    { enabled: !!selectedTimeBlock },
   );
 
   // Mutations
@@ -90,7 +79,7 @@ export function TimeBlockDialog({
   useEffect(() => {
     if (timeBlock) {
       setTitle(timeBlock.title || "");
-      setColor(timeBlock.color || generateRandomHslColor());
+      setColor(timeBlock.color || "#ff0000");
       setIsFixedTime(timeBlock.isFixedTime || false);
       setSelectedStartDate(timeBlock.startTime);
       setSelectedEndDate(timeBlock.endTime);
@@ -98,6 +87,20 @@ export function TimeBlockDialog({
       setEndTimeStr(format(timeBlock.endTime, "HH:mm"));
     }
   }, [timeBlock]);
+
+  // Update state when newBlockStart/newBlockEnd change
+  useEffect(() => {
+    if (newBlockStart && newBlockEnd) {
+      setSelectedStartDate(newBlockStart);
+      setSelectedEndDate(newBlockEnd);
+      setStartTimeStr(format(newBlockStart, "HH:mm"));
+      setEndTimeStr(format(newBlockEnd, "HH:mm"));
+    }
+  }, [newBlockStart, newBlockEnd]);
+
+  if (!workspaceId || (!selectedTimeBlock && !newBlockStart)) {
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,10 +117,10 @@ export function TimeBlockDialog({
     const finalEndTime = new Date(selectedEndDate);
     finalEndTime.setHours(endHours, endMinutes);
 
-    if (timeBlockId) {
+    if (selectedTimeBlock) {
       // Update existing time block
       await updateTimeBlock.mutateAsync({
-        id: timeBlockId,
+        id: selectedTimeBlock.id,
         title: title || "Untitled Block",
         startTime: finalStartTime,
         endTime: finalEndTime,
@@ -143,27 +146,27 @@ export function TimeBlockDialog({
       }
     }
 
-    onClose();
+    close();
     setTitle("");
     setSelectedTaskId(null);
     setSelectedTaskTitle("");
   };
 
   const handleDelete = () => {
-    if (!timeBlockId) {
+    if (!selectedTimeBlock) {
       return;
     }
 
     if (confirm("Are you sure you want to delete this time block?")) {
-      deleteTimeBlock.mutate({ id: timeBlockId });
-      onClose();
+      deleteTimeBlock.mutate({ id: selectedTimeBlock.id });
+      close();
     }
   };
 
   const handleTaskSelect = (taskId: number, taskTitle: string) => {
-    if (timeBlockId) {
+    if (selectedTimeBlock) {
       assignTask.mutate({
-        timeBlockId,
+        timeBlockId: selectedTimeBlock.id,
         taskId,
       });
     } else {
@@ -174,12 +177,12 @@ export function TimeBlockDialog({
   };
 
   const handleTaskUnassign = async (taskId: number) => {
-    if (!timeBlockId) {
+    if (!selectedTimeBlock) {
       return;
     }
 
     await unassignTask.mutateAsync({
-      timeBlockId,
+      timeBlockId: selectedTimeBlock.id,
       taskId,
     });
   };
@@ -189,20 +192,12 @@ export function TimeBlockDialog({
     setSelectedTaskTitle("");
   };
 
-  const dialogStyle = position
-    ? {
-        position: "absolute" as const,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-      }
-    : {};
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent style={dialogStyle}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {timeBlockId ? "Edit" : "Create"} Time Block
+            {selectedTimeBlock ? "Edit" : "Create"} Time Block
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -231,7 +226,7 @@ export function TimeBlockDialog({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Link Task</label>
-              {timeBlockId ? (
+              {selectedTimeBlock ? (
                 // Show assigned tasks list when editing
                 <div className="space-y-2">
                   {assignedTasks?.map((task) => (
@@ -392,7 +387,7 @@ export function TimeBlockDialog({
             </div>
           </div>
           <DialogFooter>
-            {timeBlockId && (
+            {selectedTimeBlock && (
               <Button
                 type="button"
                 variant="destructive"
@@ -403,12 +398,12 @@ export function TimeBlockDialog({
                 Delete
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={close}>
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button type="submit">
-              {timeBlockId ? (
+              {selectedTimeBlock ? (
                 <>
                   <Check className="mr-2 h-4 w-4" />
                   Save

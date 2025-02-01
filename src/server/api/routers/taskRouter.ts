@@ -116,7 +116,7 @@ export const taskRouter = createTRPCRouter({
       z.object({
         showCompleted: z.boolean(),
         projectId: z.string().optional(),
-        workspaceId: z.string().optional(),
+        workspaceId: z.string().nullish(),
       }),
     )
     .query(async ({ ctx, input }) => {

@@ -3,6 +3,7 @@
 import { addDays } from "date-fns";
 import { useEffect, useState } from "react";
 
+import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api } from "~/trpc/react";
 
 import { getTimeFromGridPosition } from "./getTimeFromGridPosition";
@@ -52,15 +53,13 @@ export function useTimeBlockMouseEvents(
   snapMinutes: number,
   timeBlocks: TimeBlock[],
   weekStart: Date,
-  setNewBlockStart: (start: Date) => void,
-  setNewBlockEnd: (end: Date) => void,
-  setIsDialogOpen: (open: boolean) => void,
-  setSelectedTimeBlock: (block: TimeBlock) => void,
   topOffset: number,
 ) {
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
   const [isControlPressed, setIsControlPressed] = useState(false);
   const [mousePosition, setMousePosition] = useState<MousePosition>(null);
+
+  const { openForTimeBlock, openForNewBlock } = useTimeBlockDialogStore();
 
   const updateTimeBlockMutation = api.timeBlock.update.useMutation();
 
@@ -211,9 +210,7 @@ export function useTimeBlockMouseEvents(
           endDate.setTime(startDate.getTime() + snapMinutes * 60 * 1000); // Add one snap interval
         }
 
-        setNewBlockStart(startDate);
-        setNewBlockEnd(endDate);
-        setIsDialogOpen(true);
+        openForNewBlock(startDate, endDate);
         break;
       }
       case "drag_existing": {
@@ -227,7 +224,7 @@ export function useTimeBlockMouseEvents(
         // If total movement is less than threshold, show edit dialog instead of moving
         const MOVEMENT_THRESHOLD = 5; // pixels
         if (totalMovement < MOVEMENT_THRESHOLD) {
-          setSelectedTimeBlock(block);
+          openForTimeBlock(block);
           break;
         }
 

@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 import { DayMetadataSection } from "./DayMetadataSection";
@@ -77,12 +78,7 @@ export function WeeklyCalendar({
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
   const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newBlockStart, setNewBlockStart] = useState<Date | null>(null);
-  const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
-  const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
-    null,
-  );
+  const { openForTimeBlock, openForNewBlock } = useTimeBlockDialogStore();
 
   // Fetch time blocks for the current week
   const { data: timeBlocks = [] } = api.timeBlock.getWeeklyBlocks.useQuery(
@@ -310,7 +306,6 @@ export function WeeklyCalendar({
     handleMouseLeave,
     handleBlockDragStart,
     handleBlockResizeStart,
-
     dragState,
     isControlPressed,
     mousePosition,
@@ -321,10 +316,6 @@ export function WeeklyCalendar({
     snapMinutes,
     timeBlocks,
     weekStart,
-    setNewBlockStart,
-    setNewBlockEnd,
-    setIsDialogOpen,
-    setSelectedTimeBlock,
     topOffset,
   );
 
@@ -1027,30 +1018,7 @@ export function WeeklyCalendar({
         )}
       </div>
 
-      {currentWorkspaceId && newBlockStart && newBlockEnd && (
-        <TimeBlockDialog
-          isOpen={isDialogOpen}
-          onClose={() => {
-            setIsDialogOpen(false);
-            setNewBlockStart(null);
-            setNewBlockEnd(null);
-          }}
-          workspaceId={currentWorkspaceId}
-          startTime={newBlockStart}
-          endTime={newBlockEnd}
-        />
-      )}
-
-      {selectedTimeBlock && (
-        <TimeBlockDialog
-          isOpen={!!selectedTimeBlock}
-          onClose={() => setSelectedTimeBlock(null)}
-          workspaceId={currentWorkspaceId || ""}
-          startTime={selectedTimeBlock.startTime}
-          endTime={selectedTimeBlock.endTime}
-          timeBlockId={selectedTimeBlock.id}
-        />
-      )}
+      <TimeBlockDialog />
 
       <ListTimeBlocksDialog
         isOpen={isListDialogOpen}
