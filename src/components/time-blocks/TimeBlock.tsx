@@ -23,6 +23,7 @@ export type TimeBlockProps = {
   topOffset?: number;
   numberOfDays?: number;
   weekStart: Date;
+  blockHeight?: number;
 };
 
 export function TimeBlock({
@@ -36,18 +37,19 @@ export function TimeBlock({
   topOffset = 0,
   numberOfDays = 7,
   weekStart,
+  blockHeight = 64,
 }: TimeBlockProps) {
   const openEditDialog = useEditTaskStore((state) => state.open);
-  const blockStart = new Date(block.startTime);
-  const blockEnd = new Date(block.endTime);
+  const blockStart = block.startTime;
+  const blockEnd = block.endTime;
 
   const style = useMemo(() => {
     if (!gridRef.current) {
       return {};
     }
 
-    const startTime = new Date(block.startTime);
-    const endTime = new Date(block.endTime);
+    const startTime = block.startTime;
+    const endTime = block.endTime;
 
     // Calculate days since week start
     const daysDiff = Math.floor(
@@ -55,14 +57,12 @@ export function TimeBlock({
     );
     const dayOfWeek = Math.max(0, Math.min(numberOfDays - 1, daysDiff));
 
-    console.log(dayOfWeek, numberOfDays);
-
     const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
     const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
     const duration = endHourDecimal - startHourDecimal;
 
-    const top = (startHourDecimal - startHour) * 64 + topOffset;
-    const height = duration * 64;
+    const top = (startHourDecimal - startHour) * blockHeight + topOffset;
+    const height = duration * blockHeight;
 
     const width =
       (block.totalOverlaps ?? 1) > 1
@@ -107,6 +107,7 @@ export function TimeBlock({
     isPreview,
     numberOfDays,
     weekStart,
+    blockHeight,
   ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {

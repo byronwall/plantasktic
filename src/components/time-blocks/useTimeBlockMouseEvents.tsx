@@ -1,3 +1,9 @@
+// problems to fix:
+// get dat indicator is wrong - appears to use getDay()?
+// resize events are wrong - not accounting for block height or offset correctly?
+// really the dates are stored correctly - the blocks are rendered to the wrong column
+// but then it's OK some of the time? weird time zone problem?
+
 "use client";
 
 import { addDays } from "date-fns";
@@ -55,6 +61,7 @@ export function useTimeBlockMouseEvents(
   weekStart: Date,
   topOffset: number,
   numberOfDays = 7,
+  blockHeight = 64,
 ) {
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
   const [isControlPressed, setIsControlPressed] = useState(false);
@@ -81,6 +88,7 @@ export function useTimeBlockMouseEvents(
       endHour,
       snapMinutes,
       numberOfDays,
+      blockHeight,
     );
     if (!time) {
       return;
@@ -107,6 +115,7 @@ export function useTimeBlockMouseEvents(
       endHour,
       snapMinutes,
       numberOfDays,
+      blockHeight,
     );
 
     if (!time) {
@@ -140,20 +149,6 @@ export function useTimeBlockMouseEvents(
         const dx = e.pageX - (startPosition.x || e.pageX);
         const dy = e.pageY - (startPosition.y || e.pageY);
         const newMovement = totalMovement + Math.sqrt(dx * dx + dy * dy);
-
-        const adjustedTime = getTimeFromGridPosition(
-          e.pageX,
-          e.pageY - startOffset.y,
-          gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-        );
-        if (!adjustedTime) {
-          return;
-        }
 
         setDragState({
           ...dragState,
@@ -226,7 +221,7 @@ export function useTimeBlockMouseEvents(
         }
 
         // If total movement is less than threshold, show edit dialog instead of moving
-        const MOVEMENT_THRESHOLD = 5; // pixels
+        const MOVEMENT_THRESHOLD = 5;
         if (totalMovement < MOVEMENT_THRESHOLD) {
           openForTimeBlock(block);
           break;
@@ -241,6 +236,7 @@ export function useTimeBlockMouseEvents(
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           return null;
@@ -299,6 +295,7 @@ export function useTimeBlockMouseEvents(
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           break;

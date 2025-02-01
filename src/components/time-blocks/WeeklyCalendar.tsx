@@ -26,6 +26,7 @@ type WeeklyCalendarProps = {
   defaultStartHour?: number;
   defaultEndHour?: number;
   defaultNumberOfDays?: number;
+  defaultHeight?: number;
 };
 
 type TimeBlockTask =
@@ -55,6 +56,7 @@ export function WeeklyCalendar({
   defaultStartHour = 6,
   defaultEndHour = 20,
   defaultNumberOfDays = 7,
+  defaultHeight = 64,
 }: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
 
@@ -62,8 +64,11 @@ export function WeeklyCalendar({
   const [endHour, setEndHour] = useState(defaultEndHour);
   const [numberOfDays, setNumberOfDays] = useState(defaultNumberOfDays);
   const [snapMinutes, setSnapMinutes] = useState(15);
+  const [blockHeight, setBlockHeight] = useState(defaultHeight);
 
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    startOfDay(new Date()),
+  );
   const weekStart = selectedDate;
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -121,7 +126,7 @@ export function WeeklyCalendar({
       return null;
     }
 
-    const top = (hour - startHour + minutes / 60) * 64;
+    const top = (hour - startHour + minutes / 60) * blockHeight;
     const left = `${(dayOfWeek * 100) / numberOfDays}%`;
     const width = `${100 / numberOfDays}%`;
 
@@ -130,7 +135,7 @@ export function WeeklyCalendar({
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
-      setSelectedDate(date);
+      setSelectedDate(startOfDay(date));
     }
   };
 
@@ -221,7 +226,7 @@ export function WeeklyCalendar({
     }
 
     const getPosition = (hour: number, minute = 0) => {
-      return (hour - startHour + minute / 60) * 64 + topOffset;
+      return (hour - startHour + minute / 60) * blockHeight + topOffset;
     };
 
     switch (dragState.type) {
@@ -315,6 +320,7 @@ export function WeeklyCalendar({
     weekStart,
     topOffset,
     numberOfDays,
+    blockHeight,
   );
 
   const renderDragPreview = () => {
@@ -377,6 +383,7 @@ export function WeeklyCalendar({
             topOffset={topOffset}
             numberOfDays={numberOfDays}
             weekStart={weekStart}
+            blockHeight={blockHeight}
           />
         );
       }
@@ -439,6 +446,7 @@ export function WeeklyCalendar({
             topOffset={topOffset}
             numberOfDays={numberOfDays}
             weekStart={weekStart}
+            blockHeight={blockHeight}
           />
         );
       }
@@ -508,6 +516,7 @@ export function WeeklyCalendar({
             topOffset={topOffset}
             numberOfDays={numberOfDays}
             weekStart={weekStart}
+            blockHeight={blockHeight}
           />
         );
       }
@@ -731,6 +740,11 @@ export function WeeklyCalendar({
     return false;
   };
 
+  // Add view buttons section after the existing buttons
+  const handleViewChange = (height: number) => {
+    setBlockHeight(height);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -814,6 +828,31 @@ export function WeeklyCalendar({
             />
           </div>
 
+          {/* Add view buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={blockHeight === 64 ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleViewChange(64)}
+            >
+              Normal
+            </Button>
+            <Button
+              variant={blockHeight === 96 ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleViewChange(96)}
+            >
+              Detailed
+            </Button>
+            <Button
+              variant={blockHeight === 128 ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleViewChange(128)}
+            >
+              Very Detailed
+            </Button>
+          </div>
+
           <Button
             variant="outline"
             onClick={() => setIsMetadataSummaryOpen(true)}
@@ -887,7 +926,8 @@ export function WeeklyCalendar({
               {displayedHours.map((hour, index) => (
                 <div
                   key={hour}
-                  className={`h-16 border-r pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
+                  className={`border-r pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
+                  style={{ height: `${blockHeight}px` }}
                 >
                   {format(new Date().setHours(hour, 0), "h a")}
                 </div>
@@ -989,7 +1029,8 @@ export function WeeklyCalendar({
                   {displayedHours.map((hour, hourIndex) => (
                     <div
                       key={hour}
-                      className={`h-16 ${hourIndex < displayedHours.length - 1 ? "border-b" : ""}`}
+                      className={`${hourIndex < displayedHours.length - 1 ? "border-b" : ""}`}
+                      style={{ height: `${blockHeight}px` }}
                     />
                   ))}
                 </div>
@@ -1017,6 +1058,7 @@ export function WeeklyCalendar({
                   topOffset={topOffset}
                   numberOfDays={numberOfDays}
                   weekStart={weekStart}
+                  blockHeight={blockHeight}
                 />
               ))}
               {renderDragPreview()}
@@ -1031,7 +1073,7 @@ export function WeeklyCalendar({
                       (mousePosition.hour -
                         startHour +
                         mousePosition.minute / 60) *
-                        64 +
+                        blockHeight +
                       topOffset,
                   }}
                 />

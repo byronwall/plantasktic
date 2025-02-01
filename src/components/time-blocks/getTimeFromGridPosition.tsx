@@ -9,6 +9,7 @@ export function getTimeFromGridPosition(
   endHour: number,
   snapMinutes: number,
   numberOfDays = 7,
+  blockHeight = 64,
 ) {
   if (!gridRef.current) {
     return null;
@@ -34,7 +35,6 @@ export function getTimeFromGridPosition(
   }
 
   const dayWidth = rect.width / numberOfDays;
-  const hourHeight = 64; // matches the h-16 class
 
   // Add 0.5 * dayWidth to center the drag point within the column
   const adjustedX = relativeX;
@@ -42,7 +42,7 @@ export function getTimeFromGridPosition(
     0,
     Math.min(numberOfDays - 1, Math.floor(adjustedX / dayWidth)),
   );
-  const rawHour = adjustedY / hourHeight + startHour;
+  const rawHour = adjustedY / blockHeight + startHour;
   const hour = Math.floor(rawHour);
 
   // Calculate minutes and snap to interval
