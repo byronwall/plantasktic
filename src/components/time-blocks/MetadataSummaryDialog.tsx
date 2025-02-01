@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  addDays,
   addMonths,
   endOfMonth,
   endOfYear,
@@ -11,7 +12,7 @@ import {
   subMonths,
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { DateInput } from "~/components/ui/date-input";
@@ -46,20 +47,24 @@ export function MetadataSummaryDialog({
   weekStart,
 }: MetadataSummaryDialogProps) {
   const { currentWorkspaceId } = useCurrentProject();
-  const [viewMode, setViewMode] = useState<ViewMode>("month");
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState<Date>(weekStart);
   const [customStartDate, setCustomStartDate] = useState<Date>(weekStart);
   const [customEndDate, setCustomEndDate] = useState<Date>(
     endOfMonth(weekStart),
   );
 
+  useEffect(() => {
+    setSelectedDate(weekStart);
+  }, [weekStart]);
+
   // Calculate date range based on view mode
   const getDateRange = () => {
     switch (viewMode) {
       case "week":
         return {
-          startDate: selectedDate,
-          endDate: endOfMonth(selectedDate),
+          startDate: weekStart,
+          endDate: addDays(weekStart, 7),
         };
       case "month":
         return {
