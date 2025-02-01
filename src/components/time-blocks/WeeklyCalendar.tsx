@@ -21,7 +21,10 @@ import { MetadataSummaryDialog } from "./MetadataSummaryDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
 import { TimeBlock } from "./TimeBlock";
 import { TimeBlockDialog } from "./TimeBlockDialog";
-import { useTimeBlockMouseEvents } from "./useTimeBlockMouseEvents";
+import {
+  getTimeFromGridPosition,
+  useTimeBlockMouseEvents,
+} from "./useTimeBlockMouseEvents";
 
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
@@ -261,6 +264,11 @@ export function WeeklyCalendar({
         const time = getTimeFromGridPosition(
           dragState.currentPosition.x,
           dragState.currentPosition.y,
+          gridRef,
+          topOffset,
+          startHour,
+          endHour,
+          snapMinutes,
         );
         if (!time) {
           return null;
@@ -282,6 +290,11 @@ export function WeeklyCalendar({
         const time = getTimeFromGridPosition(
           dragState.currentPosition.x,
           dragState.currentPosition.y,
+          gridRef,
+          topOffset,
+          startHour,
+          endHour,
+          snapMinutes,
         );
         if (!time) {
           return null;
@@ -298,7 +311,7 @@ export function WeeklyCalendar({
     handleMouseLeave,
     handleBlockDragStart,
     handleBlockResizeStart,
-    getTimeFromGridPosition,
+
     dragState,
     isControlPressed,
     mousePosition,
@@ -380,6 +393,11 @@ export function WeeklyCalendar({
         const time = getTimeFromGridPosition(
           currentPosition.x,
           currentPosition.y,
+          gridRef,
+          topOffset,
+          startHour,
+          endHour,
+          snapMinutes,
         );
         if (!time) {
           return null;
@@ -426,6 +444,11 @@ export function WeeklyCalendar({
         const time = getTimeFromGridPosition(
           currentPosition.x,
           currentPosition.y,
+          gridRef,
+          topOffset,
+          startHour,
+          endHour,
+          snapMinutes,
         );
         if (!time) {
           return null;
