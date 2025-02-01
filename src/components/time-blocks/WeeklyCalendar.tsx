@@ -16,15 +16,13 @@ import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 import { DayMetadataSection } from "./DayMetadataSection";
+import { getTimeFromGridPosition } from "./getTimeFromGridPosition";
 import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
 import { MetadataSummaryDialog } from "./MetadataSummaryDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
 import { TimeBlock } from "./TimeBlock";
 import { TimeBlockDialog } from "./TimeBlockDialog";
-import {
-  getTimeFromGridPosition,
-  useTimeBlockMouseEvents,
-} from "./useTimeBlockMouseEvents";
+import { useTimeBlockMouseEvents } from "./useTimeBlockMouseEvents";
 
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
@@ -66,21 +64,22 @@ export function WeeklyCalendar({
   defaultEndHour = 20,
 }: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   const [startHour, setStartHour] = useState(defaultStartHour);
   const [endHour, setEndHour] = useState(defaultEndHour);
   const [snapMinutes, setSnapMinutes] = useState(15);
+
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const weekStart = startOfWeek(selectedDate);
+
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Dialog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
   const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newBlockStart, setNewBlockStart] = useState<Date | null>(null);
   const [newBlockEnd, setNewBlockEnd] = useState<Date | null>(null);
-
-  // Remove DndKit state and sensors
   const [selectedTimeBlock, setSelectedTimeBlock] = useState<TimeBlock | null>(
     null,
   );
