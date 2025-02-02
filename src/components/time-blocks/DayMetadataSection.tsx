@@ -81,10 +81,11 @@ export function DayMetadataSection({
   });
 
   const upsertMutation = api.timeBlock.upsertTimeBlockDayMeta.useMutation();
+  const createMutation = api.timeBlock.createTimeBlockDayMeta.useMutation();
   const deleteMutation = api.timeBlock.deleteTimeBlockDayMeta.useMutation();
 
   const onSubmit = async (data: MetadataFormData) => {
-    await upsertMutation.mutateAsync({
+    await createMutation.mutateAsync({
       workspaceId,
       date: startOfDay(date),
       key: data.key,
@@ -95,22 +96,28 @@ export function DayMetadataSection({
     setIsOpen(false);
   };
 
-  const handleDelete = (key: string) => {
+  const handleDelete = (item: DayMetadataItem) => {
     deleteMutation.mutate({
-      workspaceId,
-      date: startOfDay(date),
-      key,
+      id: item.id,
     });
     setEditingMetadata(null);
   };
 
   const handleBooleanChange = (key: string, checked: boolean) => {
-    upsertMutation.mutate({
-      workspaceId,
-      date: startOfDay(date),
-      key,
-      value: checked.toString(),
-    });
+    const existingMetadata = metadata.find((item) => item.key === key);
+    if (existingMetadata) {
+      upsertMutation.mutate({
+        id: existingMetadata.id,
+        value: checked.toString(),
+      });
+    } else {
+      createMutation.mutate({
+        workspaceId,
+        date: startOfDay(date),
+        key,
+        value: checked.toString(),
+      });
+    }
   };
 
   const handleEditSubmit = async (data: EditMetadataFormData) => {
@@ -119,9 +126,7 @@ export function DayMetadataSection({
     }
 
     await upsertMutation.mutateAsync({
-      workspaceId,
-      date,
-      key: editingMetadata.key,
+      id: editingMetadata.id,
       value: data.value,
     });
 
@@ -240,9 +245,9 @@ export function DayMetadataSection({
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{item.key}:</span>
                   <EditableMetadataValue
-                    date={date}
                     metadataKey={item.key}
                     value={item.value}
+                    id={item.id}
                   />
                 </div>
               </div>
@@ -279,7 +284,7 @@ export function DayMetadataSection({
                   type="button"
                   variant="destructive"
                   onClick={() =>
-                    editingMetadata && handleDelete(editingMetadata.key)
+                    editingMetadata && handleDelete(editingMetadata)
                   }
                 >
                   Delete

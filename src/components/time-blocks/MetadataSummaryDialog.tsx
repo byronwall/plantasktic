@@ -112,10 +112,13 @@ export function MetadataSummaryDialog({
       if (!acc[dateKey]) {
         acc[dateKey] = {};
       }
-      acc[dateKey][item.key] = item.value;
+      acc[dateKey][item.key] = {
+        value: item.value,
+        id: item.id,
+      };
       return acc;
     },
-    {} as Record<string, Record<string, string>>,
+    {} as Record<string, Record<string, { value: string; id: string }>>,
   );
 
   // Get unique dates for rows
@@ -244,9 +247,9 @@ export function MetadataSummaryDialog({
                         <td key={key} className="p-2">
                           {metadataByDate[dateKey]?.[key] ? (
                             <EditableMetadataValue
-                              date={new Date(dateKey)}
                               metadataKey={key}
-                              value={metadataByDate[dateKey][key]}
+                              value={metadataByDate[dateKey][key].value}
+                              id={metadataByDate[dateKey][key].id}
                             />
                           ) : (
                             "-"

@@ -237,6 +237,22 @@ export const timeBlockRouter = createTRPCRouter({
   upsertTimeBlockDayMeta: protectedProcedure
     .input(
       z.object({
+        id: z.string(),
+        value: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.timeBlockDayMetadata.update({
+        where: { id: input.id },
+        data: {
+          value: input.value,
+        },
+      });
+    }),
+
+  createTimeBlockDayMeta: protectedProcedure
+    .input(
+      z.object({
         workspaceId: z.string(),
         date: z.date(),
         key: z.string(),
@@ -244,19 +260,9 @@ export const timeBlockRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.timeBlockDayMetadata.upsert({
-        where: {
-          workspaceId_date_key: {
-            workspaceId: input.workspaceId,
-            date: input.date,
-            key: input.key,
-          },
-        },
-        create: {
+      return ctx.db.timeBlockDayMetadata.create({
+        data: {
           ...input,
-        },
-        update: {
-          value: input.value,
         },
       });
     }),
@@ -264,20 +270,12 @@ export const timeBlockRouter = createTRPCRouter({
   deleteTimeBlockDayMeta: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string(),
-        date: z.date(),
-        key: z.string(),
+        id: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.timeBlockDayMetadata.delete({
-        where: {
-          workspaceId_date_key: {
-            workspaceId: input.workspaceId,
-            date: startOfDay(input.date),
-            key: input.key,
-          },
-        },
+        where: { id: input.id },
       });
     }),
 

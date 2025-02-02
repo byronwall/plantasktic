@@ -19,7 +19,6 @@ import {
   FormLabel,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 type EditMetadataFormData = {
@@ -27,19 +26,17 @@ type EditMetadataFormData = {
 };
 
 type EditableMetadataValueProps = {
-  date: Date;
   metadataKey: string;
   value: string;
+  id: string;
 };
 
 export const EditableMetadataValue = ({
-  date,
   metadataKey,
   value,
+  id,
 }: EditableMetadataValueProps) => {
   const [isEditing, setIsEditing] = useState(false);
-
-  const { currentWorkspaceId: workspaceId } = useCurrentProject();
 
   const form = useForm<EditMetadataFormData>({
     defaultValues: {
@@ -50,15 +47,9 @@ export const EditableMetadataValue = ({
   const upsertMutation = api.timeBlock.upsertTimeBlockDayMeta.useMutation();
   const deleteMutation = api.timeBlock.deleteTimeBlockDayMeta.useMutation();
 
-  if (!workspaceId) {
-    return null;
-  }
-
   const handleSubmit = async (data: EditMetadataFormData) => {
     await upsertMutation.mutateAsync({
-      workspaceId,
-      date,
-      key: metadataKey,
+      id,
       value: data.value,
     });
 
@@ -67,18 +58,14 @@ export const EditableMetadataValue = ({
 
   const handleDelete = () => {
     deleteMutation.mutate({
-      workspaceId,
-      date,
-      key: metadataKey,
+      id,
     });
     setIsEditing(false);
   };
 
   const handleBooleanChange = (checked: boolean) => {
     upsertMutation.mutate({
-      workspaceId,
-      date,
-      key: metadataKey,
+      id,
       value: checked.toString(),
     });
   };
