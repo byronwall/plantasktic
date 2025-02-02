@@ -47,15 +47,16 @@ export function CommandMenu() {
     workspaceId: currentWorkspaceId ?? undefined,
   });
 
-  const { data: searchResults = [] } = api.task.searchTasks.useQuery(
-    {
-      query: searchQuery,
-      workspaceId: currentWorkspaceId ?? undefined,
-    },
-    {
-      enabled: searchQuery.length > 0,
-    },
-  );
+  const { data: searchResults = [], isLoading: isSearching } =
+    api.task.searchTasks.useQuery(
+      {
+        query: searchQuery,
+        workspaceId: currentWorkspaceId ?? undefined,
+      },
+      {
+        enabled: searchQuery.length > 0,
+      },
+    );
 
   const createWorkspace = api.workspace.create.useMutation({
     onSuccess: () => {
@@ -109,6 +110,8 @@ export function CommandMenu() {
     setOpen(false);
   };
 
+  const hasResults = searchQuery.length > 0 && searchResults.length > 0;
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput
@@ -118,38 +121,6 @@ export function CommandMenu() {
       />
       <CommandList className="max-h-[calc(100vh-180px)]">
         <CommandEmpty>No results found.</CommandEmpty>
-
-        {searchQuery.length > 0 && searchResults.length > 0 && (
-          <>
-            <CommandGroup
-              heading={
-                <div className="flex items-center gap-2">
-                  <Search className="size-4" />
-                  <span>Search Results</span>
-                </div>
-              }
-            >
-              {searchResults.map((task) => (
-                <CommandItem
-                  key={task.task_id}
-                  onSelect={() => handleTaskClick(task)}
-                >
-                  <TaskTitle
-                    taskId={task.task_id}
-                    title={task.title}
-                    isReadOnly
-                  />
-                  {task.project && (
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      {task.project.name}
-                    </span>
-                  )}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandSeparator />
-          </>
-        )}
 
         <CommandGroup heading="Navigation">
           <CommandItem
@@ -298,6 +269,41 @@ export function CommandMenu() {
             </CommandItem>
           ))}
         </CommandGroup>
+
+        {hasResults && <CommandSeparator />}
+
+        {hasResults && (
+          <CommandGroup
+            key={searchQuery}
+            heading={
+              <div className="flex items-center gap-2">
+                <Search className="size-4" />
+                <span>Search Results</span>
+              </div>
+            }
+          >
+            {searchResults.map((task) => (
+              <CommandItem
+                key={task.task_id}
+                onSelect={() => handleTaskClick(task)}
+                value={task.title + task.project?.name}
+              >
+                <div className="">
+                  <TaskTitle
+                    taskId={task.task_id}
+                    title={task.title}
+                    isReadOnly
+                  />
+                  {task.project && (
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {task.project.name}
+                    </span>
+                  )}
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
       </CommandList>
     </CommandDialog>
   );
