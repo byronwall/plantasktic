@@ -1,5 +1,5 @@
 "use client";
-import { Link } from "lucide-react";
+import { Link, Lock } from "lucide-react";
 import { type RefObject, useMemo } from "react";
 
 import { cn } from "~/lib/utils";
@@ -153,6 +153,7 @@ export function TimeBlock({
         <span className="flex-1 text-wrap">
           {block.title || "Untitled Block"}
         </span>
+        {block.isFixedTime && <Lock className="h-3 w-3" />}
         {block.taskAssignments?.length > 0 && (
           <button
             onMouseDown={(e) => {
