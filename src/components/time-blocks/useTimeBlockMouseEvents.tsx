@@ -4,7 +4,7 @@
 "use client";
 
 import { addDays } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api } from "~/trpc/react";
@@ -61,8 +61,9 @@ export function useTimeBlockMouseEvents(
   blockHeight = 64,
 ) {
   const [dragState, setDragState] = useState<DragState>({ type: "idle" });
-  const [isControlPressed, setIsControlPressed] = useState(false);
   const [mousePosition, setMousePosition] = useState<MousePosition>(null);
+  const isControlPressedRef = useRef(false);
+  const isControlPressed = isControlPressedRef.current;
 
   const { openForTimeBlock, openForNewBlock } = useTimeBlockDialogStore();
 
@@ -155,7 +156,7 @@ export function useTimeBlockMouseEvents(
           },
           startPosition: { x: e.pageX, y: e.pageY },
           totalMovement: newMovement,
-          shouldDuplicate: isControlPressed,
+          shouldDuplicate: isControlPressedRef.current,
         });
         break;
       }
@@ -350,7 +351,7 @@ export function useTimeBlockMouseEvents(
       currentPosition: { x: 0, y: 0 },
       startPosition: { x: 0, y: 0 },
       totalMovement: 0,
-      shouldDuplicate: isControlPressed,
+      shouldDuplicate: isControlPressedRef.current,
     });
   };
 
@@ -374,13 +375,13 @@ export function useTimeBlockMouseEvents(
       if (e.key === "Escape" && dragState.type !== "idle") {
         setDragState({ type: "idle" });
       } else if (e.key === "Control" || e.key === "Meta") {
-        setIsControlPressed(true);
+        isControlPressedRef.current = true;
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Control" || e.key === "Meta") {
-        setIsControlPressed(false);
+        isControlPressedRef.current = false;
       }
     };
 
