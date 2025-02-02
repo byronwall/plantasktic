@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Check, Link, Lock, Plus, Search, Trash, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { TaskAvatar } from "~/app/_components/TaskAvatar";
 import { Button } from "~/components/ui/button";
 import {
   Command,
@@ -26,6 +27,7 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
+import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
 
 const generateRandomHslColor = () => {
@@ -36,6 +38,7 @@ const generateRandomHslColor = () => {
 export function TimeBlockDialog() {
   const { isOpen, selectedTimeBlock, newBlockStart, newBlockEnd, close } =
     useTimeBlockDialogStore();
+  const openEditDialog = useEditTaskStore((state) => state.open);
 
   const { currentWorkspaceId: workspaceId } = useCurrentProject();
 
@@ -234,8 +237,11 @@ export function TimeBlockDialog() {
                       key={task.task_id}
                       className="flex items-center justify-between rounded-md border border-border bg-muted/50 p-2"
                     >
-                      <div className="flex items-center gap-2">
-                        <Link className="h-4 w-4 text-muted-foreground" />
+                      <div
+                        className="flex flex-1 cursor-pointer items-center gap-2"
+                        onClick={() => openEditDialog(task)}
+                      >
+                        <TaskAvatar title={task.title} task={task} />
                         <span className="text-sm">{task.title}</span>
                       </div>
                       <Button

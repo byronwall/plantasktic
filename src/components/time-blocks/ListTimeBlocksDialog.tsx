@@ -15,8 +15,6 @@ import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
 import { api } from "~/trpc/react";
 
-import { TimeBlockDialog } from "./TimeBlockDialog";
-
 import type { TimeBlock } from "./WeeklyCalendar";
 
 interface ListTimeBlocksDialogProps {
@@ -201,8 +199,6 @@ export function ListTimeBlocksDialog({
           </ScrollArea>
         </DialogContent>
       </Dialog>
-
-      <TimeBlockDialog />
     </>
   );
 }
