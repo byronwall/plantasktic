@@ -1089,9 +1089,27 @@ export function WeeklyCalendar({
                   {displayedHours.map((hour, hourIndex) => (
                     <div
                       key={hour}
-                      className={`${hourIndex < displayedHours.length - 1 ? "border-b" : ""}`}
+                      className="relative"
                       style={{ height: `${blockHeight}px` }}
-                    />
+                    >
+                      {/* Minor tick marks */}
+                      {Array.from(
+                        { length: Math.floor(60 / snapMinutes) - 1 },
+                        (_, i) => (
+                          <div
+                            key={i}
+                            className="absolute left-0 w-full border-b border-gray-100"
+                            style={{
+                              top: `${((i + 1) * snapMinutes * blockHeight) / 60}px`,
+                            }}
+                          />
+                        ),
+                      )}
+                      {/* Hour border */}
+                      {hourIndex < displayedHours.length - 1 && (
+                        <div className="absolute bottom-0 left-0 w-full border-b" />
+                      )}
+                    </div>
                   ))}
                 </div>
               ))}
