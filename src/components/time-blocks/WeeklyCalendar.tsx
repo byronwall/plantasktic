@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, addWeeks, format, startOfDay, subWeeks } from "date-fns";
-import { List, Table, Wand2 } from "lucide-react";
+import { List, Settings, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -19,6 +19,7 @@ import { useTimeBlockMouseEvents } from "./useTimeBlockMouseEvents";
 
 import { DateInput } from "../ui/date-input";
 import { Input } from "../ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 
 import type { TimeBlock as PrismaTimeBlock } from "@prisma/client";
 
@@ -56,7 +57,7 @@ export function WeeklyCalendar({
   defaultStartHour = 6,
   defaultEndHour = 20,
   defaultNumberOfDays = 7,
-  defaultHeight = 96,
+  defaultHeight = 64,
 }: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
 
@@ -806,93 +807,115 @@ export function WeeklyCalendar({
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Start</span>
-              <Input
-                type="number"
-                min={0}
-                max={23}
-                value={startHour}
-                onChange={(e) => setStartHour(Number(e.target.value))}
-                className="w-20"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">End</span>
-              <Input
-                type="number"
-                min={1}
-                max={24}
-                value={endHour}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  // Ensure end hour is greater than start hour
-                  if (value > startHour) {
-                    setEndHour(value);
-                  }
-                }}
-                className="w-20"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Snap (min)</span>
-              <Input
-                type="number"
-                min={1}
-                max={60}
-                value={snapMinutes}
-                onChange={(e) => {
-                  const value = Math.max(
-                    1,
-                    Math.min(60, Number(e.target.value)),
-                  );
-                  setSnapMinutes(value);
-                }}
-                className="w-20"
-              />
-            </div>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px]">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Time Range</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm">Start Hour</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={startHour}
+                        onChange={(e) => setStartHour(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-sm">End Hour</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={24}
+                        value={endHour}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          if (value > startHour) {
+                            setEndHour(value);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Days</span>
-            <Input
-              type="number"
-              min={1}
-              max={31}
-              value={numberOfDays}
-              onChange={(e) => {
-                const value = Math.max(1, Math.min(31, Number(e.target.value)));
-                setNumberOfDays(value);
-              }}
-              className="w-20"
-            />
-          </div>
-
-          {/* Add view buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={blockHeight === 64 ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleViewChange(64)}
-            >
-              Normal
-            </Button>
-            <Button
-              variant={blockHeight === 96 ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleViewChange(96)}
-            >
-              Detailed
-            </Button>
-            <Button
-              variant={blockHeight === 128 ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleViewChange(128)}
-            >
-              Very Detailed
-            </Button>
-          </div>
+                <div className="space-y-2">
+                  <h4 className="font-medium">View Settings</h4>
+                  <div className="grid gap-4">
+                    <div>
+                      <span className="text-sm">Days to Show</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={numberOfDays}
+                        onChange={(e) => {
+                          const value = Math.max(
+                            1,
+                            Math.min(31, Number(e.target.value)),
+                          );
+                          setNumberOfDays(value);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-sm">Snap Minutes</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={snapMinutes}
+                        onChange={(e) => {
+                          const value = Math.max(
+                            1,
+                            Math.min(60, Number(e.target.value)),
+                          );
+                          setSnapMinutes(value);
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-sm">Block Height</span>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          variant={blockHeight === 64 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleViewChange(64)}
+                          className="flex-1"
+                        >
+                          Normal
+                        </Button>
+                        <Button
+                          variant={blockHeight === 96 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleViewChange(96)}
+                          className="flex-1"
+                        >
+                          Detailed
+                        </Button>
+                        <Button
+                          variant={blockHeight === 128 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleViewChange(128)}
+                          className="flex-1"
+                        >
+                          Very Detailed
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Button
             variant="outline"
