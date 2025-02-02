@@ -186,28 +186,55 @@ export function WeeklyCalendar({
         const blockStart = new Date(block.startTime);
         const blockEnd = new Date(block.endTime);
 
-        // Normalize times to the same day for comparison
+        // Get the day-specific start and end times for comparison
+        const dayStart = new Date(startOfDay);
+        dayStart.setDate(blockStart.getDate());
+        dayStart.setMonth(blockStart.getMonth());
+        dayStart.setFullYear(blockStart.getFullYear());
+
+        const dayEnd = new Date(endOfDay);
+        dayEnd.setDate(blockStart.getDate());
+        dayEnd.setMonth(blockStart.getMonth());
+        dayEnd.setFullYear(blockStart.getFullYear());
+
+        // Create normalized times for comparison while preserving the original day
         const normalizedStart = new Date(blockStart);
-        normalizedStart.setFullYear(startOfDay.getFullYear());
-        normalizedStart.setMonth(startOfDay.getMonth());
-        normalizedStart.setDate(startOfDay.getDate());
+        normalizedStart.setHours(
+          blockStart.getHours(),
+          blockStart.getMinutes(),
+          0,
+          0,
+        );
 
         const normalizedEnd = new Date(blockEnd);
-        normalizedEnd.setFullYear(startOfDay.getFullYear());
-        normalizedEnd.setMonth(startOfDay.getMonth());
-        normalizedEnd.setDate(startOfDay.getDate());
+        normalizedEnd.setHours(
+          blockEnd.getHours(),
+          blockEnd.getMinutes(),
+          0,
+          0,
+        );
 
-        if (normalizedEnd <= startOfDay) {
+        if (normalizedEnd <= dayStart) {
           acc.before.push(block);
-        } else if (normalizedStart >= endOfDay) {
+        } else if (normalizedStart >= dayEnd) {
           acc.after.push(block);
         } else {
-          // For visible blocks, clip the times to the visible range
+          // For visible blocks, clip the times to the visible range while preserving the day
+          const clippedStart = new Date(blockStart);
+          if (normalizedStart < dayStart) {
+            clippedStart.setHours(startHour, 0, 0, 0);
+          }
+
+          const clippedEnd = new Date(blockEnd);
+          if (normalizedEnd > dayEnd) {
+            clippedEnd.setHours(endHour, 59, 59, 999);
+          }
+
           const clippedBlock = {
             ...block,
-            startTime: normalizedStart < startOfDay ? startOfDay : blockStart,
-            endTime: normalizedEnd > endOfDay ? endOfDay : blockEnd,
-            isClipped: normalizedStart < startOfDay || normalizedEnd > endOfDay,
+            startTime: clippedStart,
+            endTime: clippedEnd,
+            isClipped: normalizedStart < dayStart || normalizedEnd > dayEnd,
           };
           acc.visible.push(clippedBlock);
         }

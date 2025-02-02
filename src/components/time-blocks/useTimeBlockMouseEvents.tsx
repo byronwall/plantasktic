@@ -1,8 +1,5 @@
 // problems to fix:
 // get dat indicator is wrong - appears to use getDay()?
-// resize events are wrong - not accounting for block height or offset correctly?
-// really the dates are stored correctly - the blocks are rendered to the wrong column
-// but then it's OK some of the time? weird time zone problem?
 
 "use client";
 
