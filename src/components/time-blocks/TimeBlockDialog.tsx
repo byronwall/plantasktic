@@ -364,6 +364,36 @@ export function TimeBlockDialog() {
                 </div>
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quick Duration</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "15m", minutes: 15 },
+                  { label: "30m", minutes: 30 },
+                  { label: "45m", minutes: 45 },
+                  { label: "60m", minutes: 60 },
+                  { label: "90m", minutes: 90 },
+                  { label: "2h", minutes: 120 },
+                  { label: "3h", minutes: 180 },
+                  { label: "4h", minutes: 240 },
+                ].map(({ label, minutes }) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newEndDate = new Date(selectedStartDate);
+                      newEndDate.setMinutes(newEndDate.getMinutes() + minutes);
+                      setSelectedEndDate(newEndDate);
+                      setEndTimeStr(format(newEndDate, "HH:mm"));
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="text-sm font-medium">Color</label>
               <div className="mt-2 flex items-center gap-4">
