@@ -230,24 +230,17 @@ export function WeeklyCalendar({
         } else if (normalizedStart >= dayEnd) {
           acc.after.push(block);
         } else {
-          // For visible blocks, clip the times to the visible range while preserving the day
-          const clippedStart = new Date(blockStart);
-          if (normalizedStart < dayStart) {
-            clippedStart.setHours(startHour, 0, 0, 0);
-          }
+          // For visible blocks, keep original times but mark if they're clipped
+          const isClippedStart = normalizedStart < dayStart;
+          const isClippedEnd = normalizedEnd > dayEnd;
 
-          const clippedEnd = new Date(blockEnd);
-          if (normalizedEnd > dayEnd) {
-            clippedEnd.setHours(endHour, 59, 59, 999);
-          }
-
-          const clippedBlock = {
+          const visibleBlock = {
             ...block,
-            startTime: clippedStart,
-            endTime: clippedEnd,
-            isClipped: normalizedStart < dayStart || normalizedEnd > dayEnd,
+            isClipped: isClippedStart || isClippedEnd,
+            isClippedStart,
+            isClippedEnd,
           };
-          acc.visible.push(clippedBlock);
+          acc.visible.push(visibleBlock);
         }
         return acc;
       },

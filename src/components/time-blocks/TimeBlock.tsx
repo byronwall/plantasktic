@@ -8,7 +8,10 @@ import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { type TimeBlockWithPosition } from "./WeeklyCalendar";
 
 export type TimeBlockProps = {
-  block: TimeBlockWithPosition;
+  block: TimeBlockWithPosition & {
+    isClippedStart?: boolean;
+    isClippedEnd?: boolean;
+  };
   onDragStart: (blockId: string, offset: { x: number; y: number }) => void;
   onResizeStart: (
     blockId: string,
@@ -54,7 +57,6 @@ export function TimeBlock({
     }
 
     const startTime = block.startTime;
-    const endTime = block.endTime;
 
     // Calculate days since week start
     const daysDiff = Math.floor(
@@ -62,13 +64,15 @@ export function TimeBlock({
     );
     const dayOfWeek = Math.max(0, Math.min(numberOfDays - 1, daysDiff));
 
-    // Clamp the start and end hours to the visible range
-    const clampedStartHour = Math.max(startHourDecimal, startHour);
-    const clampedEndHour = Math.min(endHourDecimal, endHour);
-    const duration = clampedEndHour - clampedStartHour;
+    // Calculate position and size based on visible portion
+    const visibleStartHour = block.isClippedStart
+      ? startHour
+      : startHourDecimal;
+    const visibleEndHour = block.isClippedEnd ? endHour : endHourDecimal;
+    const duration = visibleEndHour - visibleStartHour;
 
     // Calculate position and size
-    const top = (clampedStartHour - startHour) * blockHeight + topOffset;
+    const top = (visibleStartHour - startHour) * blockHeight + topOffset;
     const height = Math.max(duration * blockHeight, 0);
 
     const width =
@@ -80,10 +84,6 @@ export function TimeBlock({
         ? `${(block.index * 100) / block.totalOverlaps}%`
         : "0%";
 
-    // Check if block is partially outside the visible range
-    const isPartiallyHidden =
-      startHourDecimal < startHour || endHourDecimal > endHour;
-
     return {
       top: `${top}px`,
       height: `${height}px`,
@@ -91,8 +91,8 @@ export function TimeBlock({
       width: `${parseFloat(width) / numberOfDays}%`,
       backgroundColor: block.color || "#3b82f6",
       opacity: isPreview ? 0.4 : 0.8,
-      borderRadius: isPartiallyHidden ? "0" : "0.375rem",
-      borderStyle: isPartiallyHidden ? "dashed" : "solid",
+      borderRadius: isClipped ? "0" : "0.375rem",
+      borderStyle: isClipped ? "dashed" : "solid",
       padding: "0.5rem",
       color: "white",
       overflow: "hidden",
@@ -110,16 +110,21 @@ export function TimeBlock({
   }, [
     gridRef,
     block.startTime,
-    block.endTime,
+    block.isClippedStart,
+    block.isClippedEnd,
     block.totalOverlaps,
     block.index,
     block.color,
+    weekStart,
+    numberOfDays,
     startHour,
+    startHourDecimal,
+    endHour,
+    endHourDecimal,
+    blockHeight,
     topOffset,
     isPreview,
-    numberOfDays,
-    weekStart,
-    blockHeight,
+    isClipped,
   ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -151,8 +156,8 @@ export function TimeBlock({
           ? "border-dashed border-gray-400 bg-gray-100/50"
           : "border-solid bg-card shadow-sm hover:shadow-md",
         isClipped && "rounded-none border-dashed",
-        startHourDecimal < startHour && "rounded-t-none border-t-0",
-        endHourDecimal > endHour && "rounded-b-none border-b-0",
+        block.isClippedStart && "rounded-t-none border-t-0",
+        block.isClippedEnd && "rounded-b-none border-b-0",
       )}
       style={style}
       onMouseDown={handleMouseDown}

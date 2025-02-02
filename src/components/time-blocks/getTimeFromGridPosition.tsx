@@ -45,8 +45,6 @@ export function getTimeFromGridPosition(
   const rawHour = adjustedY / blockHeight + startHour;
   const hour = Math.floor(rawHour);
 
-  console.log("blockHeight", blockHeight);
-
   // Calculate minutes and snap to interval
   const rawMinutes = (rawHour % 1) * 60;
   const snappedMinutes = Math.round(rawMinutes / snapMinutes) * snapMinutes;
