@@ -120,14 +120,24 @@ export function WeeklyCalendar({
     const now = currentTime;
     const hour = now.getHours();
     const minutes = now.getMinutes();
-    const dayOfWeek = now.getDay();
+
+    // Check if current time is within the selected week range
+    const weekEnd = addDays(weekStart, numberOfDays);
+    if (now < weekStart || now >= weekEnd) {
+      return null;
+    }
 
     if (hour < startHour || hour > endHour) {
       return null;
     }
 
+    // Calculate days since week start
+    const daysSinceStart = Math.floor(
+      (now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
     const top = (hour - startHour + minutes / 60) * blockHeight;
-    const left = `${(dayOfWeek * 100) / numberOfDays}%`;
+    const left = `${(daysSinceStart * 100) / numberOfDays}%`;
     const width = `${100 / numberOfDays}%`;
 
     return { top, left, width };
