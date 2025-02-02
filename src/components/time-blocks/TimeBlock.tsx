@@ -18,6 +18,7 @@ export type TimeBlockProps = {
   ) => void;
   isPreview?: boolean;
   startHour: number;
+  endHour: number;
   gridRef: RefObject<HTMLDivElement>;
   isClipped?: boolean;
   topOffset?: number;
@@ -32,6 +33,7 @@ export function TimeBlock({
   onResizeStart,
   isPreview = false,
   startHour,
+  endHour,
   gridRef,
   isClipped = false,
   topOffset = 0,
@@ -42,6 +44,9 @@ export function TimeBlock({
   const openEditDialog = useEditTaskStore((state) => state.open);
   const blockStart = block.startTime;
   const blockEnd = block.endTime;
+
+  const startHourDecimal = blockStart.getHours() + blockStart.getMinutes() / 60;
+  const endHourDecimal = blockEnd.getHours() + blockEnd.getMinutes() / 60;
 
   const style = useMemo(() => {
     if (!gridRef.current) {
@@ -57,12 +62,14 @@ export function TimeBlock({
     );
     const dayOfWeek = Math.max(0, Math.min(numberOfDays - 1, daysDiff));
 
-    const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
-    const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
-    const duration = endHourDecimal - startHourDecimal;
+    // Clamp the start and end hours to the visible range
+    const clampedStartHour = Math.max(startHourDecimal, startHour);
+    const clampedEndHour = Math.min(endHourDecimal, endHour);
+    const duration = clampedEndHour - clampedStartHour;
 
-    const top = (startHourDecimal - startHour) * blockHeight + topOffset;
-    const height = duration * blockHeight;
+    // Calculate position and size
+    const top = (clampedStartHour - startHour) * blockHeight + topOffset;
+    const height = Math.max(duration * blockHeight, 0);
 
     const width =
       (block.totalOverlaps ?? 1) > 1
@@ -73,6 +80,10 @@ export function TimeBlock({
         ? `${(block.index * 100) / block.totalOverlaps}%`
         : "0%";
 
+    // Check if block is partially outside the visible range
+    const isPartiallyHidden =
+      startHourDecimal < startHour || endHourDecimal > endHour;
+
     return {
       top: `${top}px`,
       height: `${height}px`,
@@ -80,7 +91,8 @@ export function TimeBlock({
       width: `${parseFloat(width) / numberOfDays}%`,
       backgroundColor: block.color || "#3b82f6",
       opacity: isPreview ? 0.4 : 0.8,
-      borderRadius: "0.375rem",
+      borderRadius: isPartiallyHidden ? "0" : "0.375rem",
+      borderStyle: isPartiallyHidden ? "dashed" : "solid",
       padding: "0.5rem",
       color: "white",
       overflow: "hidden",
@@ -138,7 +150,9 @@ export function TimeBlock({
         isPreview
           ? "border-dashed border-gray-400 bg-gray-100/50"
           : "border-solid bg-card shadow-sm hover:shadow-md",
-        isClipped && "border-dashed",
+        isClipped && "rounded-none border-dashed",
+        startHourDecimal < startHour && "rounded-t-none border-t-0",
+        endHourDecimal > endHour && "rounded-b-none border-b-0",
       )}
       style={style}
       onMouseDown={handleMouseDown}

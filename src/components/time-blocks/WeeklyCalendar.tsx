@@ -419,6 +419,7 @@ export function WeeklyCalendar({
             onResizeStart={() => undefined}
             isPreview
             startHour={startHour}
+            endHour={endHour}
             gridRef={gridRef}
             topOffset={topOffset}
             numberOfDays={numberOfDays}
@@ -483,6 +484,7 @@ export function WeeklyCalendar({
             onResizeStart={() => undefined}
             isPreview
             startHour={startHour}
+            endHour={endHour}
             gridRef={gridRef}
             topOffset={topOffset}
             numberOfDays={numberOfDays}
@@ -554,6 +556,7 @@ export function WeeklyCalendar({
             onResizeStart={() => undefined}
             isPreview
             startHour={startHour}
+            endHour={endHour}
             gridRef={gridRef}
             topOffset={topOffset}
             numberOfDays={numberOfDays}
@@ -1117,6 +1120,7 @@ export function WeeklyCalendar({
                   onDragStart={handleBlockDragStart}
                   onResizeStart={handleBlockResizeStart}
                   startHour={startHour}
+                  endHour={endHour}
                   gridRef={gridRef}
                   isClipped={block.isClipped}
                   topOffset={topOffset}
