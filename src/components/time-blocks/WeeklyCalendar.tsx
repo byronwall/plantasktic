@@ -56,7 +56,7 @@ export function WeeklyCalendar({
   defaultStartHour = 6,
   defaultEndHour = 20,
   defaultNumberOfDays = 7,
-  defaultHeight = 64,
+  defaultHeight = 96,
 }: WeeklyCalendarProps) {
   const { currentWorkspaceId } = useCurrentProject();
 
@@ -265,6 +265,7 @@ export function WeeklyCalendar({
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           return null;
@@ -292,6 +293,7 @@ export function WeeklyCalendar({
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           return null;
@@ -403,6 +405,7 @@ export function WeeklyCalendar({
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           return null;
@@ -467,6 +470,7 @@ export function WeeklyCalendar({
           endHour,
           snapMinutes,
           numberOfDays,
+          blockHeight,
         );
         if (!time) {
           return null;
