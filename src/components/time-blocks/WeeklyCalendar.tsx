@@ -603,73 +603,28 @@ export function WeeklyCalendar({
 
   const bulkUpdateMutation = api.timeBlock.bulkUpdate.useMutation();
 
-  const correctOverlappingBlocks = (dayOffset: number) => {
-    const dayBlocks = timeBlocks?.filter(
-      (block) => block.startTime.getDay() === dayOffset,
-    );
+  const correctOverlappingBlocks = (date: Date) => {
+    // Find blocks for the given date by comparing year/month/day
+    const dayBlocks = timeBlocks?.filter((block) => {
+      const blockDate = new Date(block.startTime);
+      return (
+        blockDate.getFullYear() === date.getFullYear() &&
+        blockDate.getMonth() === date.getMonth() &&
+        blockDate.getDate() === date.getDate()
+      );
+    });
 
     if (!dayBlocks?.length) {
       return;
     }
 
-    // Sort blocks by start time and separate fixed blocks
+    // Sort blocks by start time
     const sortedBlocks = [...dayBlocks].sort(
       (a, b) =>
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
     const updates: { id: string; startTime: Date; endTime: Date }[] = [];
-
-    // Helper function to check if a time range overlaps with any fixed blocks
-    const overlapsWithFixedBlock = (
-      startTime: Date,
-      endTime: Date,
-      currentBlockId: string,
-    ) => {
-      return sortedBlocks.some(
-        (block) =>
-          block.isFixedTime &&
-          block.id !== currentBlockId &&
-          new Date(startTime) < new Date(block.endTime) &&
-          new Date(endTime) > new Date(block.startTime),
-      );
-    };
-
-    // Helper function to find the next available time slot after a fixed block
-    const findNextAvailableSlot = (
-      desiredStart: Date,
-      duration: number,
-      currentBlockId: string,
-    ): Date => {
-      let candidateStart = new Date(desiredStart);
-
-      // Keep trying slots until we find one that doesn't overlap with fixed blocks
-      while (
-        overlapsWithFixedBlock(
-          candidateStart,
-          new Date(candidateStart.getTime() + duration),
-          currentBlockId,
-        )
-      ) {
-        // Find the next fixed block that we're overlapping with
-        const nextFixedBlock = sortedBlocks.find(
-          (block) =>
-            block.isFixedTime &&
-            block.id !== currentBlockId &&
-            new Date(block.endTime) > candidateStart,
-        );
-
-        if (nextFixedBlock) {
-          // Move to the end of this fixed block
-          candidateStart = new Date(nextFixedBlock.endTime);
-        } else {
-          // Shouldn't happen, but break to avoid infinite loop
-          break;
-        }
-      }
-
-      return candidateStart;
-    };
 
     // First pass: keep fixed blocks in their original positions
     sortedBlocks.forEach((block) => {
@@ -683,7 +638,7 @@ export function WeeklyCalendar({
     });
 
     // Second pass: arrange non-fixed blocks
-    sortedBlocks.forEach((block, index) => {
+    sortedBlocks.forEach((block) => {
       if (block.isFixedTime) {
         return; // Skip fixed blocks as they're already handled
       }
@@ -693,45 +648,16 @@ export function WeeklyCalendar({
 
       let newStartTime: Date;
 
-      if (index === 0 || !updates.length) {
-        // If it's the first block or no updates yet, try to keep original start time
+      if (updates.length === 0) {
+        // If no blocks yet, use the original start time
         newStartTime = new Date(block.startTime);
-        if (
-          overlapsWithFixedBlock(
-            newStartTime,
-            new Date(newStartTime.getTime() + blockDuration),
-            block.id,
-          )
-        ) {
-          newStartTime = findNextAvailableSlot(
-            newStartTime,
-            blockDuration,
-            block.id,
-          );
-        }
       } else {
-        // Find the last updated block's end time
+        // Find the last block's end time
         const lastUpdate = updates[updates.length - 1];
         if (!lastUpdate) {
-          // If no last update, use the block's original start time
           newStartTime = new Date(block.startTime);
         } else {
           newStartTime = new Date(lastUpdate.endTime);
-        }
-
-        // Check if this position overlaps with any fixed blocks
-        if (
-          overlapsWithFixedBlock(
-            newStartTime,
-            new Date(newStartTime.getTime() + blockDuration),
-            block.id,
-          )
-        ) {
-          newStartTime = findNextAvailableSlot(
-            newStartTime,
-            blockDuration,
-            block.id,
-          );
         }
       }
 
@@ -744,38 +670,13 @@ export function WeeklyCalendar({
       });
     });
 
-    bulkUpdateMutation.mutate(updates);
-  };
-
-  // Function to check if a day has overlapping blocks
-  const hasDayOverlaps = (dayOffset: number) => {
-    const dayBlocks = timeBlocks?.filter(
-      (block) => block.startTime.getDay() === dayOffset,
-    );
-
-    if (!dayBlocks?.length) {
-      return false;
-    }
-
-    const sortedBlocks = [...dayBlocks].sort(
+    // Sort updates by start time to ensure proper ordering
+    updates.sort(
       (a, b) =>
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
-    for (let i = 1; i < sortedBlocks.length; i++) {
-      const currentBlock = sortedBlocks[i];
-      const previousBlock = sortedBlocks[i - 1];
-
-      if (!currentBlock || !previousBlock) {
-        continue;
-      }
-
-      if (new Date(currentBlock.startTime) < new Date(previousBlock.endTime)) {
-        return true;
-      }
-    }
-
-    return false;
+    bulkUpdateMutation.mutate(updates);
   };
 
   // Add view buttons section after the existing buttons
@@ -948,17 +849,15 @@ export function WeeklyCalendar({
                   <span className="font-medium">
                     {format(date, "EEE MMM d")}
                   </span>
-                  {hasDayOverlaps(dayOffset) && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => correctOverlappingBlocks(dayOffset)}
-                      title="Fix overlapping blocks"
-                    >
-                      <Wand2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => correctOverlappingBlocks(date)}
+                    title="Compact time blocks"
+                  >
+                    <Wand2 className="h-4 w-4" />
+                  </Button>
                 </div>
               );
             })}
