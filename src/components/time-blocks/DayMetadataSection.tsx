@@ -29,6 +29,8 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
+import { EditableMetadataValue } from "./EditableMetadataValue";
+
 import { Label } from "../ui/label";
 
 type DayMetadataItem = {
@@ -237,21 +239,11 @@ export function DayMetadataSection({
               >
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{item.key}:</span>
-                  {isBooleanValue(item.value) ? (
-                    <Checkbox
-                      checked={item.value.toLowerCase() === "true"}
-                      onCheckedChange={(checked: boolean) =>
-                        handleBooleanChange(item.key, checked)
-                      }
-                    />
-                  ) : (
-                    <button
-                      onClick={() => handleEditClick(item)}
-                      className="hover:underline"
-                    >
-                      {item.value}
-                    </button>
-                  )}
+                  <EditableMetadataValue
+                    date={date}
+                    metadataKey={item.key}
+                    value={item.value}
+                  />
                 </div>
               </div>
             ))}

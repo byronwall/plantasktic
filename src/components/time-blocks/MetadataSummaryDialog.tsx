@@ -25,6 +25,8 @@ import {
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
+import { EditableMetadataValue } from "./EditableMetadataValue";
+
 import {
   Table,
   TableBody,
@@ -240,7 +242,15 @@ export function MetadataSummaryDialog({
                       <td className="p-2">{dateKey}</td>
                       {uniqueKeys.map((key) => (
                         <td key={key} className="p-2">
-                          {metadataByDate[dateKey]?.[key] || "-"}
+                          {metadataByDate[dateKey]?.[key] ? (
+                            <EditableMetadataValue
+                              date={new Date(dateKey)}
+                              metadataKey={key}
+                              value={metadataByDate[dateKey][key]}
+                            />
+                          ) : (
+                            "-"
+                          )}
                         </td>
                       ))}
                     </TableRow>
