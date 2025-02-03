@@ -106,7 +106,7 @@ export function CommandMenu() {
   }, []);
 
   const handleTaskClick = (task: Task) => {
-    openTask(task);
+    openTask(task.task_id);
     setOpen(false);
   };
 

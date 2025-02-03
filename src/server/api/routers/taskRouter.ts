@@ -384,4 +384,15 @@ export const taskRouter = createTRPCRouter({
         parentTask: task?.parentTask ?? null,
       };
     }),
+
+  getTask: protectedProcedure
+    .input(z.object({ taskId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      return await ctx.db.task.findUnique({
+        where: {
+          task_id: input.taskId,
+          userId: ctx.session.user.id,
+        },
+      });
+    }),
 });

@@ -1,17 +1,15 @@
 import { create } from "zustand";
 
-import type { Task } from "~/app/_components/TaskList";
-
 interface EditTaskStore {
   isOpen: boolean;
-  task: Task | null;
-  open: (task: Task) => void;
+  taskId: number | null;
+  open: (taskId: number) => void;
   close: () => void;
 }
 
 export const useEditTaskStore = create<EditTaskStore>((set) => ({
   isOpen: false,
-  task: null,
-  open: (task) => set({ isOpen: true, task }),
-  close: () => set({ isOpen: false, task: null }),
+  taskId: null,
+  open: (taskId) => set({ isOpen: true, taskId }),
+  close: () => set({ isOpen: false, taskId: null }),
 }));

@@ -108,7 +108,6 @@ type TaskGridCellProps = {
 };
 
 function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
-  const { open } = useEditTaskStore();
   const isEmpty = cell.tasks.length === 0;
 
   return (
@@ -326,7 +325,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                       className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/50 p-2 hover:bg-muted/70"
                       onClick={(e) => {
                         e.stopPropagation();
-                        open(task);
+                        open(task.task_id);
                       }}
                     >
                       <TaskAvatar title={task.title} task={task} size={24} />
@@ -347,7 +346,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                     className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/50 p-2 hover:bg-muted/70"
                     onClick={(e) => {
                       e.stopPropagation();
-                      open(task);
+                      open(task.task_id);
                     }}
                   >
                     <TaskAvatar title={task.title} task={task} size={24} />

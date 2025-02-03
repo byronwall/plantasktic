@@ -178,7 +178,7 @@ export function TimeBlock({
             onMouseDown={(e) => {
               e.stopPropagation();
               if (block.taskAssignments?.[0]?.task) {
-                openEditDialog(block.taskAssignments[0].task);
+                openEditDialog(block.taskAssignments[0].task.task_id);
               }
             }}
             className="rounded p-0.5 hover:bg-black/10"

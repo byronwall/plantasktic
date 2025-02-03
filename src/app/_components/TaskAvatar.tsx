@@ -1,3 +1,5 @@
+"use client";
+
 import Avatar from "boring-avatars";
 
 import { useColorPaletteStore } from "~/stores/useColorPaletteStore";
@@ -24,7 +26,7 @@ export const TaskAvatar = ({ title, size = 24, task }: TaskAvatarProps) => {
       className="shrink-0 cursor-pointer"
       onClick={(e) => {
         e.stopPropagation();
-        openEditDialog(task);
+        openEditDialog(task.task_id);
       }}
     />
   );

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Check,
   Clipboard,
@@ -84,7 +86,7 @@ export function TaskActions({ task }: TaskActionsProps) {
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            openEditDialog(task);
+            openEditDialog(task.task_id);
           }}
           className="h-8 w-8"
         >
