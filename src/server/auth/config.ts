@@ -48,6 +48,7 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig = {
+  basePath: "/api/identity",
   providers: [
     GitHubProvider({
       clientId: process.env.GITHUB_ID,

@@ -37,7 +37,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-background">
         <TRPCReactProvider>
-          <SessionProvider>
+          <SessionProvider session={session} basePath="/api/identity">
             {session ? (
               <WorkspaceProjectProvider>
                 <SidebarProvider className="max-w-[100vw]">

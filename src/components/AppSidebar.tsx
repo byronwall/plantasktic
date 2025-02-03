@@ -139,7 +139,7 @@ export function AppSidebar() {
                   Please sign in to manage tasks
                 </p>
                 <Button asChild>
-                  <Link href="/api/auth/signin">Sign in</Link>
+                  <Link href="/api/identity/signin">Sign in</Link>
                 </Button>
               </div>
             </SidebarGroupContent>
@@ -155,7 +155,7 @@ export function AppSidebar() {
                     {session.user.name}
                   </span>
                   <Button variant="outline" asChild>
-                    <Link href="/api/auth/signout">Sign out</Link>
+                    <Link href="/api/identity/signout">Sign out</Link>
                   </Button>
                 </div>
               ) : null}

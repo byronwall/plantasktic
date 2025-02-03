@@ -10,7 +10,7 @@ const { auth } = NextAuth(authConfig);
 export async function middleware(request: NextRequest) {
   const session = await auth();
   const isMainPage = request.nextUrl.pathname === "/";
-  const isAuthPage = request.nextUrl.pathname.startsWith("/api/auth");
+  const isAuthPage = request.nextUrl.pathname.startsWith("/api/identity");
   const isPngFile = request.nextUrl.pathname.endsWith(".png");
 
   // Allow access to main page, auth-related routes, and PNG files
@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
   // If not authenticated and not on main page, redirect to sign in
   if (!session) {
-    const signInUrl = new URL("/api/auth/signin", request.url);
+    const signInUrl = new URL("/api/identity/signin", request.url);
     return NextResponse.redirect(signInUrl);
   }
 

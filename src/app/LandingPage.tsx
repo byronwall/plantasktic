@@ -82,7 +82,7 @@ export function LandingPage() {
           </p>
           <div className="flex justify-center gap-4 pt-4">
             <Button asChild size="lg" className="rounded-full">
-              <Link href="/api/auth/signin">Get Started Free</Link>
+              <Link href="/api/identity/signin">Get Started Free</Link>
             </Button>
             <Button
               asChild
@@ -146,7 +146,7 @@ export function LandingPage() {
             Start to manage your tasks today.
           </p>
           <Button asChild size="lg" className="rounded-full">
-            <Link href="/api/auth/signin">Start Managing Tasks</Link>
+            <Link href="/api/identity/signin">Start Managing Tasks</Link>
           </Button>
         </div>
       </div>
