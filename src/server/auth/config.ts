@@ -3,7 +3,9 @@ import {
   type NextAuthConfig,
   type User as NextUser,
 } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
+import { v4 as uuidv4 } from "uuid";
 
 /* AUTH stuff stymied by Prisma running in Middleware.  Using JWT strategy.
 Guide here: https://github.com/nextauthjs/next-auth/issues/9122#issuecomment-1922631022
@@ -56,6 +58,24 @@ export const authConfig = {
           email: profile.email,
           image: profile.avatar_url,
         };
+      },
+    }),
+    CredentialsProvider({
+      id: "demo-account",
+      name: "Demo Account",
+      credentials: {},
+      async authorize() {
+        // Generate a random demo user
+        const userId: string = uuidv4();
+        const shortId = userId.substring(0, 4);
+        const demoUser: NextUser = {
+          id: userId,
+          name: `Demo User ${shortId}`,
+          email: `demo-${userId}@example.com`,
+          image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+        };
+
+        return demoUser;
       },
     }),
   ],
