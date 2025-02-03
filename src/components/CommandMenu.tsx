@@ -14,6 +14,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "~/components/ui/command";
+import { useToast } from "~/hooks/use-toast";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import { api } from "~/trpc/react";
@@ -24,6 +25,7 @@ export function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
   const { currentWorkspaceId, currentWorkspaceName } = useCurrentProject();
   const { open: openTask } = useEditTaskStore();
 
@@ -72,6 +74,18 @@ export function CommandMenu() {
     },
   });
 
+  const seedDemoData = api.demo.seedDemoData.useMutation({
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
+      toast({
+        title: "Demo Data Created",
+        description:
+          "Demo workspaces, projects, tasks, and time blocks have been created.",
+      });
+    },
+  });
+
   const handleCreateWorkspace = () => {
     const name = window.prompt("Enter workspace name:");
     if (name?.trim()) {
@@ -90,6 +104,21 @@ export function CommandMenu() {
         name: name.trim(),
         workspaceId: currentWorkspaceId,
       });
+    }
+  };
+
+  const handleSeedDemoData = () => {
+    const confirmed = window.confirm(
+      "⚠️ WARNING: This will create DEMO CONTENT in your account.\n\n" +
+        "This includes:\n" +
+        "- Multiple demo workspaces and projects\n" +
+        "- Sample tasks for a marketing campaign\n" +
+        "- Time blocks for a work week\n\n" +
+        "Are you sure you want to proceed?",
+    );
+
+    if (confirmed) {
+      seedDemoData.mutate();
     }
   };
 
@@ -304,6 +333,17 @@ export function CommandMenu() {
             ))}
           </CommandGroup>
         )}
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Demo">
+          <CommandItem
+            onSelect={handleSeedDemoData}
+            className="text-orange-500 dark:text-orange-400"
+          >
+            Create Demo Content
+          </CommandItem>
+        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );

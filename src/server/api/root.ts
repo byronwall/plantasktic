@@ -4,6 +4,7 @@ import { timeBlockRouter } from "~/server/api/routers/timeBlockRouter";
 import { workspaceRouter } from "~/server/api/routers/workspaceRouter";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
+import { demoRouter } from "./routers/demoRouter";
 import { goalRouter } from "./routers/goalRouter";
 
 /**
@@ -17,6 +18,7 @@ export const appRouter = createTRPCRouter({
   workspace: workspaceRouter,
   goal: goalRouter,
   timeBlock: timeBlockRouter,
+  demo: demoRouter,
 });
 
 // export type definition of API
