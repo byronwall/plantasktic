@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDistanceToNow } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -203,6 +204,11 @@ export function EditTaskDialog() {
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div className="mt-6 flex items-center gap-1 gap-2 text-xs text-muted-foreground">
+                  <p>Created {formatDistanceToNow(task.created_at)} ago</p>
+                  <p>Updated {formatDistanceToNow(task.updated_at)} ago</p>
                 </div>
               </div>
             </div>
