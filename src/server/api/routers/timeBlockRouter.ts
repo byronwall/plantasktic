@@ -354,4 +354,105 @@ export const timeBlockRouter = createTRPCRouter({
         ),
       );
     }),
+
+  getTimeBlockCounts: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const today = startOfDay(new Date());
+      const nextWeek = endOfDay(addDays(today, 7));
+
+      const todayEnd = endOfDay(today);
+
+      const [todayBlocks, weekBlocks] = await Promise.all([
+        ctx.db.timeBlock.count({
+          where: {
+            workspaceId: input.workspaceId,
+            startTime: {
+              gte: today,
+              lte: todayEnd,
+            },
+          },
+        }),
+        ctx.db.timeBlock.count({
+          where: {
+            workspaceId: input.workspaceId,
+            startTime: {
+              gt: todayEnd,
+              lte: nextWeek,
+            },
+          },
+        }),
+      ]);
+
+      return {
+        today: todayBlocks,
+        upcoming: weekBlocks,
+      };
+    }),
+
+  getWorkspaceTimeBlockCounts: protectedProcedure.query(async ({ ctx }) => {
+    const today = startOfDay(new Date());
+    const nextWeek = endOfDay(addDays(today, 7));
+    const todayEnd = endOfDay(today);
+
+    type WorkspaceWithTimeBlocks = {
+      id: string;
+      TimeBlock: {
+        startTime: Date;
+      }[];
+    };
+
+    const workspaces = (await ctx.db.workspace.findMany({
+      where: {
+        userId: ctx.session.user.id,
+      },
+      select: {
+        id: true,
+        TimeBlock: {
+          where: {
+            OR: [
+              {
+                startTime: {
+                  gte: today,
+                  lte: todayEnd,
+                },
+              },
+              {
+                startTime: {
+                  gt: todayEnd,
+                  lte: nextWeek,
+                },
+              },
+            ],
+          },
+          select: {
+            startTime: true,
+          },
+        },
+      },
+    })) as WorkspaceWithTimeBlocks[];
+
+    const counts: Record<string, { today: number; upcoming: number }> = {};
+
+    for (const workspace of workspaces) {
+      const todayBlocks = workspace.TimeBlock.filter((block) => {
+        return block.startTime >= today && block.startTime <= todayEnd;
+      }).length;
+
+      const upcomingBlocks = workspace.TimeBlock.filter((block) => {
+        return block.startTime > todayEnd && block.startTime <= nextWeek;
+      }).length;
+
+      counts[workspace.id] = {
+        today: todayBlocks,
+        upcoming: upcomingBlocks,
+      };
+    }
+
+    return counts;
+  }),
 });

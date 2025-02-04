@@ -117,4 +117,26 @@ export const goalRouter = createTRPCRouter({
         },
       });
     }),
+
+  getWorkspaceGoalCounts: protectedProcedure.query(async ({ ctx }) => {
+    const goals = await ctx.db.goal.groupBy({
+      by: ["workspaceId"],
+      where: {
+        userId: ctx.session.user.id,
+        status: {
+          not: "completed",
+        },
+      },
+      _count: true,
+    });
+
+    const counts: Record<string, number> = {};
+    goals.forEach((goal) => {
+      if (goal.workspaceId) {
+        counts[goal.workspaceId] = goal._count;
+      }
+    });
+
+    return counts;
+  }),
 });

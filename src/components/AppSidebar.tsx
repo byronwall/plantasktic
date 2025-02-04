@@ -21,33 +21,40 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const {
-    currentWorkspace,
-    currentWorkspaceName,
-    currentProjectName,
-    workspaces,
-    workspaceProjects,
-    projects,
-  } = useCurrentProject();
+  const { currentWorkspaceName, currentProjectName, workspaces, projects } =
+    useCurrentProject();
 
   const { data: projectTaskCounts = {} } =
     api.task.getProjectTaskCounts.useQuery();
 
-  // Sort workspaces to put current workspace first
-  const sortedWorkspaces = [...workspaces].sort((a, b) => {
-    if (a.name === currentWorkspaceName) {
-      return -1;
-    }
-    if (b.name === currentWorkspaceName) {
-      return 1;
-    }
-    return a.name.localeCompare(b.name);
-  });
+  const { data: workspaceGoalCounts = {} } =
+    api.goal.getWorkspaceGoalCounts.useQuery();
+
+  type TimeBlockCounts = Record<string, { today: number; upcoming: number }>;
+  const { data: workspaceTimeBlockCounts } =
+    api.timeBlock.getWorkspaceTimeBlockCounts.useQuery();
+  const timeBlockCounts = (workspaceTimeBlockCounts ?? {}) as TimeBlockCounts;
+
+  // Helper function to safely get time block counts
+  const getTimeBlockCounts = (workspaceId: string) => {
+    const counts = timeBlockCounts[workspaceId];
+    return counts ?? { today: 0, upcoming: 0 };
+  };
+
+  // Sort workspaces alphabetically
+  const sortedWorkspaces = [...workspaces].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
   return (
     <Sidebar>
@@ -120,15 +127,48 @@ export function AppSidebar() {
                           </SidebarMenuItem>
                           <SidebarMenuItem>
                             <SidebarMenuButton asChild>
-                              <Link href={`/${workspace.name}/goals`}>
-                                Goals
+                              <Link
+                                href={`/${workspace.name}/goals`}
+                                className="flex w-full items-center justify-between"
+                              >
+                                <span>Goals</span>
+                                {workspaceGoalCounts[workspace.id] ? (
+                                  <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                    {workspaceGoalCounts[workspace.id]}
+                                  </span>
+                                ) : null}
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                           <SidebarMenuItem>
                             <SidebarMenuButton asChild>
-                              <Link href={`/${workspace.name}/time-blocks`}>
-                                Time Blocks
+                              <Link
+                                href={`/${workspace.name}/time-blocks`}
+                                className="flex w-full items-center justify-between"
+                              >
+                                <span>Time Blocks</span>
+                                {(() => {
+                                  const counts = getTimeBlockCounts(
+                                    workspace.id,
+                                  );
+                                  return counts.today > 0 ||
+                                    counts.upcoming > 0 ? (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                          {counts.today} / {counts.upcoming}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{counts.today} blocks today</p>
+                                        <p>
+                                          {counts.upcoming} blocks in next 7
+                                          days
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ) : null;
+                                })()}
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
@@ -156,16 +196,12 @@ export function AppSidebar() {
                                         className="flex w-full items-center justify-between"
                                       >
                                         <span>{project.name}</span>
-                                        {(() => {
-                                          const count = project.id
-                                            ? projectTaskCounts[project.id]
-                                            : 0;
-                                          return count && count > 0 ? (
+                                        {project.id &&
+                                          projectTaskCounts[project.id] > 0 && (
                                             <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                              {count}
+                                              {projectTaskCounts[project.id]}
                                             </span>
-                                          ) : null;
-                                        })()}
+                                          )}
                                       </Link>
                                     </SidebarMenuButton>
                                   </SidebarMenuItem>
