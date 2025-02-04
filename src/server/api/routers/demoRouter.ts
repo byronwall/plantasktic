@@ -210,6 +210,165 @@ const TIME_BLOCK_TEMPLATES: TimeBlockTemplate[] = [
   { title: "Learning Time", startHour: 16, duration: 60, days: [1, 3] }, // Tue, Thu
 ];
 
+// Task templates for Daily Habits Tracking
+const DAILY_HABITS_TASKS = [
+  {
+    title: "Morning Routine",
+    priority: "10",
+    status: "open",
+    subtasks: [
+      { title: "Wake up at 6 AM", priority: "10", status: "open" },
+      { title: "Meditation - 15 mins", priority: "8", status: "open" },
+      { title: "Exercise - 30 mins", priority: "8", status: "open" },
+      { title: "Healthy Breakfast", priority: "8", status: "open" },
+    ],
+  },
+  {
+    title: "Work Productivity",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "No social media until noon", priority: "6", status: "open" },
+      { title: "Take breaks every 90 mins", priority: "6", status: "open" },
+      { title: "Drink water regularly", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Evening Routine",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Review daily goals", priority: "6", status: "open" },
+      { title: "Plan next day", priority: "8", status: "open" },
+      { title: "Read for 30 mins", priority: "6", status: "open" },
+      { title: "Sleep by 10 PM", priority: "8", status: "open" },
+    ],
+  },
+];
+
+// Task templates for Reading List
+const READING_LIST_TASKS = [
+  {
+    title: "Business Books",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Zero to One - Peter Thiel", priority: "8", status: "open" },
+      { title: "Good to Great - Jim Collins", priority: "6", status: "open" },
+      { title: "The Lean Startup - Eric Ries", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Personal Development",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Atomic Habits - James Clear", priority: "10", status: "open" },
+      { title: "Deep Work - Cal Newport", priority: "8", status: "open" },
+      { title: "Think Again - Adam Grant", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Technical Books",
+    priority: "6",
+    status: "open",
+    subtasks: [
+      { title: "Clean Code - Robert Martin", priority: "8", status: "open" },
+      {
+        title: "Design Patterns - Gang of Four",
+        priority: "6",
+        status: "open",
+      },
+      { title: "Pragmatic Programmer", priority: "6", status: "open" },
+    ],
+  },
+];
+
+// Task templates for Product Launch Plan
+const PRODUCT_LAUNCH_TASKS = [
+  {
+    title: "Pre-Launch Phase",
+    priority: "10",
+    status: "open",
+    subtasks: [
+      { title: "Market Research", priority: "10", status: "open" },
+      { title: "Competitor Analysis", priority: "8", status: "open" },
+      { title: "Define Target Audience", priority: "8", status: "open" },
+      { title: "Set Launch Goals", priority: "8", status: "open" },
+    ],
+  },
+  {
+    title: "Development Phase",
+    priority: "10",
+    status: "open",
+    subtasks: [
+      { title: "Finalize Product Features", priority: "10", status: "open" },
+      { title: "Complete MVP", priority: "10", status: "open" },
+      { title: "Beta Testing", priority: "8", status: "open" },
+      { title: "Gather User Feedback", priority: "8", status: "open" },
+    ],
+  },
+  {
+    title: "Marketing Preparation",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Create Marketing Assets", priority: "8", status: "open" },
+      { title: "Set Up Landing Page", priority: "8", status: "open" },
+      { title: "Plan Social Media Strategy", priority: "6", status: "open" },
+      { title: "Prepare Press Kit", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Launch Execution",
+    priority: "10",
+    status: "open",
+    subtasks: [
+      { title: "Launch Day Checklist", priority: "10", status: "open" },
+      { title: "Monitor Analytics", priority: "8", status: "open" },
+      { title: "Engage with Early Users", priority: "8", status: "open" },
+      { title: "Collect Initial Feedback", priority: "8", status: "open" },
+    ],
+  },
+];
+
+// Task templates for Weekly House Cleaning
+const HOUSE_CLEANING_TASKS = [
+  {
+    title: "Kitchen Deep Clean",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Clean Appliances", priority: "8", status: "open" },
+      { title: "Sanitize Counters", priority: "8", status: "open" },
+      { title: "Organize Pantry", priority: "6", status: "open" },
+      { title: "Clean Floors", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Bathroom Maintenance",
+    priority: "8",
+    status: "open",
+    subtasks: [
+      { title: "Clean Shower/Tub", priority: "8", status: "open" },
+      { title: "Sanitize Toilet", priority: "8", status: "open" },
+      { title: "Clean Mirrors", priority: "6", status: "open" },
+      { title: "Replace Towels", priority: "6", status: "open" },
+    ],
+  },
+  {
+    title: "Living Areas",
+    priority: "6",
+    status: "open",
+    subtasks: [
+      { title: "Vacuum Carpets", priority: "8", status: "open" },
+      { title: "Dust Furniture", priority: "6", status: "open" },
+      { title: "Clean Windows", priority: "4", status: "open" },
+      { title: "Organize Clutter", priority: "6", status: "open" },
+    ],
+  },
+];
+
 export const demoRouter = createTRPCRouter({
   seedDemoData: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -225,108 +384,15 @@ export const demoRouter = createTRPCRouter({
 
       // Create projects for this workspace
       for (const projectName of workspace.projects) {
-        await ctx.db.project.create({
+        const createdProject = await ctx.db.project.create({
           data: {
             name: projectName,
             userId,
             workspaceId: createdWorkspace.id,
           },
         });
-      }
-    }
 
-    // Find the "Work Projects" workspace and "Q4 Marketing Campaign" project
-    const workProjectsWorkspace = await ctx.db.workspace.findFirst({
-      where: {
-        name: "Work Projects",
-        userId,
-      },
-    });
-
-    // Find the "Home Management" workspace and "Renovation Plan" project
-    const homeWorkspace = await ctx.db.workspace.findFirst({
-      where: {
-        name: "Home Management",
-        userId,
-      },
-    });
-
-    if (workProjectsWorkspace) {
-      const marketingProject = await ctx.db.project.findFirst({
-        where: {
-          name: "Q4 Marketing Campaign",
-          workspaceId: workProjectsWorkspace.id,
-        },
-      });
-
-      if (marketingProject) {
-        // Create the marketing campaign tasks with priorities and categories
-        await ctx.db.task.createMany({
-          data: MARKETING_CAMPAIGN_TASKS.map((task) => ({
-            title: task.title,
-            status: "open",
-            userId,
-            projectId: marketingProject.id,
-            priority: task.priority.toString(),
-            category: task.category,
-          })),
-        });
-
-        // Create time blocks for the week
-        const today = new Date();
-        const weekStart = startOfWeek(today);
-
-        // Create time blocks for each day of the work week (Monday to Friday)
-        for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
-          const currentDay = addDays(weekStart, dayOffset);
-
-          // Filter templates for this day
-          const todayTemplates = TIME_BLOCK_TEMPLATES.filter(
-            (template) => !template.days || template.days.includes(dayOffset),
-          );
-
-          for (
-            let blockIndex = 0;
-            blockIndex < todayTemplates.length;
-            blockIndex++
-          ) {
-            const template = todayTemplates[blockIndex];
-            if (!template) {
-              continue;
-            }
-
-            const colorIndex = blockIndex % TIME_BLOCK_COLORS.length;
-
-            const startTime = setMinutes(
-              setHours(currentDay, template.startHour),
-              0,
-            );
-            const endTime = addMinutes(startTime, template.duration);
-
-            await ctx.db.timeBlock.create({
-              data: {
-                workspaceId: workProjectsWorkspace.id,
-                title: template.title,
-                startTime,
-                endTime,
-                color: TIME_BLOCK_COLORS[colorIndex],
-              },
-            });
-          }
-        }
-      }
-    }
-
-    if (homeWorkspace) {
-      const renovationProject = await ctx.db.project.findFirst({
-        where: {
-          name: "Renovation Plan",
-          workspaceId: homeWorkspace.id,
-        },
-      });
-
-      if (renovationProject) {
-        // Helper function to create tasks recursively
+        // Add tasks based on the project
         const createTaskWithSubtasks = async (
           taskData: RenovationTask,
           parentTaskId?: number,
@@ -337,7 +403,7 @@ export const demoRouter = createTRPCRouter({
               status: taskData.status,
               priority: taskData.priority,
               userId,
-              projectId: renovationProject.id,
+              projectId: createdProject.id,
               parentTaskId,
             },
           });
@@ -351,9 +417,98 @@ export const demoRouter = createTRPCRouter({
           return createdTask;
         };
 
-        // Create all renovation tasks with their hierarchical structure
-        for (const task of RENOVATION_TASKS) {
-          await createTaskWithSubtasks(task);
+        // Add tasks based on project name
+        switch (projectName) {
+          case "Daily Habits Tracking":
+            for (const task of DAILY_HABITS_TASKS) {
+              await createTaskWithSubtasks(task);
+            }
+            break;
+          case "Reading List":
+            for (const task of READING_LIST_TASKS) {
+              await createTaskWithSubtasks(task);
+            }
+            break;
+          case "Q4 Marketing Campaign":
+            await ctx.db.task.createMany({
+              data: MARKETING_CAMPAIGN_TASKS.map((task) => ({
+                title: task.title,
+                status: "open",
+                userId,
+                projectId: createdProject.id,
+                priority: task.priority.toString(),
+                category: task.category,
+              })),
+            });
+            break;
+          case "Product Launch Plan":
+            for (const task of PRODUCT_LAUNCH_TASKS) {
+              await createTaskWithSubtasks(task);
+            }
+            break;
+          case "Weekly House Cleaning":
+            for (const task of HOUSE_CLEANING_TASKS) {
+              await createTaskWithSubtasks(task);
+            }
+            break;
+          case "Renovation Plan":
+            for (const task of RENOVATION_TASKS) {
+              await createTaskWithSubtasks(task);
+            }
+            break;
+        }
+      }
+    }
+
+    // Create time blocks for the week
+    const today = new Date();
+    const weekStart = startOfWeek(today);
+
+    // Find the "Work Projects" workspace
+    const workProjectsWorkspace = await ctx.db.workspace.findFirst({
+      where: {
+        name: "Work Projects",
+        userId,
+      },
+    });
+
+    if (workProjectsWorkspace) {
+      // Create time blocks for each day of the work week (Monday to Friday)
+      for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+        const currentDay = addDays(weekStart, dayOffset);
+
+        // Filter templates for this day
+        const todayTemplates = TIME_BLOCK_TEMPLATES.filter(
+          (template) => !template.days || template.days.includes(dayOffset),
+        );
+
+        for (
+          let blockIndex = 0;
+          blockIndex < todayTemplates.length;
+          blockIndex++
+        ) {
+          const template = todayTemplates[blockIndex];
+          if (!template) {
+            continue;
+          }
+
+          const colorIndex = blockIndex % TIME_BLOCK_COLORS.length;
+
+          const startTime = setMinutes(
+            setHours(currentDay, template.startHour),
+            0,
+          );
+          const endTime = addMinutes(startTime, template.duration);
+
+          await ctx.db.timeBlock.create({
+            data: {
+              workspaceId: workProjectsWorkspace.id,
+              title: template.title,
+              startTime,
+              endTime,
+              color: TIME_BLOCK_COLORS[colorIndex],
+            },
+          });
         }
       }
     }
