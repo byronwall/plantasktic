@@ -28,14 +28,6 @@ const DEMO_WORKSPACES = [
     name: "Home Management",
     projects: ["Weekly House Cleaning", "Renovation Plan"],
   },
-  {
-    name: "Study & Learning",
-    projects: ["Online Course Completion", "Language Learning"],
-  },
-  {
-    name: "Family & Friends",
-    projects: ["Family Vacation Planning", "Holiday Season Preparation"],
-  },
 ] as const;
 
 // Task categories for marketing campaign
