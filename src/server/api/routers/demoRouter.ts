@@ -361,6 +361,105 @@ const HOUSE_CLEANING_TASKS = [
   },
 ];
 
+// Goal templates for Personal Development workspace
+const PERSONAL_DEVELOPMENT_GOALS = [
+  {
+    title: "Complete Daily Meditation Streak",
+    description: "Maintain a consistent daily meditation practice",
+    category: "Wellness",
+    priority: "high",
+    targetValue: 30,
+    currentValue: 0,
+    metricUnit: "days",
+    status: "active",
+  },
+  {
+    title: "Read 12 Books This Year",
+    description: "Focus on personal growth and learning through reading",
+    category: "Learning",
+    priority: "medium",
+    targetValue: 12,
+    currentValue: 0,
+    metricUnit: "books",
+    status: "active",
+  },
+  {
+    title: "Master TypeScript Advanced Concepts",
+    description:
+      "Deep dive into TypeScript generics, utility types, and advanced patterns",
+    category: "Skills",
+    priority: "high",
+    status: "active",
+  },
+] as const;
+
+// Goal templates for Work Projects workspace
+const WORK_PROJECTS_GOALS = [
+  {
+    title: "Increase Q4 Marketing ROI",
+    description: "Improve return on investment for Q4 marketing campaigns",
+    category: "Marketing",
+    priority: "high",
+    targetValue: 150,
+    currentValue: 100,
+    metricUnit: "percent",
+    status: "active",
+  },
+  {
+    title: "Launch Product Beta Version",
+    description: "Successfully release beta version to early adopters",
+    category: "Product",
+    priority: "high",
+    status: "active",
+    dueDate: new Date(new Date().setMonth(new Date().getMonth() + 2)),
+  },
+  {
+    title: "Achieve 95% Customer Satisfaction",
+    description:
+      "Maintain high customer satisfaction scores through product launch",
+    category: "Customer Success",
+    priority: "medium",
+    targetValue: 95,
+    currentValue: 88,
+    metricUnit: "percent",
+    status: "active",
+  },
+] as const;
+
+// Goal templates for Home Management workspace
+const HOME_MANAGEMENT_GOALS = [
+  {
+    title: "Complete Home Renovation Project",
+    description: "Finish all planned renovation tasks within budget",
+    category: "Renovation",
+    priority: "high",
+    targetValue: 100,
+    currentValue: 35,
+    metricUnit: "percent",
+    status: "active",
+  },
+  {
+    title: "Implement Weekly Cleaning Schedule",
+    description: "Establish and maintain a consistent cleaning routine",
+    category: "Organization",
+    priority: "medium",
+    targetValue: 52,
+    currentValue: 0,
+    metricUnit: "weeks",
+    status: "active",
+  },
+  {
+    title: "Reduce Monthly Utility Costs",
+    description: "Implement energy-saving measures to reduce utility bills",
+    category: "Budget",
+    priority: "medium",
+    targetValue: 20,
+    currentValue: 5,
+    metricUnit: "percent",
+    status: "active",
+  },
+] as const;
+
 export const demoRouter = createTRPCRouter({
   seedDemoData: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -373,6 +472,31 @@ export const demoRouter = createTRPCRouter({
           userId,
         },
       });
+
+      // Add goals based on workspace
+      const workspaceGoals = (() => {
+        switch (workspace.name) {
+          case "Personal Development":
+            return PERSONAL_DEVELOPMENT_GOALS;
+          case "Work Projects":
+            return WORK_PROJECTS_GOALS;
+          case "Home Management":
+            return HOME_MANAGEMENT_GOALS;
+          default:
+            return [];
+        }
+      })();
+
+      // Create goals for the workspace
+      for (const goal of workspaceGoals) {
+        await ctx.db.goal.create({
+          data: {
+            ...goal,
+            userId,
+            workspaceId: createdWorkspace.id,
+          },
+        });
+      }
 
       // Create projects for this workspace
       for (const projectName of workspace.projects) {
