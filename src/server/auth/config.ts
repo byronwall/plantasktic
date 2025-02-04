@@ -88,6 +88,25 @@ export const authConfig = {
           },
         });
 
+        // Create demo content for the new user
+        const { createCaller } = await import("~/server/api/root");
+        const caller = createCaller({
+          session: {
+            user: {
+              ...demoUser,
+              id: demoUser.id!, // We know this exists since we just created it
+            },
+            expires: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000,
+            ).toISOString(), // 30 days from now
+          },
+          db,
+          headers: new Headers({
+            "x-trpc-source": "auth-config",
+          }),
+        });
+        await caller.demo.seedDemoData();
+
         return demoUser;
       },
     }),
