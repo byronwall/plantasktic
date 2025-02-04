@@ -1,10 +1,16 @@
 "use client";
 
+import { ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +32,17 @@ export function AppSidebar() {
     workspaces,
     workspaceProjects,
   } = useCurrentProject();
+
+  // Sort workspaces to put current workspace first
+  const sortedWorkspaces = [...workspaces].sort((a, b) => {
+    if (a.name === currentWorkspaceName) {
+      return -1;
+    }
+    if (b.name === currentWorkspaceName) {
+      return 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <Sidebar>
@@ -65,71 +82,82 @@ export function AppSidebar() {
                       <Link href="/">Home View</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  {currentWorkspace && (
-                    <>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <Link href={`/${currentWorkspace.name}/goals`}>
-                            Goals
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                          <Link href={`/${currentWorkspace.name}/time-blocks`}>
-                            Time Blocks
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </>
-                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel>Workspaces - Tasks</SidebarGroupLabel>
+              <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {workspaces.map((workspace) => (
-                    <SidebarMenuItem key={workspace.id}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={workspace.name === currentWorkspaceName}
-                      >
-                        <Link href={`/${workspace.name}`}>
-                          {workspace.name}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                  {sortedWorkspaces.map((workspace) => (
+                    <Collapsible
+                      key={workspace.id}
+                      defaultOpen={workspace.name === currentWorkspaceName}
+                      className="group/collapsible"
+                    >
+                      <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-1.5 text-sm hover:bg-accent">
+                        <span>{workspace.name}</span>
+                        <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-4">
+                          <SidebarMenuItem>
+                            <SidebarMenuButton
+                              asChild
+                              isActive={
+                                workspace.name === currentWorkspaceName &&
+                                !currentProjectName
+                              }
+                            >
+                              <Link href={`/${workspace.name}`}>Overview</Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                          <SidebarMenuItem>
+                            <SidebarMenuButton asChild>
+                              <Link href={`/${workspace.name}/goals`}>
+                                Goals
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                          <SidebarMenuItem>
+                            <SidebarMenuButton asChild>
+                              <Link href={`/${workspace.name}/time-blocks`}>
+                                Time Blocks
+                              </Link>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                          {workspace.name === currentWorkspaceName &&
+                            workspaceProjects.length > 0 && (
+                              <>
+                                <div className="my-2 px-2 text-xs font-medium text-muted-foreground">
+                                  Projects
+                                </div>
+                                {workspaceProjects.map((project) => (
+                                  <SidebarMenuItem key={project.id}>
+                                    <SidebarMenuButton
+                                      asChild
+                                      isActive={
+                                        project.name === currentProjectName
+                                      }
+                                    >
+                                      <Link
+                                        href={`/${workspace.name}/${project.name}`}
+                                      >
+                                        {project.name}
+                                      </Link>
+                                    </SidebarMenuButton>
+                                  </SidebarMenuItem>
+                                ))}
+                              </>
+                            )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-
-            {currentWorkspace && (
-              <SidebarGroup>
-                <SidebarGroupLabel>Projects - Tasks</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {workspaceProjects.map((project) => (
-                      <SidebarMenuItem key={project.id}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={project.name === currentProjectName}
-                        >
-                          <Link
-                            href={`/${currentWorkspace.name}/${project.name}`}
-                          >
-                            {project.name}
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
           </>
         ) : (
           <SidebarGroup className="mt-4">
