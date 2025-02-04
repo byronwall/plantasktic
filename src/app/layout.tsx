@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 
 import { AppSidebar } from "~/components/AppSidebar";
 import { CommandMenu } from "~/components/CommandMenu";
+import { Footer } from "~/components/Footer";
 import { TaskInput } from "~/components/TaskInput";
 import { TopNavSelectors } from "~/components/TopNavSelectors";
 import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
@@ -40,29 +41,35 @@ export default async function RootLayout({
           <SessionProvider session={session} basePath="/api/identity">
             {session ? (
               <WorkspaceProjectProvider>
-                <SidebarProvider className="max-w-[100vw]">
+                <SidebarProvider className="flex max-w-[100vw]">
                   <AppSidebar />
-                  <main className="relative min-h-screen min-w-0 flex-1 p-1">
-                    <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
-                      <div className="flex items-center gap-2">
-                        <SidebarTrigger />
-                        <div className="flex w-[360px] gap-2">
-                          <TopNavSelectors />
-                        </div>
+                  <div className="flex min-h-screen w-full flex-col">
+                    <main className="relative min-w-0 flex-1 p-1">
+                      <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
+                        <div className="flex items-center gap-2">
+                          <SidebarTrigger />
+                          <div className="flex w-[360px] gap-2">
+                            <TopNavSelectors />
+                          </div>
 
-                        <TaskInput />
+                          <TaskInput />
+                        </div>
                       </div>
-                    </div>
-                    <div className="mx-auto p-2">{children}</div>
-                    <GlobalModals />
-                    <CommandMenu />
-                  </main>
+                      <div className="mx-auto p-2">{children}</div>
+                      <GlobalModals />
+                      <CommandMenu />
+                    </main>
+                    <Footer />
+                  </div>
                 </SidebarProvider>
               </WorkspaceProjectProvider>
             ) : (
-              <main className="min-h-screen w-full">
-                <div className="container mx-auto px-4 py-8">{children}</div>
-              </main>
+              <div className="flex min-h-screen w-full flex-col">
+                <main className="flex-1">
+                  <div className="container mx-auto px-4 py-8">{children}</div>
+                </main>
+                <Footer />
+              </div>
             )}
           </SessionProvider>
         </TRPCReactProvider>

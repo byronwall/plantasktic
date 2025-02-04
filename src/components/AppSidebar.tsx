@@ -72,14 +72,6 @@ export function AppSidebar() {
                 />
                 Plan•Task•Tic
               </Link>
-              <Link
-                href="https://byroni.us"
-                className="mt-1 block text-xs text-muted-foreground hover:text-foreground"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                created by Byron Wall
-              </Link>
             </div>
           </SidebarGroupLabel>
         </SidebarGroup>
