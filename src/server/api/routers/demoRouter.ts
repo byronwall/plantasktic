@@ -17,12 +17,12 @@ interface TimeBlockTemplate {
 
 const DEMO_WORKSPACES = [
   {
-    name: "Personal Development",
-    projects: ["Daily Habits Tracking", "Reading List"],
-  },
-  {
     name: "Work Projects",
     projects: ["Q4 Marketing Campaign", "Product Launch Plan"],
+  },
+  {
+    name: "Personal Development",
+    projects: ["Daily Habits Tracking", "Reading List"],
   },
   {
     name: "Home Management",
