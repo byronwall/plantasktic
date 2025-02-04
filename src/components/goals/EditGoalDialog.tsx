@@ -1,3 +1,5 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Goal } from "@prisma/client";
 import { useState } from "react";
@@ -43,19 +45,16 @@ interface EditGoalDialogProps {
   goal: Goal;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGoalUpdated: () => void;
 }
 
 export function EditGoalDialog({
   goal,
   open,
   onOpenChange,
-  onGoalUpdated,
 }: EditGoalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const updateGoal = api.goal.update.useMutation({
     onSuccess: () => {
-      onGoalUpdated();
       onOpenChange(false);
     },
   });

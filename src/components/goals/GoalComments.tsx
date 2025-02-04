@@ -1,3 +1,5 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Goal, type GoalComment, type User } from "@prisma/client";
 import { useState } from "react";
@@ -31,19 +33,14 @@ type CommentSchema = z.infer<typeof commentSchema>;
 
 interface GoalCommentsProps {
   goal: Goal & { comments: (GoalComment & { user: User })[] };
-  onCommentAdded: () => void;
 }
 
-export function GoalCommentsDialog({
-  goal,
-  onCommentAdded,
-}: GoalCommentsProps) {
+export function GoalCommentsDialog({ goal }: GoalCommentsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addComment = api.goal.addComment.useMutation({
     onSuccess: () => {
-      onCommentAdded();
       setIsOpen(false);
       form.reset();
     },

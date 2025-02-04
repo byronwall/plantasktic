@@ -1,3 +1,5 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type Goal, type GoalProgress } from "@prisma/client";
 import { useState } from "react";
@@ -41,19 +43,14 @@ type ProgressSchema = z.infer<typeof progressSchema>;
 
 interface GoalProgressProps {
   goal: Goal & { progress: GoalProgress[] };
-  onProgressAdded: () => void;
 }
 
-export function GoalProgressDialog({
-  goal,
-  onProgressAdded,
-}: GoalProgressProps) {
+export function GoalProgressDialog({ goal }: GoalProgressProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addProgress = api.goal.addProgress.useMutation({
     onSuccess: () => {
-      onProgressAdded();
       setIsOpen(false);
       form.reset();
     },

@@ -1,3 +1,5 @@
+"use client";
+
 import {
   type Goal,
   type GoalComment,
@@ -31,12 +33,7 @@ interface GoalListProps {
 }
 
 export function GoalList({ goals }: GoalListProps) {
-  const utils = api.useUtils();
-  const updateGoal = api.goal.update.useMutation({
-    onSuccess: () => {
-      void utils.goal.getAll.invalidate();
-    },
-  });
+  const updateGoal = api.goal.update.useMutation();
 
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
@@ -149,14 +146,8 @@ export function GoalList({ goals }: GoalListProps) {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <GoalProgressDialog
-                    goal={goal}
-                    onProgressAdded={() => void utils.goal.getAll.invalidate()}
-                  />
-                  <GoalCommentsDialog
-                    goal={goal}
-                    onCommentAdded={() => void utils.goal.getAll.invalidate()}
-                  />
+                  <GoalProgressDialog goal={goal} />
+                  <GoalCommentsDialog goal={goal} />
                 </div>
 
                 <Button
@@ -271,10 +262,6 @@ export function GoalList({ goals }: GoalListProps) {
                 if (!open) {
                   setEditingGoalId(null);
                 }
-              }}
-              onGoalUpdated={() => {
-                void utils.goal.getAll.invalidate();
-                setEditingGoalId(null);
               }}
             />
           )}
