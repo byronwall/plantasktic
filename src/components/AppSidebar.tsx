@@ -22,6 +22,7 @@ import {
   SidebarMenuItem,
 } from "~/components/ui/sidebar";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
@@ -31,7 +32,11 @@ export function AppSidebar() {
     currentProjectName,
     workspaces,
     workspaceProjects,
+    projects,
   } = useCurrentProject();
+
+  const { data: projectTaskCounts = {} } =
+    api.task.getProjectTaskCounts.useQuery();
 
   // Sort workspaces to put current workspace first
   const sortedWorkspaces = [...workspaces].sort((a, b) => {
@@ -127,30 +132,46 @@ export function AppSidebar() {
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
-                          {workspace.name === currentWorkspaceName &&
-                            workspaceProjects.length > 0 && (
-                              <>
-                                <div className="my-2 px-2 text-xs font-medium text-muted-foreground">
-                                  Projects
-                                </div>
-                                {workspaceProjects.map((project) => (
+                          {projects.filter(
+                            (p) => p.workspaceId === workspace.id,
+                          ).length > 0 && (
+                            <>
+                              <div className="my-2 px-2 text-xs font-medium text-muted-foreground">
+                                Projects
+                              </div>
+                              {projects
+                                .filter((p) => p.workspaceId === workspace.id)
+                                .map((project) => (
                                   <SidebarMenuItem key={project.id}>
                                     <SidebarMenuButton
                                       asChild
                                       isActive={
+                                        workspace.name ===
+                                          currentWorkspaceName &&
                                         project.name === currentProjectName
                                       }
                                     >
                                       <Link
                                         href={`/${workspace.name}/${project.name}`}
+                                        className="flex w-full items-center justify-between"
                                       >
-                                        {project.name}
+                                        <span>{project.name}</span>
+                                        {(() => {
+                                          const count = project.id
+                                            ? projectTaskCounts[project.id]
+                                            : 0;
+                                          return count && count > 0 ? (
+                                            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                              {count}
+                                            </span>
+                                          ) : null;
+                                        })()}
                                       </Link>
                                     </SidebarMenuButton>
                                   </SidebarMenuItem>
                                 ))}
-                              </>
-                            )}
+                            </>
+                          )}
                         </div>
                       </CollapsibleContent>
                     </Collapsible>

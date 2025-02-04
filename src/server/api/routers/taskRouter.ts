@@ -395,4 +395,28 @@ export const taskRouter = createTRPCRouter({
         },
       });
     }),
+
+  getProjectTaskCounts: protectedProcedure.query(async ({ ctx }) => {
+    const counts = await ctx.db.task.groupBy({
+      by: ["projectId"],
+      where: {
+        userId: ctx.session.user.id,
+        projectId: { not: null },
+        status: { not: "completed" },
+      },
+      _count: {
+        task_id: true,
+      },
+    });
+
+    return counts.reduce(
+      (acc, curr) => {
+        if (curr.projectId) {
+          acc[curr.projectId] = curr._count.task_id;
+        }
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  }),
 });
