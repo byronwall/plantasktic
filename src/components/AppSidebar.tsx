@@ -79,18 +79,6 @@ export function AppSidebar() {
         {session?.user ? (
           <>
             <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link href="/">Home View</Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
               <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
