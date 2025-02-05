@@ -113,7 +113,7 @@ export function AppSidebar() {
                               >
                                 <span>Goals</span>
                                 {workspaceGoalCounts[workspace.id] ? (
-                                  <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                  <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                     {workspaceGoalCounts[workspace.id]}
                                   </span>
                                 ) : null}
@@ -135,7 +135,7 @@ export function AppSidebar() {
                                     counts.upcoming > 0 ? (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                        <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                           {counts.today} / {counts.upcoming}
                                         </span>
                                       </TooltipTrigger>
@@ -178,7 +178,7 @@ export function AppSidebar() {
                                         <span>{project.name}</span>
                                         {project.id &&
                                           projectTaskCounts[project.id] > 0 && (
-                                            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                            <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                               {projectTaskCounts[project.id]}
                                             </span>
                                           )}
