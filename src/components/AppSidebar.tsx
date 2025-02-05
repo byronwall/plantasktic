@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -27,12 +28,14 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 export function AppSidebar() {
   const { data: session } = useSession();
   const { currentWorkspaceName, currentProjectName, workspaces, projects } =
     useCurrentProject();
+  const pathname = usePathname();
 
   const { data: projectTaskCounts = {} } =
     api.task.getProjectTaskCounts.useQuery();
@@ -55,6 +58,8 @@ export function AppSidebar() {
   const sortedWorkspaces = [...workspaces].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
+
+  const isAdmin = session?.data?.user?.roles?.includes("SITE_ADMIN");
 
   return (
     <Sidebar>
@@ -195,6 +200,34 @@ export function AppSidebar() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link
+                          href="/admin"
+                          className={cn(
+                            "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
+                            pathname === "/admin"
+                              ? "bg-gray-800 text-white"
+                              : "text-gray-400 hover:bg-gray-800 hover:text-white",
+                          )}
+                        >
+                          <ShieldCheck
+                            className="h-6 w-6 shrink-0"
+                            aria-hidden="true"
+                          />
+                          Admin
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            )}
           </>
         ) : (
           <SidebarGroup className="mt-4">

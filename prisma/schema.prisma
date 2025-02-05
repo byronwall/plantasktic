@@ -76,6 +76,7 @@ model User {
     emailVerified DateTime?
     image         String?
     gh_username   String?
+    roles         String[]      @default([])
     accounts      Account[]
     sessions      Session[]
     projects      Project[]
