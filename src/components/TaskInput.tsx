@@ -96,7 +96,9 @@ export function TaskInput() {
           <Plus className="h-4 w-4" />
         )}
       </Button>
-      <BulkImportButton projectId={currentProjectId ?? undefined} />
+      <div className="hidden lg:block">
+        <BulkImportButton projectId={currentProjectId ?? undefined} />
+      </div>
     </div>
   );
 }

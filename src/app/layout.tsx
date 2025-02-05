@@ -46,10 +46,12 @@ export default async function RootLayout({
                   <div className="flex min-h-screen w-full flex-col">
                     <main className="relative min-w-0 flex-1 p-1">
                       <div className="sticky top-0 z-50 border-b bg-background bg-white p-1">
-                        <div className="flex items-center gap-2">
-                          <SidebarTrigger />
-                          <div className="flex w-[360px] gap-2">
-                            <TopNavSelectors />
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+                          <div className="flex items-center gap-2">
+                            <SidebarTrigger />
+                            <div className="flex w-full gap-2 lg:w-[360px]">
+                              <TopNavSelectors />
+                            </div>
                           </div>
 
                           <TaskInput />
