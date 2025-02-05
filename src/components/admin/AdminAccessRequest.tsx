@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -13,8 +14,11 @@ export const AdminAccessRequest = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const { update } = useSession();
+
   const verifyAccess = api.admin.verifyAdminAccess.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await update();
       router.refresh();
     },
     onError: (error) => {
@@ -41,8 +45,8 @@ export const AdminAccessRequest = () => {
           />
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" disabled={verifyAccess.isLoading}>
-          {verifyAccess.isLoading ? "Verifying..." : "Verify Access"}
+        <Button type="submit" disabled={verifyAccess.isPending}>
+          {verifyAccess.isPending ? "Verifying..." : "Verify Access"}
         </Button>
       </form>
     </Card>

@@ -17,6 +17,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      roles: string[];
     } & DefaultSession["user"];
   }
 }
@@ -31,15 +32,17 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      roles: string[];
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    // ...other properties
+    // role: UserRole;
+    roles: string[];
+  }
 }
 
 /**
@@ -60,6 +63,7 @@ export const authConfig = {
           gh_username: profile.login,
           email: profile.email,
           image: profile.avatar_url,
+          roles: [],
         };
       },
     }),
@@ -76,16 +80,12 @@ export const authConfig = {
           name: `Demo User ${shortId}`,
           email: `demo-${userId}@example.com`,
           image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+          roles: [],
         };
 
         // Create the user in the database
         await db.user.create({
-          data: {
-            id: demoUser.id,
-            name: demoUser.name,
-            email: demoUser.email,
-            image: demoUser.image,
-          },
+          data: demoUser,
         });
 
         // Create demo content for the new user
@@ -95,6 +95,7 @@ export const authConfig = {
             user: {
               ...demoUser,
               id: demoUser.id!, // We know this exists since we just created it
+              roles: [],
             },
             expires: new Date(
               Date.now() + 30 * 24 * 60 * 60 * 1000,
@@ -113,9 +114,12 @@ export const authConfig = {
   ],
 
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.user = user;
+      }
+      if (trigger === "update") {
+        token.user.roles = session.user.roles;
       }
       return token;
     },
@@ -128,6 +132,7 @@ export const authConfig = {
           const tokenUser = sessionArgs.token.user as NextUser;
           if (tokenUser.id) {
             session.user.id = tokenUser.id;
+            session.user.roles = tokenUser.roles;
             return session;
           }
         }

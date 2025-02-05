@@ -1,35 +1,30 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { env } from "~/env.mjs";
+import { env } from "~/env";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
-const isAdmin = async (ctx: { auth: { userId: string } }) => {
-  const user = await ctx.prisma.user.findUnique({
-    where: { id: ctx.auth.userId },
-    select: { roles: true },
-  });
-
-  if (!user?.roles.includes("SITE_ADMIN")) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "You must be an admin to access this resource",
-    });
-  }
-};
-
 export const adminRouter = createTRPCRouter({
   getAllUsers: protectedProcedure.query(async ({ ctx }) => {
-    await isAdmin(ctx);
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { roles: true },
+    });
 
-    return ctx.prisma.user.findMany({
+    if (!user?.roles.includes("SITE_ADMIN")) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be an admin to access this resource",
+      });
+    }
+
+    return ctx.db.user.findMany({
       select: {
         id: true,
         name: true,
         email: true,
         roles: true,
-        lastActivity: true,
         _count: {
           select: {
             projects: true,
@@ -37,9 +32,6 @@ export const adminRouter = createTRPCRouter({
             goals: true,
           },
         },
-      },
-      orderBy: {
-        lastActivity: "desc",
       },
     });
   }),
@@ -54,8 +46,8 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
-      await ctx.prisma.user.update({
-        where: { id: ctx.auth.userId },
+      await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
         data: {
           roles: ["SITE_ADMIN"],
         },

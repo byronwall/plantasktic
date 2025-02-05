@@ -1,7 +1,5 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
-
 import { Card } from "~/components/ui/card";
 import {
   Table,
@@ -30,7 +28,6 @@ export const AdminDashboard = () => {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Roles</TableHead>
-              <TableHead>Last Activity</TableHead>
               <TableHead>Projects</TableHead>
               <TableHead>Tasks</TableHead>
               <TableHead>Goals</TableHead>
@@ -42,9 +39,6 @@ export const AdminDashboard = () => {
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.roles.join(", ")}</TableCell>
-                <TableCell>
-                  {formatDistanceToNow(user.lastActivity, { addSuffix: true })}
-                </TableCell>
                 <TableCell>{user._count.projects}</TableCell>
                 <TableCell>{user._count.Task}</TableCell>
                 <TableCell>{user._count.goals}</TableCell>

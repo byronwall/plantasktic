@@ -2,10 +2,10 @@ import { redirect } from "next/navigation";
 
 import { AdminAccessRequest } from "~/components/admin/AdminAccessRequest";
 import { AdminDashboard } from "~/components/admin/AdminDashboard";
-import { getServerAuthSession } from "~/server/auth";
+import { auth } from "~/server/auth";
 
 export default async function AdminPage() {
-  const session = await getServerAuthSession();
+  const session = await auth();
 
   if (!session?.user) {
     redirect("/");
