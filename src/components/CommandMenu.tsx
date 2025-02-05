@@ -333,17 +333,6 @@ export function CommandMenu() {
             ))}
           </CommandGroup>
         )}
-
-        <CommandSeparator />
-
-        <CommandGroup heading="Demo">
-          <CommandItem
-            onSelect={handleSeedDemoData}
-            className="text-orange-500 dark:text-orange-400"
-          >
-            Create Demo Content
-          </CommandItem>
-        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
