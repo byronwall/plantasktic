@@ -1,11 +1,11 @@
 "use client";
 
-import { ChevronRight, ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Icons } from "~/components/icons";
 import { Button } from "~/components/ui/button";
 import {
   Collapsible,
@@ -59,7 +59,7 @@ export function AppSidebar() {
     a.name.localeCompare(b.name),
   );
 
-  const isAdmin = session?.data?.user?.roles?.includes("SITE_ADMIN");
+  const isAdmin = session?.user?.roles?.includes("SITE_ADMIN");
 
   return (
     <Sidebar>
@@ -95,7 +95,7 @@ export function AppSidebar() {
                     >
                       <CollapsibleTrigger className="flex w-full items-center justify-between px-2 py-1.5 text-sm hover:bg-accent">
                         <span>{workspace.name}</span>
-                        <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        <Icons.chevronRight className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="ml-4">
@@ -107,7 +107,13 @@ export function AppSidebar() {
                                 !currentProjectName
                               }
                             >
-                              <Link href={`/${workspace.name}`}>Overview</Link>
+                              <Link
+                                href={`/${workspace.name}`}
+                                className="flex items-center gap-2"
+                              >
+                                <Icons.panel className="h-4 w-4" />
+                                Overview
+                              </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                           <SidebarMenuItem>
@@ -116,7 +122,10 @@ export function AppSidebar() {
                                 href={`/${workspace.name}/goals`}
                                 className="flex w-full items-center justify-between"
                               >
-                                <span>Goals</span>
+                                <span className="flex items-center gap-2">
+                                  <Icons.goals className="h-4 w-4" />
+                                  Goals
+                                </span>
                                 {workspaceGoalCounts[workspace.id] ? (
                                   <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                     {workspaceGoalCounts[workspace.id]}
@@ -131,11 +140,14 @@ export function AppSidebar() {
                                 href={`/${workspace.name}/time-blocks`}
                                 className="flex w-full items-center justify-between"
                               >
-                                <span>Time Blocks</span>
+                                <span className="flex items-center gap-2">
+                                  <Icons.timeBlock className="h-4 w-4" />
+                                  Time Blocks
+                                </span>
                                 {(() => {
-                                  const counts = getTimeBlockCounts(
-                                    workspace.id,
-                                  );
+                                  const counts = workspace.id
+                                    ? getTimeBlockCounts(workspace.id)
+                                    : { today: 0, upcoming: 0 };
                                   return counts.today > 0 ||
                                     counts.upcoming > 0 ? (
                                     <Tooltip>
@@ -178,9 +190,12 @@ export function AppSidebar() {
                                     >
                                       <Link
                                         href={`/${workspace.name}/${project.name}`}
-                                        className="flex w-full items-center justify-between"
+                                        className="flex h-fit w-full items-center justify-between"
                                       >
-                                        <span>{project.name}</span>
+                                        <span className="flex items-center gap-2">
+                                          <Icons.todo className="h-4 w-4" />
+                                          {project.name}
+                                        </span>
                                         {project.id &&
                                           projectTaskCounts[project.id] > 0 && (
                                             <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
@@ -216,7 +231,7 @@ export function AppSidebar() {
                               : "text-gray-400 hover:bg-gray-800 hover:text-white",
                           )}
                         >
-                          <ShieldCheck
+                          <Icons.admin
                             className="h-6 w-6 shrink-0"
                             aria-hidden="true"
                           />
@@ -244,7 +259,7 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup className="mt-auto">
+        <SidebarGroup className="mt-auto pb-4">
           <SidebarGroupContent>
             <SidebarMenu>
               {session?.user ? (
