@@ -130,7 +130,7 @@ export function GanttTask({
         isEndVisible ? "rounded-r-lg" : "",
       )}
     >
-      <TaskAvatar title={task.title} task={task} size={20} />
+      <TaskAvatar task={task} size={20} />
       <SimpleTooltip
         content={task.title}
         className="max-w-lg"

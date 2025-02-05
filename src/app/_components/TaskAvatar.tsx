@@ -8,18 +8,17 @@ import { useEditTaskStore } from "~/stores/useEditTaskStore";
 import type { Task } from "./TaskList";
 
 type TaskAvatarProps = {
-  title: string;
   size?: number;
   task: Task;
 };
 
-export const TaskAvatar = ({ title, size = 24, task }: TaskAvatarProps) => {
+export const TaskAvatar = ({ size = 24, task }: TaskAvatarProps) => {
   const { selectedColors, avatarVariant } = useColorPaletteStore();
   const openEditDialog = useEditTaskStore((state) => state.open);
 
   return (
     <Avatar
-      name={title}
+      name={task.title}
       colors={selectedColors}
       variant={avatarVariant}
       size={size}

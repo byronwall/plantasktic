@@ -52,7 +52,7 @@ export function UnscheduledTasks({ tasks }: UnscheduledTasksProps) {
             key={task.task_id}
             className="flex items-center gap-4 rounded-lg border bg-card p-4"
           >
-            <TaskAvatar title={task.title} task={task} />
+            <TaskAvatar task={task} />
             <div className="flex flex-grow flex-col gap-2">
               <div className="font-medium">{task.title}</div>
               <div className="flex items-center gap-2">

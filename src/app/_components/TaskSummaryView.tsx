@@ -1,8 +1,12 @@
+"use client";
+
 import { addDays, isAfter, isBefore, startOfDay } from "date-fns";
-import { BarChart3, Calendar, ListTodo, Star } from "lucide-react";
+import { AlertCircle, BarChart3, Calendar, ListTodo, Star } from "lucide-react";
+import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
+import { TaskListDialog } from "./TaskListDialog";
 import { TaskSummaryDisplay } from "./TaskSummaryDisplay";
 
 import type { Task } from "@prisma/client";
@@ -12,17 +16,37 @@ interface TaskSummaryViewProps {
 }
 
 export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const [dialogTitle, setDialogTitle] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   // Calculate total tasks
   const totalTasks = tasks.length;
 
-  // Calculate tasks due next week
+  // Calculate tasks due this week and next week
   const today = startOfDay(new Date());
-  const nextWeek = addDays(today, 7);
-  const tasksDueNextWeek = tasks.filter(
+  const endOfWeek = addDays(today, 7);
+  const endOfNextWeek = addDays(today, 14);
+
+  // Get overdue tasks
+  const overdueTasks = tasks.filter(
+    (task) => task.due_date && isBefore(task.due_date, today),
+  );
+
+  // Get tasks due this week
+  const tasksDueThisWeek = tasks.filter(
     (task) =>
       task.due_date &&
       isAfter(task.due_date, today) &&
-      isBefore(task.due_date, nextWeek),
+      isBefore(task.due_date, endOfWeek),
+  );
+
+  // Get tasks due next week
+  const tasksDueNextWeek = tasks.filter(
+    (task) =>
+      task.due_date &&
+      isAfter(task.due_date, endOfWeek) &&
+      isBefore(task.due_date, endOfNextWeek),
   );
 
   // Get top 10 tasks by due date (soonest first)
@@ -57,71 +81,136 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
     })
     .slice(0, 10);
 
+  const handleCardClick = (tasks: Task[], title: string) => {
+    setSelectedTasks(tasks);
+    setDialogTitle(title);
+    setIsDialogOpen(true);
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {/* Total Tasks Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-          <ListTodo className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalTasks}</div>
-        </CardContent>
-      </Card>
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total Tasks Card */}
+        <Card
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => handleCardClick(tasks, "All Tasks")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+            <ListTodo className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalTasks}</div>
+          </CardContent>
+        </Card>
 
-      {/* Tasks Due Next Week Card */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Due Next Week</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{tasksDueNextWeek.length}</div>
-        </CardContent>
-      </Card>
+        {/* Overdue Tasks Card */}
+        <Card
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() => handleCardClick(overdueTasks, "Overdue Tasks")}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
+            <AlertCircle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">
+              {overdueTasks.length}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Top Tasks by Due Date Card */}
-      <Card className="col-span-2 row-span-2">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Top 10 Tasks by Due Date
-          </CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {tasksByDueDate.map((task) => (
-              <TaskSummaryDisplay
-                key={task.task_id}
-                task={task}
-                fields={["title", "due_date"]}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Tasks Due This Week Card */}
+        <Card
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() =>
+            handleCardClick(tasksDueThisWeek, "Tasks Due This Week")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Due This Week</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tasksDueThisWeek.length}</div>
+          </CardContent>
+        </Card>
 
-      {/* Top Tasks by Priority Card */}
-      <Card className="col-span-2 row-span-2">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Top 10 Tasks by Priority
-          </CardTitle>
-          <Star className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {tasksByPriority.map((task) => (
-              <TaskSummaryDisplay
-                key={task.task_id}
-                task={task}
-                fields={["title", "priority"]}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        {/* Tasks Due Next Week Card */}
+        <Card
+          className="cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() =>
+            handleCardClick(tasksDueNextWeek, "Tasks Due Next Week")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Due Next Week</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tasksDueNextWeek.length}</div>
+          </CardContent>
+        </Card>
+
+        {/* Top Tasks by Due Date Card */}
+        <Card
+          className="col-span-2 row-span-2 cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() =>
+            handleCardClick(tasksByDueDate, "Top 10 Tasks by Due Date")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Top 10 Tasks by Due Date
+            </CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {tasksByDueDate.map((task) => (
+                <TaskSummaryDisplay
+                  key={task.task_id}
+                  task={task}
+                  fields={["title", "due_date"]}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Tasks by Priority Card */}
+        <Card
+          className="col-span-2 row-span-2 cursor-pointer transition-colors hover:bg-muted/50"
+          onClick={() =>
+            handleCardClick(tasksByPriority, "Top 10 Tasks by Priority")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Top 10 Tasks by Priority
+            </CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {tasksByPriority.map((task) => (
+                <TaskSummaryDisplay
+                  key={task.task_id}
+                  task={task}
+                  fields={["title", "priority"]}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <TaskListDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        tasks={selectedTasks}
+        title={dialogTitle}
+      />
+    </>
   );
 }

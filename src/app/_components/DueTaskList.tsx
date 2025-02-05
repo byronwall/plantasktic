@@ -24,7 +24,7 @@ export function DueTaskList() {
         {tasks.map((task: Task) => (
           <div key={task.task_id} className="rounded-lg border p-4">
             <div className="flex items-center gap-2">
-              <TaskAvatar title={task.title} task={task} />
+              <TaskAvatar task={task} />
               <h3 className="font-semibold">{task.title}</h3>
             </div>
             <p className="text-sm text-gray-500">

@@ -241,7 +241,7 @@ export function TimeBlockDialog() {
                         className="flex flex-1 cursor-pointer items-center gap-2"
                         onClick={() => openEditDialog(task.task_id)}
                       >
-                        <TaskAvatar title={task.title} task={task} />
+                        <TaskAvatar task={task} />
                         <span className="text-sm">{task.title}</span>
                       </div>
                       <Button

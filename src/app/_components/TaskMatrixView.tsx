@@ -127,7 +127,7 @@ function TaskGridCell({ cell, isSelected, onSelect }: TaskGridCellProps) {
           key={task.task_id}
           className="max-w-sm text-wrap break-words text-base"
         >
-          <TaskAvatar title={task.title} task={task} size={24} />
+          <TaskAvatar task={task} size={24} />
         </SimpleTooltip>
       ))}
     </div>
@@ -328,7 +328,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                         open(task.task_id);
                       }}
                     >
-                      <TaskAvatar title={task.title} task={task} size={24} />
+                      <TaskAvatar task={task} size={24} />
                       <span>{task.title}</span>
                     </li>
                   ))}
@@ -349,7 +349,7 @@ export function TaskMatrixView({ tasks }: { tasks: Task[] }) {
                       open(task.task_id);
                     }}
                   >
-                    <TaskAvatar title={task.title} task={task} size={24} />
+                    <TaskAvatar task={task} size={24} />
                     <span>{task.title}</span>
                   </li>
                 ))}
