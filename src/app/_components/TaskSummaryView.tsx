@@ -92,8 +92,14 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Tasks Card */}
         <Card
-          className="cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() => handleCardClick(tasks, "All Tasks")}
+          className={`${
+            tasks.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
+          onClick={() =>
+            tasks.length > 0 && handleCardClick(tasks, "All Tasks")
+          }
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
@@ -106,8 +112,15 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
 
         {/* Overdue Tasks Card */}
         <Card
-          className="cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() => handleCardClick(overdueTasks, "Overdue Tasks")}
+          className={`${
+            overdueTasks.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
+          onClick={() =>
+            overdueTasks.length > 0 &&
+            handleCardClick(overdueTasks, "Overdue Tasks")
+          }
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
@@ -122,8 +135,13 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
 
         {/* Tasks Due This Week Card */}
         <Card
-          className="cursor-pointer transition-colors hover:bg-muted/50"
+          className={`${
+            tasksDueThisWeek.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
           onClick={() =>
+            tasksDueThisWeek.length > 0 &&
             handleCardClick(tasksDueThisWeek, "Tasks Due This Week")
           }
         >
@@ -138,8 +156,13 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
 
         {/* Tasks Due Next Week Card */}
         <Card
-          className="cursor-pointer transition-colors hover:bg-muted/50"
+          className={`${
+            tasksDueNextWeek.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
           onClick={() =>
+            tasksDueNextWeek.length > 0 &&
             handleCardClick(tasksDueNextWeek, "Tasks Due Next Week")
           }
         >
@@ -153,17 +176,24 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
         </Card>
 
         {/* Top Tasks by Due Date Card */}
-        <Card
-          className="col-span-2 row-span-2 cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() =>
-            handleCardClick(tasksByDueDate, "Top 10 Tasks by Due Date")
-          }
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Top 10 Tasks by Due Date
-            </CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-2 row-span-2">
+          <CardHeader
+            className={`${
+              tasksByDueDate.length > 0
+                ? "cursor-pointer transition-colors hover:bg-muted/50"
+                : ""
+            }`}
+            onClick={() =>
+              tasksByDueDate.length > 0 &&
+              handleCardClick(tasksByDueDate, "Top 10 Tasks by Due Date")
+            }
+          >
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Top 10 Tasks by Due Date
+              </CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -179,17 +209,24 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
         </Card>
 
         {/* Top Tasks by Priority Card */}
-        <Card
-          className="col-span-2 row-span-2 cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() =>
-            handleCardClick(tasksByPriority, "Top 10 Tasks by Priority")
-          }
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Top 10 Tasks by Priority
-            </CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+        <Card className="col-span-2 row-span-2">
+          <CardHeader
+            className={`${
+              tasksByPriority.length > 0
+                ? "cursor-pointer transition-colors hover:bg-muted/50"
+                : ""
+            }`}
+            onClick={() =>
+              tasksByPriority.length > 0 &&
+              handleCardClick(tasksByPriority, "Top 10 Tasks by Priority")
+            }
+          >
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Top 10 Tasks by Priority
+              </CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
