@@ -31,10 +31,40 @@ import { useCurrentProject } from "~/hooks/useCurrentProject";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
+const isRouteActive = (
+  pathname: string,
+  workspace: string,
+  project?: string,
+  route?: string,
+) => {
+  const normalizedPathname = decodeURIComponent(pathname.toLowerCase());
+  const workspacePath = `/${encodeURIComponent(workspace.toLowerCase())}`;
+
+  if (route) {
+    return normalizedPathname === `${workspacePath}/${route.toLowerCase()}`;
+  }
+
+  if (project) {
+    const projectPath = `${workspacePath}/${encodeURIComponent(project.toLowerCase())}`;
+    return normalizedPathname === projectPath;
+  }
+
+  // For workspace overview page
+  return normalizedPathname === workspacePath;
+};
+
+const activeItemClass = "bg-primary/10 text-primary font-medium";
+const hoverItemClass = "hover:bg-accent/50 hover:text-primary";
+
 export function AppSidebar() {
   const { data: session } = useSession();
-  const { currentWorkspaceName, currentProjectName, workspaces, projects } =
-    useCurrentProject();
+  const {
+    currentWorkspaceName,
+    currentProjectName,
+    currentProjectId,
+    workspaces,
+    projects,
+  } = useCurrentProject();
   const pathname = usePathname();
 
   const { data: projectTaskCounts = {} } =
@@ -102,10 +132,12 @@ export function AppSidebar() {
                           <SidebarMenuItem>
                             <SidebarMenuButton
                               asChild
-                              isActive={
-                                workspace.name === currentWorkspaceName &&
-                                !currentProjectName
-                              }
+                              className={cn(
+                                "w-full transition-colors",
+                                isRouteActive(pathname, workspace.name)
+                                  ? activeItemClass
+                                  : hoverItemClass,
+                              )}
                             >
                               <Link
                                 href={`/${workspace.name}`}
@@ -117,7 +149,20 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                           <SidebarMenuItem>
-                            <SidebarMenuButton asChild>
+                            <SidebarMenuButton
+                              asChild
+                              className={cn(
+                                "w-full transition-colors",
+                                isRouteActive(
+                                  pathname,
+                                  workspace.name,
+                                  undefined,
+                                  "goals",
+                                )
+                                  ? activeItemClass
+                                  : hoverItemClass,
+                              )}
+                            >
                               <Link
                                 href={`/${workspace.name}/goals`}
                                 className="flex w-full items-center justify-between"
@@ -135,7 +180,20 @@ export function AppSidebar() {
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                           <SidebarMenuItem>
-                            <SidebarMenuButton asChild>
+                            <SidebarMenuButton
+                              asChild
+                              className={cn(
+                                "w-full transition-colors",
+                                isRouteActive(
+                                  pathname,
+                                  workspace.name,
+                                  undefined,
+                                  "time-blocks",
+                                )
+                                  ? activeItemClass
+                                  : hoverItemClass,
+                              )}
+                            >
                               <Link
                                 href={`/${workspace.name}/time-blocks`}
                                 className="flex w-full items-center justify-between"
@@ -182,11 +240,12 @@ export function AppSidebar() {
                                   <SidebarMenuItem key={project.id}>
                                     <SidebarMenuButton
                                       asChild
-                                      isActive={
-                                        workspace.name ===
-                                          currentWorkspaceName &&
-                                        project.name === currentProjectName
-                                      }
+                                      className={cn(
+                                        "w-full transition-colors",
+                                        project.id === currentProjectId
+                                          ? activeItemClass
+                                          : hoverItemClass,
+                                      )}
                                     >
                                       <Link
                                         href={`/${workspace.name}/${project.name}`}
@@ -196,7 +255,7 @@ export function AppSidebar() {
                                           <Icons.todo className="h-4 w-4" />
                                           {project.name}
                                         </span>
-                                        {project.id &&
+                                        {project.id != null &&
                                           projectTaskCounts[project.id] > 0 && (
                                             <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                               {projectTaskCounts[project.id]}
@@ -221,16 +280,16 @@ export function AppSidebar() {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <Link
-                          href="/admin"
-                          className={cn(
-                            "group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6",
-                            pathname === "/admin"
-                              ? "bg-gray-800 text-white"
-                              : "text-gray-400 hover:bg-gray-800 hover:text-white",
-                          )}
-                        >
+                      <SidebarMenuButton
+                        asChild
+                        className={cn(
+                          "group flex gap-x-3 rounded-md p-2 text-sm leading-6 transition-colors",
+                          pathname === "/admin"
+                            ? activeItemClass
+                            : hoverItemClass,
+                        )}
+                      >
+                        <Link href="/admin">
                           <Icons.admin
                             className="h-6 w-6 shrink-0"
                             aria-hidden="true"
