@@ -1,7 +1,14 @@
 "use client";
 
-import { addDays, isAfter, isBefore, startOfDay } from "date-fns";
-import { AlertCircle, BarChart3, Calendar, ListTodo, Star } from "lucide-react";
+import { addDays, isAfter, isBefore, startOfDay, subDays } from "date-fns";
+import {
+  AlertCircle,
+  BarChart3,
+  Calendar,
+  Clock,
+  ListTodo,
+  Star,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -49,6 +56,16 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
       isBefore(task.due_date, endOfNextWeek),
   );
 
+  // Get tasks created in the last day
+  const tasksCreatedLastDay = tasks.filter(
+    (task) => task.created_at && isAfter(task.created_at, subDays(today, 1)),
+  );
+
+  // Get tasks created in the last week
+  const tasksCreatedLastWeek = tasks.filter(
+    (task) => task.created_at && isAfter(task.created_at, subDays(today, 7)),
+  );
+
   // Get top 10 tasks by due date (soonest first)
   const tasksByDueDate = [...tasks]
     .filter((task) => task.due_date)
@@ -81,6 +98,19 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
     })
     .slice(0, 10);
 
+  // Get 10 most recently created tasks
+  const recentTasks = [...tasks]
+    .sort((a, b) => {
+      if (!a.created_at) {
+        return 1;
+      }
+      if (!b.created_at) {
+        return -1;
+      }
+      return b.created_at.getTime() - a.created_at.getTime();
+    })
+    .slice(0, 10);
+
   const handleCardClick = (tasks: Task[], title: string) => {
     setSelectedTasks(tasks);
     setDialogTitle(title);
@@ -89,7 +119,7 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {/* Total Tasks Card */}
         <Card
           className={`${
@@ -175,8 +205,60 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
           </CardContent>
         </Card>
 
+        {/* Tasks Created Last Day Card */}
+        <Card
+          className={`${
+            tasksCreatedLastDay.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
+          onClick={() =>
+            tasksCreatedLastDay.length > 0 &&
+            handleCardClick(tasksCreatedLastDay, "Tasks Created Last Day")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Created Last Day
+            </CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {tasksCreatedLastDay.length}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tasks Created Last Week Card */}
+        <Card
+          className={`${
+            tasksCreatedLastWeek.length > 0
+              ? "cursor-pointer transition-colors hover:bg-muted/50"
+              : ""
+          }`}
+          onClick={() =>
+            tasksCreatedLastWeek.length > 0 &&
+            handleCardClick(tasksCreatedLastWeek, "Tasks Created Last Week")
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Created Last Week
+            </CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {tasksCreatedLastWeek.length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Top Tasks by Due Date Card */}
-        <Card className="col-span-2 row-span-2">
+        <Card className="col-span-1">
           <CardHeader
             className={`${
               tasksByDueDate.length > 0
@@ -209,7 +291,7 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
         </Card>
 
         {/* Top Tasks by Priority Card */}
-        <Card className="col-span-2 row-span-2">
+        <Card className="col-span-1">
           <CardHeader
             className={`${
               tasksByPriority.length > 0
@@ -235,6 +317,39 @@ export function TaskSummaryView({ tasks }: TaskSummaryViewProps) {
                   key={task.task_id}
                   task={task}
                   fields={["title", "priority"]}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Tasks Card */}
+        <Card className="col-span-1">
+          <CardHeader
+            className={`${
+              recentTasks.length > 0
+                ? "cursor-pointer transition-colors hover:bg-muted/50"
+                : ""
+            }`}
+            onClick={() =>
+              recentTasks.length > 0 &&
+              handleCardClick(recentTasks, "10 Most Recent Tasks")
+            }
+          >
+            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                10 Most Recent Tasks
+              </CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {recentTasks.map((task) => (
+                <TaskSummaryDisplay
+                  key={task.task_id}
+                  task={task}
+                  fields={["title", "created_at"]}
                 />
               ))}
             </div>
