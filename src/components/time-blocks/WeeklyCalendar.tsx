@@ -618,7 +618,7 @@ export function WeeklyCalendar({
       return;
     }
 
-    // Sort blocks by start time
+    // Sort blocks by start time to preserve original order
     const sortedBlocks = [...dayBlocks].sort(
       (a, b) =>
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
@@ -626,55 +626,68 @@ export function WeeklyCalendar({
 
     const updates: { id: string; startTime: Date; endTime: Date }[] = [];
 
-    // First pass: keep fixed blocks in their original positions
+    // Get the start time of the first block - this will be our anchor
+    const firstBlock = sortedBlocks[0];
+    if (!firstBlock) {
+      return;
+    }
+
+    const firstBlockStart = new Date(firstBlock.startTime);
+    let currentTime = new Date(firstBlockStart);
+
+    // Process blocks in their original order
     sortedBlocks.forEach((block) => {
+      const blockDuration =
+        new Date(block.endTime).getTime() - new Date(block.startTime).getTime();
+
       if (block.isFixedTime) {
+        // For fixed blocks, keep their original time
         updates.push({
           id: block.id,
           startTime: new Date(block.startTime),
           endTime: new Date(block.endTime),
         });
-      }
-    });
-
-    // Second pass: arrange non-fixed blocks
-    sortedBlocks.forEach((block) => {
-      if (block.isFixedTime) {
-        return; // Skip fixed blocks as they're already handled
-      }
-
-      const blockDuration =
-        new Date(block.endTime).getTime() - new Date(block.startTime).getTime();
-
-      let newStartTime: Date;
-
-      if (updates.length === 0) {
-        // If no blocks yet, use the original start time
-        newStartTime = new Date(block.startTime);
+        // Update currentTime to the end of this fixed block if it's later
+        const fixedEndTime = new Date(block.endTime);
+        if (fixedEndTime > currentTime) {
+          currentTime = new Date(fixedEndTime);
+        }
       } else {
-        // Find the last block's end time
-        const lastUpdate = updates[updates.length - 1];
-        if (!lastUpdate) {
-          newStartTime = new Date(block.startTime);
+        // For non-fixed blocks, schedule them at the current time
+        // but check if we need to move past any fixed blocks
+        const newStartTime = new Date(currentTime);
+        const newEndTime = new Date(newStartTime.getTime() + blockDuration);
+
+        // Check if this would overlap with any upcoming fixed blocks
+        const nextFixedBlock = sortedBlocks.find(
+          (fb) =>
+            fb.isFixedTime &&
+            new Date(fb.startTime) > currentTime &&
+            new Date(fb.startTime) < newEndTime,
+        );
+
+        if (nextFixedBlock) {
+          // If there would be an overlap, schedule after the fixed block
+          currentTime = new Date(nextFixedBlock.endTime);
+          updates.push({
+            id: block.id,
+            startTime: new Date(currentTime),
+            endTime: new Date(currentTime.getTime() + blockDuration),
+          });
         } else {
-          newStartTime = new Date(lastUpdate.endTime);
+          // No overlap, schedule at current time
+          updates.push({
+            id: block.id,
+            startTime: newStartTime,
+            endTime: newEndTime,
+          });
+        }
+        const lastUpdate = updates[updates.length - 1];
+        if (lastUpdate) {
+          currentTime = new Date(lastUpdate.endTime);
         }
       }
-
-      const newEndTime = new Date(newStartTime.getTime() + blockDuration);
-
-      updates.push({
-        id: block.id,
-        startTime: newStartTime,
-        endTime: newEndTime,
-      });
     });
-
-    // Sort updates by start time to ensure proper ordering
-    updates.sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
 
     bulkUpdateMutation.mutate(updates);
   };
