@@ -53,6 +53,28 @@ export function TimeBlockDialog() {
   const [selectedTaskTitle, setSelectedTaskTitle] = useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // Calculate duration in minutes
+  const calculateDuration = (start: Date, end: Date) => {
+    return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+  };
+
+  // Check if a duration matches the current time block
+  const isDurationMatch = (minutes: number) => {
+    const start = new Date(selectedStartDate);
+    start.setHours(
+      parseInt(startTimeStr.split(":")[0] || "0"),
+      parseInt(startTimeStr.split(":")[1] || "0"),
+    );
+
+    const end = new Date(selectedEndDate);
+    end.setHours(
+      parseInt(endTimeStr.split(":")[0] || "0"),
+      parseInt(endTimeStr.split(":")[1] || "0"),
+    );
+
+    return calculateDuration(start, end) === minutes;
+  };
+
   // Reset all form state when modal is closed or when switching between edit/create modes
   useEffect(() => {
     if (!isOpen) {
@@ -396,7 +418,7 @@ export function TimeBlockDialog() {
                   <Button
                     key={label}
                     type="button"
-                    variant="outline"
+                    variant={isDurationMatch(minutes) ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
                       const newEndDate = new Date(selectedStartDate);
