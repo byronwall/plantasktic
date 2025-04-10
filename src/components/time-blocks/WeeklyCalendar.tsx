@@ -604,8 +604,12 @@ export function WeeklyCalendar({
   const bulkUpdateMutation = api.timeBlock.bulkUpdate.useMutation();
 
   const correctOverlappingBlocks = (date: Date) => {
-    // Find blocks for the given date by comparing year/month/day
-    const dayBlocks = timeBlocks?.filter((block) => {
+    if (!timeBlocks) {
+      return;
+    }
+
+    // Filter blocks for the given date by comparing year/month/day
+    const dayBlocks = timeBlocks.filter((block) => {
       const blockDate = new Date(block.startTime);
       return (
         blockDate.getFullYear() === date.getFullYear() &&
@@ -614,78 +618,95 @@ export function WeeklyCalendar({
       );
     });
 
-    if (!dayBlocks?.length) {
+    if (dayBlocks.length === 0) {
       return;
     }
 
-    // Sort blocks by start time to preserve original order
-    const sortedBlocks = [...dayBlocks].sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
+    // Sort blocks by their current start time
+    const sortedBlocks = [...dayBlocks].sort((a, b) => {
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
-    const updates: { id: string; startTime: Date; endTime: Date }[] = [];
+    const updates: {
+      id: string;
+      startTime: Date;
+      endTime: Date;
+    }[] = [];
 
-    // Get the start time of the first block - this will be our anchor
-    const firstBlock = sortedBlocks[0];
-    if (!firstBlock) {
-      return;
-    }
-
-    const firstBlockStart = new Date(firstBlock.startTime);
-    let currentTime = new Date(firstBlockStart);
-
-    // Process blocks in their original order
+    // First, add all fixed blocks to updates without moving them
     sortedBlocks.forEach((block) => {
-      const blockDuration =
-        new Date(block.endTime).getTime() - new Date(block.startTime).getTime();
-
       if (block.isFixedTime) {
-        // For fixed blocks, keep their original time
         updates.push({
           id: block.id,
           startTime: new Date(block.startTime),
           endTime: new Date(block.endTime),
         });
-        // Update currentTime to the end of this fixed block if it's later
-        const fixedEndTime = new Date(block.endTime);
-        if (fixedEndTime > currentTime) {
-          currentTime = new Date(fixedEndTime);
-        }
-      } else {
-        // For non-fixed blocks, schedule them at the current time
-        // but check if we need to move past any fixed blocks
-        const newStartTime = new Date(currentTime);
-        const newEndTime = new Date(newStartTime.getTime() + blockDuration);
+      }
+    });
 
-        // Check if this would overlap with any upcoming fixed blocks
-        const nextFixedBlock = sortedBlocks.find(
-          (fb) =>
-            fb.isFixedTime &&
-            new Date(fb.startTime) > currentTime &&
-            new Date(fb.startTime) < newEndTime,
-        );
+    // Get the earliest non-fixed block's start time as our starting point
+    const firstNonFixedBlock = sortedBlocks.find((block) => !block.isFixedTime);
+    if (!firstNonFixedBlock) {
+      return;
+    }
 
-        if (nextFixedBlock) {
-          // If there would be an overlap, schedule after the fixed block
-          currentTime = new Date(nextFixedBlock.endTime);
-          updates.push({
-            id: block.id,
-            startTime: new Date(currentTime),
-            endTime: new Date(currentTime.getTime() + blockDuration),
-          });
-        } else {
-          // No overlap, schedule at current time
-          updates.push({
-            id: block.id,
-            startTime: newStartTime,
-            endTime: newEndTime,
-          });
+    let currentTime = new Date(firstNonFixedBlock.startTime);
+
+    // Check if there are any fixed blocks that start before our current time
+    const earlierFixedBlock = sortedBlocks.find(
+      (block) =>
+        block.isFixedTime &&
+        new Date(block.startTime) <= currentTime &&
+        new Date(block.endTime) > currentTime,
+    );
+
+    // If there's a fixed block that overlaps with our start time,
+    // we need to start after it
+    if (earlierFixedBlock) {
+      currentTime = new Date(earlierFixedBlock.endTime);
+    }
+
+    // Then process non-fixed blocks, moving them as needed to avoid fixed blocks
+    sortedBlocks.forEach((block) => {
+      if (!block.isFixedTime) {
+        const blockDuration =
+          new Date(block.endTime).getTime() -
+          new Date(block.startTime).getTime();
+
+        // Start with current time
+        let proposedStart = new Date(currentTime);
+        let proposedEnd = new Date(proposedStart.getTime() + blockDuration);
+
+        // Check if this would overlap with any fixed blocks
+        let hasConflict = true;
+        while (hasConflict) {
+          hasConflict = false;
+          for (const fixedBlock of sortedBlocks.filter((b) => b.isFixedTime)) {
+            const fixedStart = new Date(fixedBlock.startTime);
+            const fixedEnd = new Date(fixedBlock.endTime);
+
+            // Check for overlap
+            if (
+              (proposedStart < fixedEnd && proposedEnd > fixedStart) ||
+              (proposedStart >= fixedStart && proposedStart < fixedEnd) ||
+              (proposedEnd > fixedStart && proposedEnd <= fixedEnd)
+            ) {
+              // If overlap found, move to end of fixed block and check again
+              proposedStart = new Date(fixedEnd);
+              proposedEnd = new Date(proposedStart.getTime() + blockDuration);
+              hasConflict = true;
+              break;
+            }
+          }
         }
-        const lastUpdate = updates[updates.length - 1];
-        if (lastUpdate) {
-          currentTime = new Date(lastUpdate.endTime);
-        }
+
+        updates.push({
+          id: block.id,
+          startTime: proposedStart,
+          endTime: proposedEnd,
+        });
+
+        currentTime = new Date(proposedEnd);
       }
     });
 
