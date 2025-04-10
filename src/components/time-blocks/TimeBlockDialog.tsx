@@ -53,6 +53,22 @@ export function TimeBlockDialog() {
   const [selectedTaskTitle, setSelectedTaskTitle] = useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // Reset all form state when modal is closed or when switching between edit/create modes
+  useEffect(() => {
+    if (!isOpen) {
+      setTitle("");
+      setColor(generateRandomHslColor());
+      setIsFixedTime(false);
+      setSelectedStartDate(new Date());
+      setSelectedEndDate(new Date());
+      setStartTimeStr("00:00");
+      setEndTimeStr("00:00");
+      setSelectedTaskId(null);
+      setSelectedTaskTitle("");
+      setIsSearchOpen(false);
+    }
+  }, [isOpen]);
+
   // Query for tasks
   const { data: tasks } = api.task.getTasks.useQuery({
     showCompleted: false,
@@ -82,7 +98,7 @@ export function TimeBlockDialog() {
   useEffect(() => {
     if (timeBlock) {
       setTitle(timeBlock.title || "");
-      setColor(timeBlock.color || "#ff0000");
+      setColor(timeBlock.color || generateRandomHslColor());
       setIsFixedTime(timeBlock.isFixedTime || false);
       setSelectedStartDate(timeBlock.startTime);
       setSelectedEndDate(timeBlock.endTime);
