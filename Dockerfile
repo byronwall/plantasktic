@@ -9,9 +9,10 @@ RUN npm install -g pnpm
 
 # Install dependencies
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
 COPY prisma/schema.prisma ./prisma/
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the app's source code
 COPY . .
