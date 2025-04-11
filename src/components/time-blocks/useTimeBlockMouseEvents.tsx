@@ -1,53 +1,17 @@
-// problems to fix:
-// get dat indicator is wrong - appears to use getDay()?
-
 "use client";
 
-import { addDays } from "date-fns";
-import { useEffect, useRef, useState } from "react";
+import { addDays, differenceInDays } from "date-fns";
+import { useEffect, useState } from "react";
 
+import { useKeyModifiers } from "~/hooks/useKeyModifiers";
+import { useTimeBlockActions } from "~/hooks/useTimeBlockActions";
 import { useTimeBlockDialogStore } from "~/stores/timeBlockDialogStore";
-import { api } from "~/trpc/react";
 
-import { getTimeFromGridPosition } from "./getTimeFromGridPosition";
+import { useTimePosition } from "./TimePositionContext";
+import { useTimeBlockDragMachine } from "./useTimeBlockDragMachine";
 import { type TimeBlock } from "./WeeklyCalendar";
 
-type DragState =
-  | { type: "idle" }
-  | {
-      type: "drag_new";
-      startTime: { hour: number; day: number; minute: number };
-      currentTime: { hour: number; day: number; minute: number };
-    }
-  | {
-      type: "drag_existing";
-      blockId: string;
-      startOffset: { x: number; y: number };
-      currentPosition: { x: number; y: number };
-      startPosition: { x: number; y: number };
-      totalMovement: number;
-      shouldDuplicate: boolean;
-    }
-  | {
-      type: "resize_block_top";
-      blockId: string;
-      startTime: Date;
-      endTime: Date;
-      currentPosition: { x: number; y: number };
-    }
-  | {
-      type: "resize_block_bottom";
-      blockId: string;
-      startTime: Date;
-      endTime: Date;
-      currentPosition: { x: number; y: number };
-    };
-
-type MousePosition = {
-  day: number;
-  hour: number;
-  minute: number;
-} | null;
+type MousePosition = Date | null;
 
 export function useTimeBlockMouseEvents(
   gridRef: React.RefObject<HTMLDivElement>,
@@ -60,43 +24,38 @@ export function useTimeBlockMouseEvents(
   numberOfDays = 7,
   blockHeight = 64,
 ) {
-  const [dragState, setDragState] = useState<DragState>({ type: "idle" });
+  const {
+    state: dragState,
+    startNew,
+    startExisting,
+    startResize,
+    move,
+    end,
+    cancel,
+  } = useTimeBlockDragMachine();
+
   const [mousePosition, setMousePosition] = useState<MousePosition>(null);
-  const isControlPressedRef = useRef(false);
-  const isControlPressed = isControlPressedRef.current;
 
+  const { Control, Meta } = useKeyModifiers(["Control", "Meta"]);
+  const isControlPressed = Control || Meta;
+
+  const { positionToTime, snapTime } = useTimePosition();
   const { openForTimeBlock, openForNewBlock } = useTimeBlockDialogStore();
-
-  const updateTimeBlockMutation = api.timeBlock.update.useMutation();
-
-  const duplicateTimeBlockMutation = api.timeBlock.duplicate.useMutation();
+  const { moveBlock, resizeBlock, duplicateBlock } = useTimeBlockActions();
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Check if we clicked on a time block
     if ((e.target as HTMLElement).closest('[data-time-block="true"]')) {
       return;
     }
-
-    const time = getTimeFromGridPosition(
-      e.pageX,
-      e.pageY,
+    const timeAtClick = positionToTime(
+      { x: e.clientX, y: e.clientY },
       gridRef,
-      topOffset,
-      startHour,
-      endHour,
-      snapMinutes,
-      numberOfDays,
-      blockHeight,
+      true,
     );
-    if (!time) {
+    if (!timeAtClick) {
       return;
     }
-
-    setDragState({
-      type: "drag_new",
-      startTime: { hour: time.hour, day: time.day, minute: time.minute },
-      currentTime: { hour: time.hour, day: time.day, minute: time.minute },
-    });
+    startNew(timeAtClick);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -104,254 +63,176 @@ export function useTimeBlockMouseEvents(
       return;
     }
 
-    const time = getTimeFromGridPosition(
-      e.pageX,
-      e.pageY,
+    const timeAtPosition = positionToTime(
+      { x: e.clientX, y: e.clientY },
       gridRef,
-      topOffset,
-      startHour,
-      endHour,
-      snapMinutes,
-      numberOfDays,
-      blockHeight,
+      false,
     );
 
-    if (!time) {
-      setMousePosition(null);
-      return;
-    }
-
-    // Only update mouse position when not dragging
     if (dragState.type === "idle") {
-      setMousePosition(time);
+      setMousePosition(timeAtPosition ? snapTime(timeAtPosition) : null);
     } else {
       setMousePosition(null);
-    }
 
-    switch (dragState.type) {
-      case "drag_new": {
-        setDragState({
-          ...dragState,
-          currentTime: { hour: time.hour, day: time.day, minute: time.minute },
-        });
-        break;
-      }
-      case "drag_existing": {
-        const { blockId, startOffset, startPosition, totalMovement } =
-          dragState;
-        const block = timeBlocks?.find((b) => b.id === blockId);
-        if (!block) {
-          return;
+      if (dragState.type === "drag_new") {
+        if (timeAtPosition) {
+          move({ time: timeAtPosition });
         }
-
-        const dx = e.pageX - (startPosition.x || e.pageX);
-        const dy = e.pageY - (startPosition.y || e.pageY);
-        const newMovement = totalMovement + Math.sqrt(dx * dx + dy * dy);
-
-        setDragState({
-          ...dragState,
-          currentPosition: {
-            x: e.pageX,
-            y: e.pageY - startOffset.y,
-          },
-          startPosition: { x: e.pageX, y: e.pageY },
-          totalMovement: newMovement,
-          shouldDuplicate: isControlPressedRef.current,
+      } else if (
+        dragState.type === "drag_existing" ||
+        dragState.type === "resize_block_top" ||
+        dragState.type === "resize_block_bottom"
+      ) {
+        move({
+          mousePosition: { x: e.clientX, y: e.clientY },
+          isControlPressed: isControlPressed,
         });
-        break;
-      }
-      case "resize_block_top":
-      case "resize_block_bottom": {
-        setDragState({
-          ...dragState,
-          currentPosition: { x: e.pageX, y: e.pageY },
-        });
-        break;
       }
     }
   };
 
-  // Add handler to clear mouse position when leaving grid
   const handleMouseLeave = () => {
     setMousePosition(null);
-    setDragState({ type: "idle" });
   };
 
   const handleMouseUp = () => {
-    if (!gridRef.current || !timeBlocks) {
+    if (!gridRef.current || !timeBlocks || dragState.type === "idle") {
+      end();
       return;
     }
-
     switch (dragState.type) {
       case "drag_new": {
-        const { startTime, currentTime } = dragState;
+        const finalStartTime = snapTime(dragState.startTime);
+        let finalEndTime = snapTime(dragState.currentTime);
 
-        const startDate = addDays(weekStart, startTime.day);
-        startDate.setHours(
-          Math.min(Math.max(startTime.hour, startHour), endHour),
-          Math.round(startTime.minute / snapMinutes) * snapMinutes,
-          0,
-          0,
-        );
-
-        const endDate = addDays(weekStart, currentTime.day);
-        endDate.setHours(
-          Math.min(Math.max(currentTime.hour, startHour), endHour),
-          Math.round(currentTime.minute / snapMinutes) * snapMinutes,
-          0,
-          0,
-        );
-
-        // Ensure end time is after start time and within bounds
-        if (endDate.getTime() <= startDate.getTime()) {
-          endDate.setTime(startDate.getTime() + snapMinutes * 60 * 1000); // Add one snap interval
+        if (finalEndTime.getTime() <= finalStartTime.getTime()) {
+          finalEndTime = new Date(
+            finalStartTime.getTime() + snapMinutes * 60 * 1000,
+          );
         }
 
-        openForNewBlock(startDate, endDate);
+        openForNewBlock(finalStartTime, finalEndTime);
         break;
       }
       case "drag_existing": {
-        const { blockId, currentPosition, totalMovement, shouldDuplicate } =
-          dragState;
+        const {
+          blockId,
+          currentMousePosition,
+          initialMousePosition,
+          totalMovement,
+          shouldDuplicate,
+        } = dragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
-          return null;
+          break;
         }
 
-        // If total movement is less than threshold, show edit dialog instead of moving
         const MOVEMENT_THRESHOLD = 5;
-        if (totalMovement < MOVEMENT_THRESHOLD) {
+        if (totalMovement < MOVEMENT_THRESHOLD && !shouldDuplicate) {
           openForTimeBlock(block);
           break;
         }
 
-        const time = getTimeFromGridPosition(
-          currentPosition.x,
-          currentPosition.y,
+        const timeAtCurrentPos = positionToTime(
+          { x: currentMousePosition.x, y: currentMousePosition.y },
           gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
+          true,
         );
-        if (!time) {
-          return null;
+        const timeAtInitialPos = positionToTime(
+          { x: initialMousePosition.x, y: initialMousePosition.y },
+          gridRef,
+          true,
+        );
+
+        if (!timeAtCurrentPos || !timeAtInitialPos) {
+          break;
         }
 
-        const blockStart = new Date(block.startTime);
-        const blockEnd = new Date(block.endTime);
-        const duration =
-          (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
+        const timeDiff =
+          timeAtCurrentPos.getTime() - timeAtInitialPos.getTime();
 
-        const newStart = new Date(weekStart);
-        newStart.setDate(newStart.getDate() + time.day);
-        newStart.setHours(Math.max(time.hour, startHour), time.minute, 0, 0);
-
-        const newEnd = new Date(newStart.getTime());
-        newEnd.setTime(newStart.getTime() + duration * 60 * 60 * 1000);
-
-        // If the end time would exceed the endHour, adjust both start and end times
-        if (newEnd.getHours() > endHour) {
-          const hoursToAdjust = newEnd.getHours() - endHour;
-          newStart.setHours(newStart.getHours() - hoursToAdjust);
-          newEnd.setHours(endHour);
-        }
+        const originalStartTime = new Date(block.startTime);
+        const originalEndTime = new Date(block.endTime);
+        const newStart = new Date(originalStartTime.getTime() + timeDiff);
+        const newEnd = new Date(originalEndTime.getTime() + timeDiff);
 
         if (shouldDuplicate) {
-          duplicateTimeBlockMutation.mutate({
-            id: blockId,
-            startTime: newStart,
-            endTime: newEnd,
-          });
+          duplicateBlock(blockId, newStart, newEnd);
         } else {
-          updateTimeBlockMutation.mutate({
-            id: blockId,
-            startTime: newStart,
-            endTime: newEnd,
-            ...(block.title && { title: block.title }),
-            ...(block.color && { color: block.color }),
-          });
+          moveBlock(blockId, newStart, newEnd);
         }
         break;
       }
       case "resize_block_top":
       case "resize_block_bottom": {
-        const { blockId, startTime, endTime, currentPosition } = dragState;
+        const {
+          blockId,
+          initialStartTime,
+          initialEndTime,
+          currentMousePosition,
+        } = dragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           break;
         }
 
-        const time = getTimeFromGridPosition(
-          currentPosition.x,
-          currentPosition.y,
+        const finalTime = positionToTime(
+          { x: currentMousePosition.x, y: currentMousePosition.y },
           gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
+          true,
         );
-        if (!time) {
+
+        if (!finalTime) {
           break;
         }
 
-        // Calculate days since week start instead of using getDay()
-        const daysDiff = Math.floor(
-          (new Date(block.startTime).getTime() - weekStart.getTime()) /
-            (1000 * 60 * 60 * 24),
-        );
-        const newTime = new Date(weekStart);
-        newTime.setDate(newTime.getDate() + daysDiff);
-        newTime.setHours(
-          Math.min(Math.max(time.hour, startHour), endHour),
-          time.minute,
+        const originalDayOffset = differenceInDays(initialStartTime, weekStart);
+
+        const newTimeOnOriginalDay = addDays(weekStart, originalDayOffset);
+        newTimeOnOriginalDay.setHours(
+          finalTime.getHours(),
+          finalTime.getMinutes(),
           0,
           0,
         );
 
-        // Only update the edge being dragged and ensure end time is after start time
-        const newStart =
-          dragState.type === "resize_block_top" ? newTime : startTime;
-        const newEnd =
-          dragState.type === "resize_block_bottom" ? newTime : endTime;
+        let newStart = new Date(initialStartTime);
+        let newEnd = new Date(initialEndTime);
 
-        // Ensure the block stays within bounds and has minimum duration
-        if (
-          newEnd.getTime() <= newStart.getTime() ||
-          newStart.getHours() < startHour ||
-          newEnd.getHours() > endHour
-        ) {
+        if (dragState.type === "resize_block_top") {
+          newStart = newTimeOnOriginalDay;
+        } else {
+          newEnd = newTimeOnOriginalDay;
+        }
+
+        if (newEnd.getTime() <= newStart.getTime()) {
           break;
         }
 
-        updateTimeBlockMutation.mutate({
-          id: blockId,
-          startTime: newStart,
-          endTime: newEnd,
-        });
+        resizeBlock(blockId, newStart, newEnd);
         break;
       }
     }
 
-    setDragState({ type: "idle" });
+    end();
   };
 
   const handleBlockDragStart = (
     blockId: string,
     offset: { x: number; y: number },
+    e: React.MouseEvent,
   ) => {
-    setDragState({
-      type: "drag_existing",
+    const block = timeBlocks.find((b) => b.id === blockId);
+    if (!block) {
+      return;
+    }
+    startExisting({
       blockId,
+      initialStartTime: new Date(block.startTime),
+      initialEndTime: new Date(block.endTime),
       startOffset: offset,
-      currentPosition: { x: 0, y: 0 },
-      startPosition: { x: 0, y: 0 },
-      totalMovement: 0,
-      shouldDuplicate: isControlPressedRef.current,
+      initialMousePosition: { x: e.clientX, y: e.clientY },
+      isControlPressed: !!isControlPressed,
     });
   };
 
@@ -360,39 +241,41 @@ export function useTimeBlockMouseEvents(
     edge: "top" | "bottom",
     startTime: Date,
     endTime: Date,
+    e: React.MouseEvent,
   ) => {
-    setDragState({
-      type: edge === "top" ? "resize_block_top" : "resize_block_bottom",
+    startResize({
       blockId,
-      startTime,
-      endTime,
-      currentPosition: { x: 0, y: 0 },
+      edge,
+      initialStartTime: startTime,
+      initialEndTime: endTime,
+      initialMousePosition: { x: e.clientX, y: e.clientY },
     });
   };
+
+  // Add effect to prevent text selection during drag
+  useEffect(() => {
+    const isDragging = dragState.type !== "idle";
+    document.body.style.userSelect = isDragging ? "none" : "";
+    document.body.style.cursor = isDragging ? "grabbing" : ""; // Optional: general grabbing cursor
+
+    // Cleanup function to reset styles if component unmounts mid-drag
+    return () => {
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [dragState.type]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && dragState.type !== "idle") {
-        setDragState({ type: "idle" });
-      } else if (e.key === "Control" || e.key === "Meta") {
-        isControlPressedRef.current = true;
+        cancel();
       }
     };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Control" || e.key === "Meta") {
-        isControlPressedRef.current = false;
-      }
-    };
-
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [dragState.type]);
+  }, [dragState.type, cancel]);
 
   return {
     handleMouseDown,
@@ -402,7 +285,7 @@ export function useTimeBlockMouseEvents(
     handleBlockDragStart,
     handleBlockResizeStart,
     dragState,
-    isControlPressed,
+    isControlPressed: isControlPressed,
     mousePosition,
   };
 }

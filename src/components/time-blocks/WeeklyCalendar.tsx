@@ -1,20 +1,30 @@
 "use client";
 
-import { addDays, addWeeks, format, startOfDay, subWeeks } from "date-fns";
+import {
+  addDays,
+  addWeeks,
+  differenceInDays,
+  format,
+  startOfDay,
+  subWeeks,
+} from "date-fns";
 import { List, Settings, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "~/components/ui/button";
 import { useCurrentProject } from "~/hooks/useCurrentProject";
+import { useTimeBlockActions } from "~/hooks/useTimeBlockActions";
 import { api, type RouterOutputs } from "~/trpc/react";
 
+import { BlockPreview } from "./BlockPreview";
 import { DayMetadataSection } from "./DayMetadataSection";
-import { getTimeFromGridPosition } from "./getTimeFromGridPosition";
 import { ListTimeBlocksDialog } from "./ListTimeBlocksDialog";
 import { MetadataSummaryDialog } from "./MetadataSummaryDialog";
 import { getOverlappingGroups } from "./overlapHelpers";
 import { TimeBlock } from "./TimeBlock";
 import { TimeBlockDialog } from "./TimeBlockDialog";
+import { TimeIndicator } from "./TimeIndicator";
+import { TimePositionProvider, useTimePosition } from "./TimePositionContext";
 import { useTimeBlockMouseEvents } from "./useTimeBlockMouseEvents";
 
 import { DateInput } from "../ui/date-input";
@@ -53,45 +63,63 @@ type DayMetadataItem = {
   workspaceId: string;
 };
 
-export function WeeklyCalendar({
-  defaultStartHour = 6,
-  defaultEndHour = 20,
-  defaultNumberOfDays = 7,
-  defaultHeight = 64,
-}: WeeklyCalendarProps) {
+// Define props for CalendarContent
+type CalendarContentProps = {
+  startHour: number;
+  endHour: number;
+  snapMinutes: number;
+  numberOfDays: number;
+  weekStart: Date;
+  blockHeight: number;
+  topOffset: number;
+  // Add setters needed for before/after click handlers (or use a store)
+  setStartHour: (hour: number) => void;
+  setEndHour: (hour: number) => void;
+  // Add dialog state setters
+  setIsListDialogOpen: (isOpen: boolean) => void;
+  setIsMetadataSummaryOpen: (isOpen: boolean) => void;
+  setTopOffset: (topOffset: number) => void;
+};
+
+const CalendarContent = ({
+  startHour,
+  endHour,
+  snapMinutes,
+  numberOfDays,
+  weekStart,
+  blockHeight,
+  topOffset,
+  setStartHour, // Receive setters as props
+  setEndHour,
+  setIsListDialogOpen, // Receive setters
+  setIsMetadataSummaryOpen, // Receive setters
+  setTopOffset, // Receive setter
+}: CalendarContentProps) => {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null); // Ref for the sticky header
+
+  // Use position hook - remove date-fns functions
+  const {
+    getYPositionFromTime,
+    getDayFromXPosition,
+    positionToTime,
+    snapTime,
+  } = useTimePosition();
+
   const { currentWorkspaceId } = useCurrentProject();
 
-  const [startHour, setStartHour] = useState(defaultStartHour);
-  const [endHour, setEndHour] = useState(defaultEndHour);
-  const [numberOfDays, setNumberOfDays] = useState(defaultNumberOfDays);
-  const [snapMinutes, setSnapMinutes] = useState(15);
-  const [blockHeight, setBlockHeight] = useState(defaultHeight);
+  // Use actions hook
+  const { bulkUpdateBlocks } = useTimeBlockActions();
 
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    startOfDay(new Date()),
-  );
-  const weekStart = selectedDate;
-
-  const gridRef = useRef<HTMLDivElement>(null);
-
-  const [isListDialogOpen, setIsListDialogOpen] = useState(false);
-  const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
-
-  const DAYS = Array.from({ length: numberOfDays }, (_, i) => i);
-
-  // Fetch time blocks for the current week
+  // --- Data Fetching (unchanged) ---
   const { data: timeBlocks = [] } = api.timeBlock.getWeeklyBlocks.useQuery(
     {
       weekStart,
       workspaceId: currentWorkspaceId,
       numberOfDays,
     },
-    {
-      enabled: !!currentWorkspaceId,
-    },
+    { enabled: !!currentWorkspaceId },
   );
-
-  // Add metadata query
   const { data: weekMetadata = [] as DayMetadataItem[] } =
     api.timeBlock.getWeekMetadata.useQuery(
       {
@@ -99,241 +127,31 @@ export function WeeklyCalendar({
         weekStart,
         weekEnd: addDays(weekStart, numberOfDays),
       },
-      {
-        enabled: !!currentWorkspaceId,
-      },
+      { enabled: !!currentWorkspaceId },
     );
+  // --- End Data Fetching ---
 
-  // Add current time state
+  // --- State (Current Time) ---
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update current time every minute
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Calculate current time position
-  const getCurrentTimePosition = () => {
-    const now = currentTime;
-    const hour = now.getHours();
-    const minutes = now.getMinutes();
-
-    // Check if current time is within the selected week range
-    const weekEnd = addDays(weekStart, numberOfDays);
-    if (now < weekStart || now >= weekEnd) {
-      return null;
-    }
-
-    if (hour < startHour || hour > endHour) {
-      return null;
-    }
-
-    // Calculate days since week start
-    const daysSinceStart = Math.floor(
-      (now.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24),
-    );
-
-    const top = (hour - startHour + minutes / 60) * blockHeight;
-    const left = `${(daysSinceStart * 100) / numberOfDays}%`;
-    const width = `${100 / numberOfDays}%`;
-
-    return { top, left, width };
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(startOfDay(date));
-    }
-  };
-
-  const displayedHours = Array.from(
-    { length: endHour - startHour },
-    (_, i) => i + startHour,
-  );
-
-  const handlePreviousWeek = () => {
-    setSelectedDate((prev) => subWeeks(prev, 1));
-  };
-
-  const handleNextWeek = () => {
-    setSelectedDate((prev) => addWeeks(prev, 1));
-  };
-
-  // Add proper typing for the overlapping groups calculation
-  const overlappingGroups = useMemo(() => {
-    return Object.values(getOverlappingGroups(timeBlocks) || {})
-      .flat()
-      .map((block) => ({
-        ...block,
-        startTime: new Date(block.startTime),
-        endTime: new Date(block.endTime),
-      }));
-  }, [timeBlocks]);
-
-  const categorizedBlocks = useMemo(() => {
-    if (!timeBlocks) {
-      return { before: [], after: [], visible: [] };
-    }
-
-    const startOfDay = new Date(weekStart);
-    startOfDay.setHours(startHour, 0, 0, 0);
-
-    const endOfDay = new Date(weekStart);
-    endOfDay.setHours(endHour, 59, 59, 999);
-
-    return overlappingGroups.reduce(
-      (
-        acc: {
-          before: TimeBlockWithPosition[];
-          after: TimeBlockWithPosition[];
-          visible: TimeBlockWithPosition[];
-        },
-        block,
-      ) => {
-        const blockStart = new Date(block.startTime);
-        const blockEnd = new Date(block.endTime);
-
-        // Get the day-specific start and end times for comparison
-        const dayStart = new Date(startOfDay);
-        dayStart.setDate(blockStart.getDate());
-        dayStart.setMonth(blockStart.getMonth());
-        dayStart.setFullYear(blockStart.getFullYear());
-
-        const dayEnd = new Date(endOfDay);
-        dayEnd.setDate(blockStart.getDate());
-        dayEnd.setMonth(blockStart.getMonth());
-        dayEnd.setFullYear(blockStart.getFullYear());
-
-        // Create normalized times for comparison while preserving the original day
-        const normalizedStart = new Date(blockStart);
-        normalizedStart.setHours(
-          blockStart.getHours(),
-          blockStart.getMinutes(),
-          0,
-          0,
-        );
-
-        const normalizedEnd = new Date(blockEnd);
-        normalizedEnd.setHours(
-          blockEnd.getHours(),
-          blockEnd.getMinutes(),
-          0,
-          0,
-        );
-
-        if (normalizedEnd <= dayStart) {
-          acc.before.push(block);
-        } else if (normalizedStart >= dayEnd) {
-          acc.after.push(block);
-        } else {
-          // For visible blocks, keep original times but mark if they're clipped
-          const isClippedStart = normalizedStart < dayStart;
-          const isClippedEnd = normalizedEnd > dayEnd;
-
-          const visibleBlock = {
-            ...block,
-            isClipped: isClippedStart || isClippedEnd,
-            isClippedStart,
-            isClippedEnd,
-          };
-          acc.visible.push(visibleBlock);
-        }
-        return acc;
-      },
-      { before: [], after: [], visible: [] },
-    );
-  }, [timeBlocks, weekStart, startHour, endHour, overlappingGroups]);
-
-  const topOffset = categorizedBlocks.before.length > 0 ? 32 : 0;
-
-  // Get drag indicator positions
-  const getDragIndicatorPositions = () => {
-    if (dragState.type === "idle") {
-      return null;
-    }
-
-    const getPosition = (hour: number, minute = 0) => {
-      return (hour - startHour + minute / 60) * blockHeight + topOffset;
-    };
-
-    switch (dragState.type) {
-      case "drag_new": {
-        const { startTime, currentTime } = dragState;
-
-        function getLaterTime(time: { hour: number; minute: number }) {
-          if (time.hour === currentTime.hour) {
-            return time.minute > currentTime.minute ? time : currentTime;
-          }
-          return time.hour > currentTime.hour ? time : currentTime;
-        }
-
-        function getEarlierTime(time: { hour: number; minute: number }) {
-          if (time.hour === currentTime.hour) {
-            return time.minute < currentTime.minute ? time : currentTime;
-          }
-          return time.hour < currentTime.hour ? time : currentTime;
-        }
-
-        const laterTime = getLaterTime(startTime);
-        const earlierTime = getEarlierTime(startTime);
-
-        const startPos = getPosition(earlierTime.hour, earlierTime.minute);
-        const endPos = getPosition(laterTime.hour, laterTime.minute);
-
-        return { startPos, endPos };
-      }
-      case "drag_existing": {
-        const time = getTimeFromGridPosition(
-          dragState.currentPosition.x,
-          dragState.currentPosition.y,
-          gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
-        );
-        if (!time) {
-          return null;
-        }
-        const block = timeBlocks?.find((b) => b.id === dragState.blockId);
-        if (!block) {
-          return null;
-        }
-        const duration =
-          (new Date(block.endTime).getTime() -
-            new Date(block.startTime).getTime()) /
-          (1000 * 60 * 60);
-        const startPos = getPosition(time.hour, time.minute);
-        const endPos = getPosition(time.hour + duration, time.minute);
-        return { startPos, endPos };
-      }
-      case "resize_block_top":
-      case "resize_block_bottom": {
-        const time = getTimeFromGridPosition(
-          dragState.currentPosition.x,
-          dragState.currentPosition.y,
-          gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
-        );
-        if (!time) {
-          return null;
-        }
-        return { startPos: getPosition(time.hour, time.minute) };
+  // Measure header height after mount
+  useEffect(() => {
+    if (headerRef.current) {
+      const headerHeight = headerRef.current.offsetHeight;
+      // Only update if the height has changed
+      if (headerHeight > 0) {
+        setTopOffset(headerHeight);
       }
     }
-  };
+  }, [setTopOffset]); // Rerun if setter changes (should be stable)
 
+  // --- Mouse Events Hook ---
   const {
     handleMouseDown,
     handleMouseMove,
@@ -355,228 +173,263 @@ export function WeeklyCalendar({
     numberOfDays,
     blockHeight,
   );
+  // --- End Mouse Events Hook ---
+
+  // --- Memos (Overlapping, Categorized Blocks - unchanged) ---
+  const overlappingGroups = useMemo(() => {
+    return Object.values(getOverlappingGroups(timeBlocks) || {})
+      .flat()
+      .map((block) => ({
+        ...block,
+        startTime: new Date(block.startTime),
+        endTime: new Date(block.endTime),
+      }));
+  }, [timeBlocks]);
+
+  const categorizedBlocks = useMemo(() => {
+    if (!timeBlocks) {
+      return { before: [], after: [], visible: [] };
+    }
+    const startOfDayDate = new Date(weekStart);
+    startOfDayDate.setHours(startHour, 0, 0, 0);
+    const endOfDayDate = new Date(weekStart);
+    endOfDayDate.setHours(endHour, 59, 59, 999);
+    return overlappingGroups.reduce(
+      (
+        acc: {
+          before: TimeBlockWithPosition[];
+          after: TimeBlockWithPosition[];
+          visible: TimeBlockWithPosition[];
+        },
+        block,
+      ) => {
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+        const dayStart = new Date(startOfDayDate);
+        dayStart.setDate(blockStart.getDate());
+        dayStart.setMonth(blockStart.getMonth());
+        dayStart.setFullYear(blockStart.getFullYear());
+        const dayEnd = new Date(endOfDayDate);
+        dayEnd.setDate(blockStart.getDate());
+        dayEnd.setMonth(blockStart.getMonth());
+        dayEnd.setFullYear(blockStart.getFullYear());
+        const normalizedStart = new Date(blockStart);
+        normalizedStart.setHours(
+          blockStart.getHours(),
+          blockStart.getMinutes(),
+          0,
+          0,
+        );
+        const normalizedEnd = new Date(blockEnd);
+        normalizedEnd.setHours(
+          blockEnd.getHours(),
+          blockEnd.getMinutes(),
+          0,
+          0,
+        );
+        if (normalizedEnd <= dayStart) {
+          acc.before.push(block);
+        } else if (normalizedStart >= dayEnd) {
+          acc.after.push(block);
+        } else {
+          const isClippedStart = normalizedStart < dayStart;
+          const isClippedEnd = normalizedEnd > dayEnd;
+          const visibleBlock = {
+            ...block,
+            isClipped: isClippedStart || isClippedEnd,
+            isClippedStart,
+            isClippedEnd,
+          };
+          acc.visible.push(visibleBlock);
+        }
+        return acc;
+      },
+      { before: [], after: [], visible: [] },
+    );
+  }, [timeBlocks, weekStart, startHour, endHour, overlappingGroups]);
+  // --- End Memos ---
+
+  // --- Calculations / Render Helpers ---
+  const getCurrentTimeIndicatorPosition = () => {
+    const now = currentTime;
+    const weekEnd = addDays(weekStart, numberOfDays);
+    if (
+      now < weekStart ||
+      now >= weekEnd ||
+      now.getHours() < startHour ||
+      now.getHours() >= endHour
+    ) {
+      return null;
+    }
+    const top = getYPositionFromTime(now);
+    const dayIndex = differenceInDays(startOfDay(now), startOfDay(weekStart));
+    const leftPercent = (dayIndex * 100) / numberOfDays;
+    const widthPercent = 100 / numberOfDays;
+    return {
+      top,
+      left: `calc(${leftPercent}% + 1px)`,
+      width: `calc(${widthPercent}% - 2px)`,
+    };
+  };
 
   const renderDragPreview = () => {
     if (dragState.type === "idle") {
       return null;
     }
 
+    let previewStartTime: Date | null = null;
+    let previewEndTime: Date | null = null;
+    let blockData: Partial<TimeBlockWithPosition> = {}; // Base data for preview
+    const isCreating = dragState.type === "drag_new";
+    const isMoving = dragState.type === "drag_existing";
+    const isResizing =
+      dragState.type === "resize_block_top" ||
+      dragState.type === "resize_block_bottom";
+    const isDuplicating = isMoving && dragState.shouldDuplicate;
+
     switch (dragState.type) {
-      case "drag_new": {
-        const { startTime, currentTime } = dragState;
-        const previewStartHour = Math.min(
-          Math.max(Math.min(startTime.hour, currentTime.hour), startHour),
-          endHour,
-        );
-        const previewEndHour = Math.min(
-          Math.max(Math.max(startTime.hour, currentTime.hour), startHour),
-          endHour,
-        );
+      case "drag_new":
+        previewStartTime = snapTime(dragState.startTime);
+        previewEndTime = snapTime(dragState.currentTime);
+        blockData = { title: "New Block", color: null }; // Basic info
+        break;
 
-        const startDate = addDays(weekStart, startTime.day);
-        startDate.setHours(previewStartHour, 0, 0, 0);
-
-        const endDate = addDays(weekStart, startTime.day);
-        endDate.setHours(previewEndHour, 0, 0, 0);
-
-        // Add minutes to respect snap schedule
-        const startMinutes =
-          Math.round((startTime.minute || 0) / snapMinutes) * snapMinutes;
-        const endMinutes =
-          Math.round((currentTime.minute || 0) / snapMinutes) * snapMinutes;
-
-        startDate.setMinutes(startMinutes);
-        endDate.setMinutes(endMinutes);
-
-        // Ensure minimum block size of one snap interval
-        if (endDate.getTime() <= startDate.getTime()) {
-          endDate.setTime(startDate.getTime() + snapMinutes * 60 * 1000);
-        }
-
-        const now = new Date();
-        return (
-          <TimeBlock
-            block={{
-              id: "preview",
-              startTime: startDate,
-              endTime: endDate,
-              title: "New Block",
-              workspaceId: currentWorkspaceId || "",
-              color: null,
-              created_at: now,
-              updated_at: now,
-              taskAssignments: [],
-              isFixedTime: false,
-            }}
-            onDragStart={() => undefined}
-            onResizeStart={() => undefined}
-            isPreview
-            startHour={startHour}
-            endHour={endHour}
-            gridRef={gridRef}
-            topOffset={topOffset}
-            numberOfDays={numberOfDays}
-            weekStart={weekStart}
-            blockHeight={blockHeight}
-          />
-        );
-      }
       case "drag_existing": {
-        const { blockId, currentPosition } = dragState;
-        const block = timeBlocks?.find((b) => b.id === blockId);
-        if (!block) {
+        const originalBlock = timeBlocks.find(
+          (b) => b.id === dragState.blockId,
+        );
+        if (!originalBlock) {
           return null;
         }
 
-        const time = getTimeFromGridPosition(
-          currentPosition.x,
-          currentPosition.y,
+        const timeAtCurrentPos = positionToTime(
+          dragState.currentMousePosition,
           gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
+          true,
         );
-        if (!time) {
+        const timeAtInitialPos = positionToTime(
+          dragState.initialMousePosition,
+          gridRef,
+          true,
+        );
+        if (!timeAtCurrentPos || !timeAtInitialPos) {
           return null;
         }
 
-        const blockStart = new Date(block.startTime);
-        const blockEnd = new Date(block.endTime);
-        const duration =
-          (blockEnd.getTime() - blockStart.getTime()) / (1000 * 60 * 60);
-
-        const previewStart = new Date(weekStart);
-        previewStart.setDate(previewStart.getDate() + time.day);
-        previewStart.setHours(
-          Math.max(time.hour, startHour),
-          time.minute,
-          0,
-          0,
-        );
-
-        const previewEnd = new Date(previewStart.getTime());
-        previewEnd.setTime(previewStart.getTime() + duration * 60 * 60 * 1000);
-
-        if (previewEnd.getHours() > endHour) {
-          const hoursToAdjust = previewEnd.getHours() - endHour;
-          previewStart.setHours(previewStart.getHours() - hoursToAdjust);
-          previewEnd.setHours(endHour);
-        }
-
-        return (
-          <TimeBlock
-            block={{
-              ...block,
-              startTime: previewStart,
-              endTime: previewEnd,
-            }}
-            onDragStart={() => undefined}
-            onResizeStart={() => undefined}
-            isPreview
-            startHour={startHour}
-            endHour={endHour}
-            gridRef={gridRef}
-            topOffset={topOffset}
-            numberOfDays={numberOfDays}
-            weekStart={weekStart}
-            blockHeight={blockHeight}
-          />
-        );
+        const timeDiff =
+          timeAtCurrentPos.getTime() - timeAtInitialPos.getTime();
+        const originalStartTime = new Date(originalBlock.startTime);
+        const originalEndTime = new Date(originalBlock.endTime);
+        previewStartTime = new Date(originalStartTime.getTime() + timeDiff);
+        previewEndTime = new Date(originalEndTime.getTime() + timeDiff);
+        blockData = originalBlock; // Use original block data
+        break;
       }
+
       case "resize_block_top":
       case "resize_block_bottom": {
-        const { blockId, startTime, endTime, currentPosition } = dragState;
-        const block = timeBlocks?.find((b) => b.id === blockId);
-        if (!block) {
+        const originalBlock = timeBlocks.find(
+          (b) => b.id === dragState.blockId,
+        );
+        if (!originalBlock) {
           return null;
         }
 
-        const time = getTimeFromGridPosition(
-          currentPosition.x,
-          currentPosition.y,
+        const timeAtCurrentPos = positionToTime(
+          dragState.currentMousePosition,
           gridRef,
-          topOffset,
-          startHour,
-          endHour,
-          snapMinutes,
-          numberOfDays,
-          blockHeight,
+          true,
         );
-        if (!time) {
+        if (!timeAtCurrentPos) {
           return null;
         }
 
-        // delta between the start of the week and the block's start time
-        const dayOffset =
-          (new Date(block.startTime).getTime() - weekStart.getTime()) /
-          (1000 * 60 * 60 * 24);
-
-        const newTime = new Date(weekStart);
-        newTime.setDate(newTime.getDate() + dayOffset);
-        newTime.setHours(
-          Math.min(Math.max(time.hour, startHour), endHour),
-          time.minute,
+        const originalDayOffset = differenceInDays(
+          dragState.initialStartTime,
+          weekStart,
+        );
+        const resizeTimeOnOriginalDay = addDays(weekStart, originalDayOffset);
+        resizeTimeOnOriginalDay.setHours(
+          timeAtCurrentPos.getHours(),
+          timeAtCurrentPos.getMinutes(),
           0,
           0,
         );
 
-        // For top resize, update start time but keep end time
-        // For bottom resize, keep start time but update end time
-        const previewStart =
-          dragState.type === "resize_block_top" ? newTime : startTime;
-        const previewEnd =
-          dragState.type === "resize_block_bottom" ? newTime : endTime;
+        previewStartTime = new Date(dragState.initialStartTime);
+        previewEndTime = new Date(dragState.initialEndTime);
 
-        if (
-          previewEnd.getTime() <= previewStart.getTime() ||
-          previewStart.getHours() < startHour ||
-          previewEnd.getHours() > endHour
-        ) {
-          return null;
+        if (dragState.type === "resize_block_top") {
+          previewStartTime = resizeTimeOnOriginalDay;
+        } else {
+          previewEndTime = resizeTimeOnOriginalDay;
         }
-
-        return (
-          <TimeBlock
-            block={{
-              ...block,
-              startTime: previewStart,
-              endTime: previewEnd,
-            }}
-            onDragStart={() => undefined}
-            onResizeStart={() => undefined}
-            isPreview
-            startHour={startHour}
-            endHour={endHour}
-            gridRef={gridRef}
-            topOffset={topOffset}
-            numberOfDays={numberOfDays}
-            weekStart={weekStart}
-            blockHeight={blockHeight}
-          />
-        );
+        blockData = originalBlock; // Use original block data
+        break;
       }
     }
+
+    // Ensure valid times
+    if (!previewStartTime || !previewEndTime) {
+      return null;
+    }
+    if (previewEndTime.getTime() <= previewStartTime.getTime()) {
+      // Ensure minimum duration if invalid
+      previewEndTime = new Date(
+        previewStartTime.getTime() + snapMinutes * 60 * 1000,
+      );
+    }
+
+    // Calculate position and dimensions
+    const startDayIndex = differenceInDays(
+      startOfDay(previewStartTime),
+      startOfDay(weekStart),
+    );
+    const endDayIndex = differenceInDays(
+      startOfDay(previewEndTime),
+      startOfDay(weekStart),
+    );
+
+    // For simplicity, preview stays within the start day for now
+    // Multi-day preview rendering would require more complex width/left/offset calculation
+    if (startDayIndex < 0 || startDayIndex >= numberOfDays) {
+      return null;
+    }
+
+    const top = getYPositionFromTime(previewStartTime);
+    const bottom = getYPositionFromTime(previewEndTime);
+    const height = Math.max(bottom - top, blockHeight * (snapMinutes / 60)); // Min height
+    const leftPercent = (startDayIndex * 100) / numberOfDays;
+    const widthPercent = 100 / numberOfDays;
+
+    // TODO: Handle overlapping previews if needed (similar to TimeBlock overlap logic)
+
+    return (
+      <BlockPreview
+        blockData={blockData}
+        top={top}
+        left={`${leftPercent}%`}
+        width={`${widthPercent}%`}
+        height={height}
+        isCreating={isCreating}
+        isMoving={isMoving}
+        isResizing={isResizing}
+        isDuplicating={isDuplicating}
+      />
+    );
   };
 
   const handleBeforeClick = () => {
     if (categorizedBlocks.before.length === 0) {
       return;
     }
-
-    // Find the latest block that's before the current view
     const latestBefore = categorizedBlocks.before.reduce((latest, current) => {
       return new Date(current.endTime) > new Date(latest.endTime)
         ? current
         : latest;
     });
-
-    // Get the hour from the block's end time
     const blockEndHour = new Date(latestBefore.endTime).getHours();
-
-    // Adjust start hour to show this block
+    // Use setter prop
     setStartHour(Math.max(0, blockEndHour - 1));
   };
 
@@ -584,8 +437,6 @@ export function WeeklyCalendar({
     if (categorizedBlocks.after.length === 0) {
       return;
     }
-
-    // Find the earliest block that's after the current view
     const earliestAfter = categorizedBlocks.after.reduce(
       (earliest, current) => {
         return new Date(current.startTime) < new Date(earliest.startTime)
@@ -593,553 +444,499 @@ export function WeeklyCalendar({
           : earliest;
       },
     );
-
-    // Get the hour from the block's start time
     const blockStartHour = new Date(earliestAfter.startTime).getHours();
-
-    // Adjust end hour to show this block
+    // Use setter prop
     setEndHour(Math.min(23, blockStartHour + 1));
   };
 
-  const bulkUpdateMutation = api.timeBlock.bulkUpdate.useMutation();
-
   const correctOverlappingBlocks = (date: Date) => {
-    if (!timeBlocks) {
-      return;
-    }
+    const targetDate = startOfDay(date);
 
-    // Filter blocks for the given date by comparing year/month/day
-    const dayBlocks = timeBlocks.filter((block) => {
-      const blockDate = new Date(block.startTime);
-      return (
-        blockDate.getFullYear() === date.getFullYear() &&
-        blockDate.getMonth() === date.getMonth() &&
-        blockDate.getDate() === date.getDate()
-      );
+    const blocksForDay = overlappingGroups.filter((block) => {
+      const blockDate = startOfDay(new Date(block.startTime));
+      return blockDate.getTime() === targetDate.getTime();
     });
 
-    if (dayBlocks.length === 0) {
-      return;
-    }
-
-    // Sort blocks by their current start time
-    const sortedBlocks = [...dayBlocks].sort((a, b) => {
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-    });
-
-    const updates: {
-      id: string;
-      startTime: Date;
-      endTime: Date;
-    }[] = [];
-
-    // First, add all fixed blocks to updates without moving them
-    sortedBlocks.forEach((block) => {
-      if (block.isFixedTime) {
-        updates.push({
-          id: block.id,
-          startTime: new Date(block.startTime),
-          endTime: new Date(block.endTime),
-        });
-      }
-    });
-
-    // Get the earliest non-fixed block's start time as our starting point
-    const firstNonFixedBlock = sortedBlocks.find((block) => !block.isFixedTime);
-    if (!firstNonFixedBlock) {
-      return;
-    }
-
-    let currentTime = new Date(firstNonFixedBlock.startTime);
-
-    // Check if there are any fixed blocks that start before our current time
-    const earlierFixedBlock = sortedBlocks.find(
-      (block) =>
-        block.isFixedTime &&
-        new Date(block.startTime) <= currentTime &&
-        new Date(block.endTime) > currentTime,
+    blocksForDay.sort(
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
-    // If there's a fixed block that overlaps with our start time,
-    // we need to start after it
-    if (earlierFixedBlock) {
-      currentTime = new Date(earlierFixedBlock.endTime);
-    }
+    const updates: { id: string; startTime: Date; endTime: Date }[] = [];
+    let lastEndTime: Date | null = null;
 
-    // Then process non-fixed blocks, moving them as needed to avoid fixed blocks
-    sortedBlocks.forEach((block) => {
-      if (!block.isFixedTime) {
-        const blockDuration =
-          new Date(block.endTime).getTime() -
-          new Date(block.startTime).getTime();
+    for (const block of blocksForDay) {
+      const startTime = new Date(block.startTime);
+      const endTime = new Date(block.endTime);
+      const duration = endTime.getTime() - startTime.getTime();
 
-        // Start with current time
-        let proposedStart = new Date(currentTime);
-        let proposedEnd = new Date(proposedStart.getTime() + blockDuration);
-
-        // Check if this would overlap with any fixed blocks
-        let hasConflict = true;
-        while (hasConflict) {
-          hasConflict = false;
-          for (const fixedBlock of sortedBlocks.filter((b) => b.isFixedTime)) {
-            const fixedStart = new Date(fixedBlock.startTime);
-            const fixedEnd = new Date(fixedBlock.endTime);
-
-            // Check for overlap
-            if (
-              (proposedStart < fixedEnd && proposedEnd > fixedStart) ||
-              (proposedStart >= fixedStart && proposedStart < fixedEnd) ||
-              (proposedEnd > fixedStart && proposedEnd <= fixedEnd)
-            ) {
-              // If overlap found, move to end of fixed block and check again
-              proposedStart = new Date(fixedEnd);
-              proposedEnd = new Date(proposedStart.getTime() + blockDuration);
-              hasConflict = true;
-              break;
-            }
-          }
-        }
-
+      if (lastEndTime !== null && startTime < lastEndTime) {
+        const newStartTime: Date = new Date(lastEndTime);
+        const newEndTime: Date = new Date(newStartTime.getTime() + duration);
         updates.push({
           id: block.id,
-          startTime: proposedStart,
-          endTime: proposedEnd,
+          startTime: newStartTime,
+          endTime: newEndTime,
         });
-
-        currentTime = new Date(proposedEnd);
+        lastEndTime = newEndTime;
+      } else {
+        lastEndTime = endTime;
       }
-    });
+    }
 
-    bulkUpdateMutation.mutate(updates);
+    if (updates.length > 0 && currentWorkspaceId) {
+      bulkUpdateBlocks({
+        updates,
+        workspaceId: currentWorkspaceId,
+      });
+    }
   };
 
-  // Add view buttons section after the existing buttons
-  const handleViewChange = (height: number) => {
-    setBlockHeight(height);
-  };
+  const displayedHours = Array.from(
+    { length: endHour - startHour },
+    (_, i) => i + startHour,
+  );
+  const DAYS = Array.from({ length: numberOfDays }, (_, i) => i);
+  // --- End Calculations / Render Helpers ---
 
+  // --- JSX Return ---
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Time Blocks</h1>
-          <p className="text-muted-foreground">
-            Schedule and organize your tasks with time blocks
-          </p>
+    <div className="flex-grow overflow-auto">
+      {/* Main Grid Structure */}
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
+        }}
+      >
+        {/* Time Labels Column */}
+        <div className="relative w-16 select-none border-r">
+          {categorizedBlocks.before.length > 0 && (
+            <div
+              className="h-8 cursor-pointer border-b bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
+              onClick={handleBeforeClick}
+              title="Click to adjust view to show earlier blocks"
+            >
+              {categorizedBlocks.before.length} before
+            </div>
+          )}
+          {displayedHours.map((hour, index) => (
+            <div
+              key={hour}
+              className={`pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
+              style={{ height: `${blockHeight}px` }}
+            >
+              {format(new Date().setHours(hour, 0), "h a")}
+            </div>
+          ))}
+          {categorizedBlocks.after.length > 0 && (
+            <div
+              className="h-8 cursor-pointer border-t bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
+              onClick={handleAfterClick}
+              title="Click to adjust view to show later blocks"
+            >
+              {categorizedBlocks.after.length} after
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handlePreviousWeek}>
-              Previous
-            </Button>
-            <DateInput value={selectedDate} onChange={handleDateChange} />
-            <Button variant="outline" size="sm" onClick={handleNextWeek}>
-              Next
-            </Button>
-          </div>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px]">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Time Range</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm">Start Hour</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={23}
-                        value={startHour}
-                        onChange={(e) => setStartHour(Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-sm">End Hour</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={24}
-                        value={endHour}
-                        onChange={(e) => {
-                          const value = Number(e.target.value);
-                          if (value > startHour) {
-                            setEndHour(value);
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
+        {/* Days Content Area - Render each day column */}
+        <div
+          ref={gridRef}
+          className="relative col-span-full grid"
+          style={{
+            gridColumn: `span ${numberOfDays}`,
+            gridTemplateColumns: `repeat(${numberOfDays}, minmax(0, 1fr))`,
+          }}
+        >
+          {/* Map over days to create columns */}
+          {DAYS.map((dayOffset) => {
+            const date = addDays(weekStart, dayOffset);
+            const dayMetadata = weekMetadata.filter(
+              (meta) =>
+                format(startOfDay(meta.date), "yyyy-MM-dd") ===
+                format(startOfDay(date), "yyyy-MM-dd"),
+            );
 
-                <div className="space-y-2">
-                  <h4 className="font-medium">View Settings</h4>
-                  <div className="grid gap-4">
-                    <div>
-                      <span className="text-sm">Days to Show</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={31}
-                        value={numberOfDays}
-                        onChange={(e) => {
-                          const value = Math.max(
-                            1,
-                            Math.min(31, Number(e.target.value)),
-                          );
-                          setNumberOfDays(value);
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-sm">Snap Minutes</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={60}
-                        value={snapMinutes}
-                        onChange={(e) => {
-                          const value = Math.max(
-                            1,
-                            Math.min(60, Number(e.target.value)),
-                          );
-                          setSnapMinutes(value);
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-sm">Block Height</span>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          variant={blockHeight === 64 ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleViewChange(64)}
-                          className="flex-1"
-                        >
-                          Normal
-                        </Button>
-                        <Button
-                          variant={blockHeight === 96 ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleViewChange(96)}
-                          className="flex-1"
-                        >
-                          Detailed
-                        </Button>
-                        <Button
-                          variant={blockHeight === 128 ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleViewChange(128)}
-                          className="flex-1"
-                        >
-                          Very Detailed
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Button
-            variant="outline"
-            onClick={() => setIsMetadataSummaryOpen(true)}
-          >
-            <Table className="mr-2 h-4 w-4" />
-            Summary
-          </Button>
-
-          <Button variant="outline" onClick={() => setIsListDialogOpen(true)}>
-            <List className="mr-2 h-4 w-4" />
-            List View
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <div className="rounded-lg border bg-card">
-          {/* Header with days */}
-          <div
-            className="grid select-none border-b"
-            style={{
-              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
-            }}
-          >
-            <div className="w-16 border-r p-2" /> {/* Time column header */}
-            {DAYS.map((dayOffset, index) => {
-              const date = addDays(weekStart, dayOffset);
-              return (
+            return (
+              // Container for a single day column
+              <div key={dayOffset} className="relative flex flex-col border-r">
+                {/* Sticky Day Header */}
                 <div
-                  key={dayOffset}
-                  className={`flex items-center justify-between p-2 ${index < DAYS.length - 1 ? "border-r" : ""}`}
+                  ref={dayOffset === 0 ? headerRef : undefined} // Attach ref to the first header
+                  className="sticky top-0 z-20 flex items-center justify-between border-b bg-background p-2"
                 >
                   <span className="font-medium">
                     {format(date, "EEE MMM d")}
                   </span>
+                  {/* Day-specific Magic Wand Button */}
                   <Button
-                    variant="ghost"
+                    variant="ghost" // Use ghost variant for less emphasis
                     size="icon"
-                    className="h-6 w-6"
-                    onClick={() => correctOverlappingBlocks(date)}
-                    title="Compact time blocks"
+                    className="h-6 w-6" // Smaller size
+                    onClick={() => correctOverlappingBlocks(date)} // Call directly with the day's date
+                    title={`Auto-adjust overlaps for ${format(date, "MMM d")}`}
                   >
                     <Wand2 className="h-4 w-4" />
                   </Button>
                 </div>
-              );
-            })}
-          </div>
 
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
-            }}
-          >
-            {/* Time labels */}
-            <div className="relative w-16 select-none">
-              {/* Show count of blocks before visible area */}
-              {categorizedBlocks.before.length > 0 && (
+                {/* Main Interaction Grid Area for the Day (relative positioning context) */}
                 <div
-                  className="h-8 cursor-pointer border-b border-r bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
-                  onClick={handleBeforeClick}
-                  title="Click to adjust view to show earlier blocks"
-                >
-                  {categorizedBlocks.before.length} before
-                </div>
-              )}
-
-              {displayedHours.map((hour, index) => (
-                <div
-                  key={hour}
-                  className={`border-r pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
-                  style={{ height: `${blockHeight}px` }}
-                >
-                  {format(new Date().setHours(hour, 0), "h a")}
-                </div>
-              ))}
-
-              {/* Show count of blocks after visible area */}
-              {categorizedBlocks.after.length > 0 && (
-                <div
-                  className="h-8 cursor-pointer border-r border-t bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
-                  onClick={handleAfterClick}
-                  title="Click to adjust view to show later blocks"
-                >
-                  {categorizedBlocks.after.length} after
-                </div>
-              )}
-
-              {/* Drag operation indicators */}
-              {(() => {
-                const positions = getDragIndicatorPositions();
-                if (!positions) {
-                  return null;
-                }
-
-                return (
-                  <>
-                    {positions.startPos !== undefined && (
-                      <div
-                        className="absolute right-0 h-0.5 w-4 bg-red-500"
-                        style={{ top: positions.startPos }}
-                      />
-                    )}
-                    {positions.endPos !== undefined && (
-                      <div
-                        className="absolute right-0 h-0.5 w-4 bg-red-500"
-                        style={{ top: positions.endPos }}
-                      />
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-
-            {/* Time slots for each day */}
-            <div
-              id="main-grid"
-              ref={gridRef}
-              className="relative select-none"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseLeave}
-              style={{
-                gridColumn: `span ${numberOfDays}`,
-                cursor:
-                  dragState.type === "drag_existing" && isControlPressed
-                    ? "copy"
-                    : undefined,
-              }}
-            >
-              {/* Add spacer for blocks before */}
-              {categorizedBlocks.before.length > 0 && (
-                <div className="absolute left-0 h-8 w-full border-b bg-muted/50" />
-              )}
-
-              {/* Current time indicator */}
-              {(() => {
-                const position = getCurrentTimePosition();
-                if (!position) {
-                  return null;
-                }
-
-                return (
-                  <div
-                    className="absolute z-10 h-0.5 bg-blue-500"
-                    style={{
-                      top:
-                        position.top +
-                        (categorizedBlocks.before.length > 0 ? 32 : 0),
-                      left: `calc(${position.left} + 1px)`,
-                      width: `calc(${position.width} - 2px)`,
-                    }}
-                  />
-                );
-              })()}
-
-              {DAYS.map((dayOffset, index) => (
-                <div
-                  key={dayOffset}
-                  className={`absolute ${index < DAYS.length - 1 ? "border-r" : ""}`}
+                  className="relative flex-grow select-none"
+                  // Mouse handlers attached to the container covering all days below
                   style={{
-                    left: `calc(${(dayOffset * 100) / numberOfDays}% + 1px)`,
-                    width: `calc(${100 / numberOfDays}% - 2px)`,
-                    height: `calc(100% - ${categorizedBlocks.before.length > 0 ? "32px" : "0px"} - ${
-                      categorizedBlocks.after.length > 0 ? "32px" : "0px"
-                    })`,
-                    top: categorizedBlocks.before.length > 0 ? "32px" : "0px",
+                    height: `${(endHour - startHour) * blockHeight}px`,
                   }}
                 >
+                  {/* Grid Lines for the Day */}
                   {displayedHours.map((hour, hourIndex) => (
                     <div
-                      key={hour}
-                      className="relative"
+                      key={`${dayOffset}-${hour}`}
+                      className={`relative border-b ${hourIndex === displayedHours.length - 1 ? "border-b-0" : ""}`}
                       style={{ height: `${blockHeight}px` }}
                     >
-                      {/* Minor tick marks */}
+                      {/* Minor Ticks */}
                       {Array.from(
                         { length: Math.floor(60 / snapMinutes) - 1 },
-                        (_, i) => (
+                        (_, tickIndex) => (
                           <div
-                            key={i}
-                            className="absolute left-0 w-full border-b border-gray-100"
+                            key={tickIndex}
+                            className="absolute left-0 w-full border-t border-dashed border-muted/50"
                             style={{
-                              top: `${((i + 1) * snapMinutes * blockHeight) / 60}px`,
+                              top: `${((tickIndex + 1) * snapMinutes * blockHeight) / 60}px`,
                             }}
                           />
                         ),
                       )}
-                      {/* Hour border */}
-                      {hourIndex < displayedHours.length - 1 && (
-                        <div className="absolute bottom-0 left-0 w-full border-b" />
-                      )}
                     </div>
                   ))}
                 </div>
-              ))}
 
-              {/* Add spacer for blocks after */}
-              {categorizedBlocks.after.length > 0 && (
-                <div
-                  className="absolute left-0 h-8 w-full border-t bg-muted/50"
-                  style={{
-                    bottom: "0",
-                  }}
-                />
-              )}
-
-              {categorizedBlocks.visible.map((block) => (
-                <TimeBlock
-                  key={block.id}
-                  block={block}
-                  onDragStart={handleBlockDragStart}
-                  onResizeStart={handleBlockResizeStart}
-                  startHour={startHour}
-                  endHour={endHour}
-                  gridRef={gridRef}
-                  isClipped={block.isClipped}
-                  topOffset={topOffset}
-                  numberOfDays={numberOfDays}
-                  weekStart={weekStart}
-                  blockHeight={blockHeight}
-                />
-              ))}
-              {renderDragPreview()}
-
-              {/* Mouse position indicator */}
-              {mousePosition && dragState.type === "idle" && (
-                <div
-                  className="absolute z-20 h-1 w-4 bg-red-300 opacity-50"
-                  style={{
-                    left: `calc(${(mousePosition.day * 100) / numberOfDays}% + 1px)`,
-                    top:
-                      (mousePosition.hour -
-                        startHour +
-                        mousePosition.minute / 60) *
-                        blockHeight +
-                      topOffset,
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Day Metadata Section */}
-        {currentWorkspaceId && (
-          <div
-            className="grid gap-4 rounded-lg border bg-card"
-            style={{
-              gridTemplateColumns: `64px repeat(${numberOfDays}, minmax(0, 1fr))`,
-            }}
-          >
-            <div className="w-16 border-r" />
-
-            {DAYS.map((dayOffset) => {
-              const date = addDays(weekStart, dayOffset);
-              const dayMetadata = weekMetadata.filter(
-                (meta) =>
-                  format(startOfDay(meta.date), "yyyy-MM-dd") ===
-                  format(startOfDay(date), "yyyy-MM-dd"),
-              );
-
-              return (
-                <div key={dayOffset} className="border-r p-1">
+                {/* Day Metadata Section at the bottom of the column */}
+                {currentWorkspaceId && (
                   <DayMetadataSection
                     workspaceId={currentWorkspaceId}
                     date={date}
                     metadata={dayMetadata}
                   />
-                </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Absolutely Positioned Elements relative to the whole grid container */}
+          {/* This container holds the time blocks, preview, indicators */}
+          <div
+            id="main-grid-overlay"
+            className="absolute inset-0"
+            onMouseDown={handleMouseDown} // Attach mouse handlers here
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+            style={{
+              cursor:
+                dragState.type === "drag_existing" && isControlPressed
+                  ? "copy"
+                  : undefined,
+            }}
+          >
+            {/* Current Time Indicator */}
+            {(() => {
+              const position = getCurrentTimeIndicatorPosition();
+              if (!position) {
+                return null;
+              }
+              return (
+                <div
+                  className="pointer-events-none absolute z-10 h-0.5 bg-blue-500"
+                  style={{
+                    top: position.top,
+                    left: position.left,
+                    width: position.width,
+                  }}
+                />
               );
-            })}
+            })()}
+
+            {/* Render Time Blocks */}
+            {categorizedBlocks.visible.map((block) => (
+              <TimeBlock
+                key={block.id}
+                block={block}
+                onDragStart={handleBlockDragStart}
+                onResizeStart={handleBlockResizeStart}
+                startHour={startHour}
+                endHour={endHour}
+                gridRef={gridRef} // Pass ref for calculations
+                isClipped={block.isClipped}
+                topOffset={topOffset}
+                numberOfDays={numberOfDays}
+                weekStart={weekStart}
+                blockHeight={blockHeight}
+              />
+            ))}
+
+            {/* Render Drag Preview */}
+            {renderDragPreview()}
+
+            {/* TimeIndicator - Use date-fns directly */}
+            {mousePosition &&
+              dragState.type === "idle" &&
+              (() => {
+                const top = getYPositionFromTime(mousePosition);
+                // Use date-fns functions directly
+                const currentDayStart = startOfDay(mousePosition);
+                const weekDayStart = startOfDay(weekStart);
+                const dayIndex = differenceInDays(
+                  currentDayStart,
+                  weekDayStart,
+                );
+
+                if (dayIndex < 0 || dayIndex >= numberOfDays) {
+                  return null;
+                }
+
+                const leftPercent = (dayIndex * 100) / numberOfDays;
+                const widthPercent = 100 / numberOfDays;
+
+                // Ensure props are valid numbers/strings before passing
+                if (isNaN(top) || isNaN(leftPercent) || isNaN(widthPercent)) {
+                  return null;
+                }
+
+                // Determine if label should be on the left
+                const labelOnLeft = leftPercent > 50; // Example threshold: 50%
+
+                return (
+                  <TimeIndicator
+                    top={top}
+                    left={`${leftPercent}%`}
+                    width={`${widthPercent}%`}
+                    time={mousePosition}
+                    type="current"
+                    labelOnLeft={labelOnLeft} // Pass prop
+                  />
+                );
+              })()}
           </div>
-        )}
+        </div>
       </div>
-
-      <TimeBlockDialog />
-
-      <ListTimeBlocksDialog
-        isOpen={isListDialogOpen}
-        onClose={() => setIsListDialogOpen(false)}
-        weekStart={weekStart}
-        numberOfDays={numberOfDays}
-      />
-
-      <MetadataSummaryDialog
-        isOpen={isMetadataSummaryOpen}
-        onClose={() => setIsMetadataSummaryOpen(false)}
-        weekStart={weekStart}
-      />
     </div>
+  );
+  // --- End JSX Return ---
+};
+
+// --- Main WeeklyCalendar Component ---
+export function WeeklyCalendar({
+  defaultStartHour = 6,
+  defaultEndHour = 20,
+  defaultNumberOfDays = 7,
+  defaultHeight = 64,
+}: WeeklyCalendarProps) {
+  // --- State Definitions ---
+  const [startHour, setStartHour] = useState(defaultStartHour);
+  const [endHour, setEndHour] = useState(defaultEndHour);
+  const [numberOfDays, setNumberOfDays] = useState(defaultNumberOfDays);
+  const [snapMinutes, setSnapMinutes] = useState(15);
+  const [blockHeight, setBlockHeight] = useState(defaultHeight);
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    startOfDay(new Date()),
+  );
+  const weekStart = selectedDate;
+  const [isListDialogOpen, setIsListDialogOpen] = useState(false);
+  const [isMetadataSummaryOpen, setIsMetadataSummaryOpen] = useState(false);
+  // --- End State Definitions ---
+
+  // State for the height of the sticky day header
+  const [topOffset, setTopOffset] = useState(0);
+
+  // --- Handlers for Header Controls ---
+  const handlePreviousWeek = () => {
+    setSelectedDate((prev) => subWeeks(prev, 1));
+  };
+  const handleNextWeek = () => {
+    setSelectedDate((prev) => addWeeks(prev, 1));
+  };
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(startOfDay(date));
+    }
+  };
+  // --- End Handlers ---
+
+  return (
+    <TimePositionProvider
+      startHour={startHour}
+      endHour={endHour}
+      snapMinutes={snapMinutes}
+      numberOfDays={numberOfDays}
+      weekStart={weekStart}
+      blockHeight={blockHeight}
+      topOffset={topOffset}
+    >
+      <div className="flex h-full flex-col">
+        {/* Header Section */}
+        <div className="mb-4 flex items-center justify-between border-b pb-4">
+          {/* Date Navigation */}
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" onClick={handlePreviousWeek}>
+              Previous
+            </Button>
+            <DateInput
+              value={selectedDate}
+              onChange={handleDateChange}
+              className="text-lg"
+            />
+            <Button variant="outline" onClick={handleNextWeek}>
+              Next
+            </Button>
+          </div>
+          {/* Controls: List, Summary, Settings */}
+          <div className="flex items-center space-x-2">
+            {/* Add List Button Back */}
+            <Button
+              variant="outline"
+              onClick={() => setIsListDialogOpen(true)}
+              title="List View"
+            >
+              <List className="h-4 w-4" />
+              <span className="ml-2">List View</span>
+            </Button>
+            {/* Add Summary Button Back */}
+            <Button
+              variant="outline"
+              onClick={() => setIsMetadataSummaryOpen(true)}
+              title="Metadata Summary"
+            >
+              <Table className="h-4 w-4" />
+              <span className="ml-2">Summary</span>
+            </Button>
+            {/* Settings Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" title="Settings">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                {/* Settings Form (unchanged) */}
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Settings</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Adjust calendar view settings.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <label htmlFor="startHour">Start Hour</label>
+                      <Input
+                        id="startHour"
+                        type="number"
+                        defaultValue={startHour}
+                        onChange={(e) =>
+                          setStartHour(parseInt(e.target.value, 10))
+                        }
+                        className="col-span-2 h-8"
+                        min={0}
+                        max={endHour - 1}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <label htmlFor="endHour">End Hour</label>
+                      <Input
+                        id="endHour"
+                        type="number"
+                        defaultValue={endHour}
+                        onChange={(e) =>
+                          setEndHour(parseInt(e.target.value, 10))
+                        }
+                        className="col-span-2 h-8"
+                        min={startHour + 1}
+                        max={24}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <label htmlFor="numberOfDays">Number of Days</label>
+                      <Input
+                        id="numberOfDays"
+                        type="number"
+                        defaultValue={numberOfDays}
+                        onChange={(e) =>
+                          setNumberOfDays(parseInt(e.target.value, 10))
+                        }
+                        className="col-span-2 h-8"
+                        min={1}
+                        max={7}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <label htmlFor="snapMinutes">Snap Interval (min)</label>
+                      <Input
+                        id="snapMinutes"
+                        type="number"
+                        defaultValue={snapMinutes}
+                        onChange={(e) =>
+                          setSnapMinutes(parseInt(e.target.value, 10))
+                        }
+                        className="col-span-2 h-8"
+                        step={5}
+                        min={5}
+                        max={60}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 items-center gap-4">
+                      <label htmlFor="blockHeight">Block Height (px)</label>
+                      <Input
+                        id="blockHeight"
+                        type="number"
+                        defaultValue={blockHeight}
+                        onChange={(e) =>
+                          setBlockHeight(parseInt(e.target.value, 10))
+                        }
+                        className="col-span-2 h-8"
+                        min={20}
+                        max={120}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Render Calendar Content Component */}
+        <CalendarContent
+          startHour={startHour}
+          endHour={endHour}
+          snapMinutes={snapMinutes}
+          numberOfDays={numberOfDays}
+          weekStart={weekStart}
+          blockHeight={blockHeight}
+          topOffset={topOffset}
+          setStartHour={setStartHour}
+          setEndHour={setEndHour}
+          setIsListDialogOpen={setIsListDialogOpen}
+          setIsMetadataSummaryOpen={setIsMetadataSummaryOpen}
+          setTopOffset={setTopOffset}
+        />
+
+        {/* Dialogs */}
+        <TimeBlockDialog />
+        <ListTimeBlocksDialog
+          isOpen={isListDialogOpen}
+          onClose={() => setIsListDialogOpen(false)}
+          weekStart={weekStart}
+          numberOfDays={numberOfDays}
+        />
+        <MetadataSummaryDialog
+          isOpen={isMetadataSummaryOpen}
+          onClose={() => setIsMetadataSummaryOpen(false)}
+          weekStart={weekStart}
+        />
+      </div>
+    </TimePositionProvider>
   );
 }

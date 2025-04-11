@@ -1,6 +1,6 @@
 "use client";
 import { Link, Lock } from "lucide-react";
-import { type RefObject, useMemo } from "react";
+import { useMemo, type MouseEvent, type RefObject } from "react";
 
 import { cn } from "~/lib/utils";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
@@ -12,12 +12,17 @@ export type TimeBlockProps = {
     isClippedStart?: boolean;
     isClippedEnd?: boolean;
   };
-  onDragStart: (blockId: string, offset: { x: number; y: number }) => void;
+  onDragStart: (
+    blockId: string,
+    offset: { x: number; y: number },
+    e: MouseEvent,
+  ) => void;
   onResizeStart: (
     blockId: string,
     edge: "top" | "bottom",
     startTime: Date,
     endTime: Date,
+    e: MouseEvent,
   ) => void;
   isPreview?: boolean;
   startHour: number;
@@ -93,11 +98,8 @@ export function TimeBlock({
       opacity: isPreview ? 0.4 : 0.8,
       borderRadius: isClipped ? "0" : "0.375rem",
       borderStyle: isClipped ? "dashed" : "solid",
-      padding: "0.5rem",
       color: "white",
       overflow: "hidden",
-      whiteSpace: "nowrap" as const,
-      textOverflow: "ellipsis",
       cursor: isPreview ? "default" : "grab",
       zIndex:
         block.totalOverlaps && block.totalOverlaps > 3
@@ -131,7 +133,6 @@ export function TimeBlock({
     if (isPreview) {
       return;
     }
-    e.stopPropagation();
 
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
@@ -139,11 +140,11 @@ export function TimeBlock({
 
     // Check if clicking on resize handles
     if (offsetY < 8) {
-      onResizeStart(block.id, "top", blockStart, blockEnd);
+      onResizeStart(block.id, "top", blockStart, blockEnd, e);
     } else if (offsetY > rect.height - 8) {
-      onResizeStart(block.id, "bottom", blockStart, blockEnd);
+      onResizeStart(block.id, "bottom", blockStart, blockEnd, e);
     } else {
-      onDragStart(block.id, { x: offsetX, y: offsetY });
+      onDragStart(block.id, { x: offsetX, y: offsetY }, e);
     }
   };
 
@@ -151,7 +152,7 @@ export function TimeBlock({
     <div
       data-time-block="true"
       className={cn(
-        "group absolute z-10 rounded-md border p-2 text-sm",
+        "group absolute z-10 rounded-md border",
         isPreview
           ? "border-dashed border-gray-400 bg-gray-100/50"
           : "border-solid bg-card shadow-sm hover:shadow-md",
@@ -162,30 +163,36 @@ export function TimeBlock({
       style={style}
       onMouseDown={handleMouseDown}
     >
-      {!isPreview && (
-        <>
-          <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
-          <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
-        </>
-      )}
-      <div className="flex items-center gap-2">
-        <span className="flex-1 text-wrap">
-          {block.title || "Untitled Block"}
-        </span>
-        {block.isFixedTime && <Lock className="h-3 w-3" />}
-        {block.taskAssignments?.length > 0 && (
-          <button
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              if (block.taskAssignments?.[0]?.task) {
-                openEditDialog(block.taskAssignments[0].task.task_id);
-              }
-            }}
-            className="rounded p-0.5 hover:bg-black/10"
-          >
-            <Link className="h-3 w-3" />
-          </button>
+      <div className="h-full p-2 text-sm">
+        {!isPreview && (
+          <>
+            <div className="absolute inset-x-0 top-0 h-2 cursor-ns-resize hover:bg-black/10" />
+            <div className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize hover:bg-black/10" />
+          </>
         )}
+        <div className="flex h-full flex-col justify-between overflow-hidden">
+          <div className="flex items-start gap-2">
+            <span className="flex-1 overflow-hidden">
+              {block.title || "Untitled Block"}
+            </span>
+            <div className="flex items-center gap-1">
+              {block.isFixedTime && <Lock className="h-3 w-3" />}
+              {block.taskAssignments?.length > 0 && (
+                <button
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    if (block.taskAssignments?.[0]?.task) {
+                      openEditDialog(block.taskAssignments[0].task.task_id);
+                    }
+                  }}
+                  className="rounded p-0.5 hover:bg-black/10"
+                >
+                  <Link className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
