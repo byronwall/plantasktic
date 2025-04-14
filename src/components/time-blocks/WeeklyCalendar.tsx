@@ -2,11 +2,10 @@
 
 import {
   addDays,
-  addWeeks,
   differenceInDays,
   format,
   startOfDay,
-  subWeeks,
+  subDays,
 } from "date-fns";
 import { List, Settings, Table, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -946,10 +945,10 @@ export function WeeklyCalendar({
 
   // --- Handlers for Header Controls ---
   const handlePreviousWeek = () => {
-    setSelectedDate((prev) => subWeeks(prev, 1));
+    setSelectedDate((prev) => subDays(prev, numberOfDays));
   };
   const handleNextWeek = () => {
-    setSelectedDate((prev) => addWeeks(prev, 1));
+    setSelectedDate((prev) => addDays(prev, numberOfDays));
   };
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
