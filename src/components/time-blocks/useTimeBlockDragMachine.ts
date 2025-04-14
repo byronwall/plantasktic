@@ -3,7 +3,7 @@
 import { useReducer } from "react";
 
 // --- State Types ---
-type IdleState = { type: "idle" };
+type IdleState = { type: "idle"; button?: number };
 
 type DragNewState = {
   type: "drag_new";
@@ -75,7 +75,7 @@ type MoveAction = {
   };
 };
 
-type EndAction = { type: "END" };
+type EndAction = { type: "END"; payload?: { button?: number } };
 type CancelAction = { type: "CANCEL" };
 type UpdateControlKeyAction = { type: "UPDATE_CONTROL"; payload: boolean };
 
@@ -206,7 +206,10 @@ const dragMachineReducer = (
 
     case "END":
     case "CANCEL":
-      nextState = { type: "idle" };
+      nextState = {
+        type: "idle",
+        button: action.type === "END" ? action.payload?.button : undefined,
+      };
       break;
 
     default:
@@ -244,7 +247,8 @@ export const useTimeBlockDragMachine = () => {
       payload: { time, mousePosition, isControlPressed },
     });
 
-  const end = () => dispatch({ type: "END" });
+  const end = (payload?: EndAction["payload"]) =>
+    dispatch({ type: "END", payload });
 
   const cancel = () => dispatch({ type: "CANCEL" });
 

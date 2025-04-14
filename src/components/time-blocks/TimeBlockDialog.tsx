@@ -1,7 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
-import { Check, Link, Lock, Plus, Search, Trash, X } from "lucide-react";
+import { Link, Lock, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { TaskAvatar } from "~/app/_components/TaskAvatar";
@@ -116,6 +116,11 @@ export function TimeBlockDialog() {
   const assignTask = api.timeBlock.assignTask.useMutation();
   const unassignTask = api.timeBlock.unassignTask.useMutation();
 
+  // Combine loading states for submit button using isPending
+  const isSaving = createTimeBlock.isPending || updateTimeBlock.isPending;
+  // Loading state for delete button using isPending
+  const isDeleting = deleteTimeBlock.isPending;
+
   // Initialize form with existing data if editing
   useEffect(() => {
     if (timeBlock) {
@@ -152,11 +157,19 @@ export function TimeBlockDialog() {
       .map(Number);
     const [endHours = 0, endMinutes = 0] = endTimeStr.split(":").map(Number);
 
-    const finalStartTime = new Date(selectedStartDate);
+    let finalStartTime = new Date(selectedStartDate);
     finalStartTime.setHours(startHours, startMinutes);
 
-    const finalEndTime = new Date(selectedEndDate);
+    let finalEndTime = new Date(selectedEndDate);
     finalEndTime.setHours(endHours, endMinutes);
+
+    // Swap if end time is before start time
+    if (finalEndTime.getTime() < finalStartTime.getTime()) {
+      [finalStartTime, finalEndTime] = [finalEndTime, finalStartTime];
+      // Also update the string state if swapped during submission
+      setStartTimeStr(format(finalStartTime, "HH:mm"));
+      setEndTimeStr(format(finalEndTime, "HH:mm"));
+    }
 
     if (selectedTimeBlock) {
       // Update existing time block
@@ -231,6 +244,34 @@ export function TimeBlockDialog() {
   const clearSelectedTask = () => {
     setSelectedTaskId(null);
     setSelectedTaskTitle("");
+  };
+
+  // Function to check and swap time strings on blur
+  const handleTimeBlur = () => {
+    // Parse current values
+    const [startHours = 0, startMinutes = 0] = startTimeStr
+      .split(":")
+      .map(Number);
+    const [endHours = 0, endMinutes = 0] = endTimeStr.split(":").map(Number);
+
+    const tempStartDate = new Date(selectedStartDate);
+    tempStartDate.setHours(startHours, startMinutes, 0, 0);
+
+    const tempEndDate = new Date(selectedEndDate);
+    tempEndDate.setHours(endHours, endMinutes, 0, 0);
+
+    // Check if dates need swapping (handle multi-day inversion)
+    if (tempEndDate.getTime() < tempStartDate.getTime()) {
+      // Swap the full dates first
+      const newStartDate = tempEndDate;
+      const newEndDate = tempStartDate;
+
+      // Update state for both date and time strings
+      setSelectedStartDate(newStartDate);
+      setSelectedEndDate(newEndDate);
+      setStartTimeStr(format(newStartDate, "HH:mm"));
+      setEndTimeStr(format(newEndDate, "HH:mm"));
+    }
   };
 
   return (
@@ -382,6 +423,7 @@ export function TimeBlockDialog() {
                     type="time"
                     value={startTimeStr}
                     onChange={(e) => setStartTimeStr(e.target.value)}
+                    onBlur={handleTimeBlur}
                     className="w-24"
                   />
                 </div>
@@ -397,6 +439,7 @@ export function TimeBlockDialog() {
                     type="time"
                     value={endTimeStr}
                     onChange={(e) => setEndTimeStr(e.target.value)}
+                    onBlur={handleTimeBlur}
                     className="w-24"
                   />
                 </div>
@@ -466,28 +509,17 @@ export function TimeBlockDialog() {
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
-                className="mr-auto"
+                disabled={isDeleting}
               >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
+                {isDeleting ? "Deleting..." : "Delete"}
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={close}>
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-            <Button type="submit">
-              {selectedTimeBlock ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create
-                </>
-              )}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving
+                ? "Saving..."
+                : selectedTimeBlock
+                  ? "Save Changes"
+                  : "Create Block"}
             </Button>
           </DialogFooter>
         </form>

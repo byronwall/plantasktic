@@ -28,29 +28,37 @@ export const BlockPreview = ({
   isCreating = false,
   isMoving = false,
 }: BlockPreviewProps) => {
+  // Determine the border color based on state or block data
+  const borderColor = isDuplicating
+    ? "border-green-500"
+    : isResizing
+      ? "border-yellow-500"
+      : isCreating
+        ? "border-blue-500"
+        : isMoving
+          ? "border-gray-500"
+          : blockData.color
+            ? undefined // Use inline style for custom color
+            : "border-gray-400"; // Default border
+
+  const inlineBorderColor =
+    blockData.color && !borderColor ? blockData.color : undefined;
+
   return (
     <div
+      // Remove background classes, keep base styles
       className={cn(
-        "pointer-events-none absolute z-20 select-none rounded-md border border-dashed bg-opacity-40",
-        isDuplicating && "border-green-500 bg-green-500/30",
-        isResizing && "border-yellow-500 bg-yellow-500/30",
-        isCreating && "border-blue-500 bg-blue-500/30",
-        isMoving && !isDuplicating && "border-gray-500 bg-gray-500/30",
+        "pointer-events-none absolute z-20 select-none rounded-md border-2 border-dashed", // Use border-2 for visibility
+        borderColor, // Apply dynamic border color class if not using inline style
       )}
       style={{
         top: `${top}px`,
         left: left,
         width: width,
         height: `${height}px`,
-        backgroundColor: blockData.color
-          ? `${blockData.color}66` // Add alpha if color exists
-          : undefined,
-        borderColor: blockData.color || undefined,
+        borderColor: inlineBorderColor, // Apply inline border color if needed
+        backgroundColor: "transparent", // Ensure no background fill
       }}
-    >
-      <div className="h-full overflow-hidden p-1 text-xs text-white">
-        {blockData.title || (isCreating ? "New Block" : "Preview")}
-      </div>
-    </div>
+    ></div>
   );
 };

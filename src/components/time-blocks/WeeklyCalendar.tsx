@@ -452,39 +452,107 @@ const CalendarContent = ({
   const correctOverlappingBlocks = (date: Date) => {
     const targetDate = startOfDay(date);
 
-    const blocksForDay = overlappingGroups.filter((block) => {
-      const blockDate = startOfDay(new Date(block.startTime));
-      return blockDate.getTime() === targetDate.getTime();
-    });
+    // 1. Filter, Separate, and Sort
+    const blocksForDay = overlappingGroups
+      .filter((block) => {
+        const blockDate = startOfDay(new Date(block.startTime));
+        return blockDate.getTime() === targetDate.getTime();
+      })
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
 
-    blocksForDay.sort(
-      (a, b) =>
-        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-    );
+    const fixedBlocks = blocksForDay.filter((b) => b.isFixedTime);
+    const nonFixedBlocks = blocksForDay.filter((b) => !b.isFixedTime);
 
+    // 2. Initialization
     const updates: { id: string; startTime: Date; endTime: Date }[] = [];
-    let lastEndTime: Date | null = null;
+    const placedNonFixedIds = new Set<string>();
+    let currentTime: Date | null = null; // Tracks the end of the last placed block
 
-    for (const block of blocksForDay) {
-      const startTime = new Date(block.startTime);
-      const endTime = new Date(block.endTime);
-      const duration = endTime.getTime() - startTime.getTime();
+    // Helper function to add updates only if times changed
+    const addUpdateIfNeeded = (
+      block: TimeBlockWithPosition,
+      newStart: Date,
+      newEnd: Date,
+    ) => {
+      const originalStart = new Date(block.startTime);
+      const originalEnd = new Date(block.endTime);
+      if (
+        newStart.getTime() !== originalStart.getTime() ||
+        newEnd.getTime() !== originalEnd.getTime()
+      ) {
+        updates.push({ id: block.id, startTime: newStart, endTime: newEnd });
+      }
+    };
 
-      if (lastEndTime !== null && startTime < lastEndTime) {
-        const newStartTime: Date = new Date(lastEndTime);
-        const newEndTime: Date = new Date(newStartTime.getTime() + duration);
-        updates.push({
-          id: block.id,
-          startTime: newStartTime,
-          endTime: newEndTime,
-        });
-        lastEndTime = newEndTime;
-      } else {
-        lastEndTime = endTime;
+    // 3. Iterate Through Segments defined by Fixed Blocks
+    const totalFixedBlocks = fixedBlocks.length;
+    for (let i = 0; i <= totalFixedBlocks; i++) {
+      const currentFixed = i > 0 ? fixedBlocks[i - 1] : null;
+      const nextFixed = i < totalFixedBlocks ? fixedBlocks[i] : null;
+
+      // Determine the bounds for placing non-fixed blocks in this segment
+      const segmentStart = currentFixed ? currentFixed.endTime : null;
+      const segmentEnd = nextFixed ? nextFixed.startTime : null;
+
+      // Update currentTime based on the end of the previous segment/fixed block
+      if (segmentStart) {
+        currentTime =
+          currentTime === null
+            ? segmentStart
+            : new Date(Math.max(currentTime.getTime(), segmentStart.getTime()));
+      }
+
+      // Try to place non-fixed blocks in this segment
+      for (const block of nonFixedBlocks) {
+        if (placedNonFixedIds.has(block.id)) {
+          continue; // Skip already placed blocks
+        }
+
+        const startTime = new Date(block.startTime);
+        const endTime = new Date(block.endTime);
+        const duration = endTime.getTime() - startTime.getTime();
+
+        // Determine the earliest possible start time for this block
+        const potentialStartTime = currentTime ?? startTime;
+        const potentialEndTime = new Date(
+          potentialStartTime.getTime() + duration,
+        );
+
+        // Check if the block fits within the current segment
+        if (segmentEnd === null || potentialEndTime <= segmentEnd) {
+          // Fits! Place the block
+          const newStartTime = potentialStartTime;
+          const newEndTime = potentialEndTime;
+
+          addUpdateIfNeeded(block, newStartTime, newEndTime);
+          currentTime = newEndTime; // Update currentTime for the next block in this segment
+          placedNonFixedIds.add(block.id);
+        } else {
+          // Doesn't fit in this segment, might fit in a later one.
+          // If we are trying to place before the *first* fixed block (i === 0),
+          // and it doesn't fit, it MUST go after that first fixed block.
+          // We don't break here, just let it be potentially placed in the next segment.
+        }
+      }
+
+      // After processing non-fixed blocks for the segment,
+      // ensure currentTime respects the start of the next fixed block (if any)
+      if (nextFixed) {
+        currentTime =
+          currentTime === null
+            ? nextFixed.startTime // Should not happen if blocks exist
+            : new Date(
+                Math.max(currentTime.getTime(), nextFixed.startTime.getTime()),
+              );
       }
     }
 
+    // 4. Bulk Update
     if (updates.length > 0 && currentWorkspaceId) {
+      console.log("Magic wand updates:", updates);
       bulkUpdateBlocks({
         updates,
         workspaceId: currentWorkspaceId,
@@ -632,7 +700,7 @@ const CalendarContent = ({
             className="absolute inset-0"
             onMouseDown={handleMouseDown} // Attach mouse handlers here
             onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onMouseUp={(e) => handleMouseUp(e)} // Pass event to handleMouseUp
             onMouseLeave={handleMouseLeave}
             style={{
               cursor:
@@ -680,45 +748,167 @@ const CalendarContent = ({
             {/* Render Drag Preview */}
             {renderDragPreview()}
 
-            {/* TimeIndicator - Use date-fns directly */}
-            {mousePosition &&
-              dragState.type === "idle" &&
-              (() => {
-                const top = getYPositionFromTime(mousePosition);
-                // Use date-fns functions directly
-                const currentDayStart = startOfDay(mousePosition);
-                const weekDayStart = startOfDay(weekStart);
-                const dayIndex = differenceInDays(
-                  currentDayStart,
-                  weekDayStart,
-                );
+            {/* TimeIndicator Logic - Combined Hover and Drag/Resize */}
+            {(() => {
+              let indicatorTime: Date | null = null;
+              // Use specific types expected by TimeIndicator
+              let indicatorType:
+                | "current"
+                | "selection-start"
+                | "selection-end" = "current";
 
-                if (dayIndex < 0 || dayIndex >= numberOfDays) {
+              if (dragState.type === "idle" && mousePosition) {
+                indicatorTime = mousePosition;
+                indicatorType = "current";
+              } else if (
+                dragState.type !== "idle" &&
+                dragState.type !== "drag_new" // Don't show edge indicator for brand new blocks yet
+              ) {
+                // --- Recalculate preview times directly here ---
+                // This duplicates logic from renderDragPreview but keeps scope
+                let previewStartTime: Date | null = null;
+                let previewEndTime: Date | null = null;
+
+                if (dragState.type === "drag_existing") {
+                  const originalBlock = timeBlocks.find(
+                    (b) => b.id === dragState.blockId,
+                  );
+                  if (originalBlock) {
+                    const timeAtCurrentPos = positionToTime(
+                      dragState.currentMousePosition,
+                      gridRef,
+                      true,
+                    );
+                    const timeAtInitialPos = positionToTime(
+                      dragState.initialMousePosition,
+                      gridRef,
+                      true,
+                    );
+                    if (timeAtCurrentPos && timeAtInitialPos) {
+                      const timeDiff =
+                        timeAtCurrentPos.getTime() - timeAtInitialPos.getTime();
+                      const originalStartTime = new Date(
+                        originalBlock.startTime,
+                      );
+                      const originalEndTime = new Date(originalBlock.endTime);
+                      previewStartTime = new Date(
+                        originalStartTime.getTime() + timeDiff,
+                      );
+                      previewEndTime = new Date(
+                        originalEndTime.getTime() + timeDiff,
+                      );
+                    }
+                  }
+                } else if (
+                  dragState.type === "resize_block_top" ||
+                  dragState.type === "resize_block_bottom"
+                ) {
+                  const originalBlock = timeBlocks.find(
+                    (b) => b.id === dragState.blockId,
+                  );
+                  if (originalBlock) {
+                    const timeAtCurrentPos = positionToTime(
+                      dragState.currentMousePosition,
+                      gridRef,
+                      true,
+                    );
+                    if (timeAtCurrentPos) {
+                      const originalDayOffset = differenceInDays(
+                        dragState.initialStartTime,
+                        weekStart,
+                      );
+                      const resizeTimeOnOriginalDay = addDays(
+                        weekStart,
+                        originalDayOffset,
+                      );
+                      resizeTimeOnOriginalDay.setHours(
+                        timeAtCurrentPos.getHours(),
+                        timeAtCurrentPos.getMinutes(),
+                        0,
+                        0,
+                      );
+
+                      previewStartTime = new Date(dragState.initialStartTime);
+                      previewEndTime = new Date(dragState.initialEndTime);
+
+                      if (dragState.type === "resize_block_top") {
+                        previewStartTime = resizeTimeOnOriginalDay;
+                      } else {
+                        previewEndTime = resizeTimeOnOriginalDay;
+                      }
+                    }
+                  }
+                }
+                // --- End Recalculation ---
+
+                if (!previewStartTime || !previewEndTime) {
                   return null;
                 }
 
-                const leftPercent = (dayIndex * 100) / numberOfDays;
-                const widthPercent = 100 / numberOfDays;
+                // Apply snapping
+                previewStartTime = snapTime(previewStartTime);
+                previewEndTime = snapTime(previewEndTime);
 
-                // Ensure props are valid numbers/strings before passing
-                if (isNaN(top) || isNaN(leftPercent) || isNaN(widthPercent)) {
-                  return null;
+                // Swap if needed
+                if (previewEndTime.getTime() < previewStartTime.getTime()) {
+                  [previewStartTime, previewEndTime] = [
+                    previewEndTime,
+                    previewStartTime,
+                  ];
+                }
+                // Prevent zero/negative duration for indicator time selection
+                if (previewEndTime.getTime() <= previewStartTime.getTime()) {
+                  // If times are identical after swap/snap, base end time on start time
+                  previewEndTime = new Date(
+                    previewStartTime.getTime() + snapMinutes * 60 * 1000,
+                  );
                 }
 
-                // Determine if label should be on the left
-                const labelOnLeft = leftPercent > 50; // Example threshold: 50%
+                // Determine which time and type to show
+                if (dragState.type === "resize_block_bottom") {
+                  indicatorTime = previewEndTime;
+                  indicatorType = "selection-end";
+                } else {
+                  // Default to start time for move and resize_top
+                  indicatorTime = previewStartTime;
+                  indicatorType = "selection-start";
+                }
+              }
 
-                return (
-                  <TimeIndicator
-                    top={top}
-                    left={`${leftPercent}%`}
-                    width={`${widthPercent}%`}
-                    time={mousePosition}
-                    type="current"
-                    labelOnLeft={labelOnLeft} // Pass prop
-                  />
-                );
-              })()}
+              // --- Common Rendering Logic for TimeIndicator ---
+              if (!indicatorTime) {
+                return null;
+              }
+
+              const top = getYPositionFromTime(indicatorTime);
+              const currentDayStart = startOfDay(indicatorTime);
+              const weekDayStart = startOfDay(weekStart);
+              const dayIndex = differenceInDays(currentDayStart, weekDayStart);
+
+              if (dayIndex < 0 || dayIndex >= numberOfDays) {
+                return null;
+              }
+
+              const leftPercent = (dayIndex * 100) / numberOfDays;
+              const widthPercent = 100 / numberOfDays;
+
+              if (isNaN(top) || isNaN(leftPercent) || isNaN(widthPercent)) {
+                return null;
+              }
+
+              const labelOnLeft = leftPercent > 50;
+
+              return (
+                <TimeIndicator
+                  top={top}
+                  left={`${leftPercent}%`}
+                  width={`${widthPercent}%`}
+                  time={indicatorTime}
+                  type={indicatorType}
+                  labelOnLeft={labelOnLeft}
+                />
+              );
+            })()}
           </div>
         </div>
       </div>

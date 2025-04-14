@@ -95,23 +95,38 @@ export function useTimeBlockMouseEvents(
     setMousePosition(null);
   };
 
-  const handleMouseUp = () => {
-    if (!gridRef.current || !timeBlocks || dragState.type === "idle") {
-      end();
-      return;
-    }
-    switch (dragState.type) {
-      case "drag_new": {
-        const finalStartTime = snapTime(dragState.startTime);
-        let finalEndTime = snapTime(dragState.currentTime);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    const button = e.button;
+    const finalDragState = { ...dragState };
 
+    end({ button });
+
+    if (!gridRef.current || !timeBlocks) {
+      if (finalDragState.type === "idle") {
+        return;
+      }
+    }
+
+    switch (finalDragState.type) {
+      case "drag_new": {
+        let finalStartTime = snapTime(finalDragState.startTime);
+        let finalEndTime = snapTime(finalDragState.currentTime);
+
+        // Swap if end time is before start time
+        if (finalEndTime.getTime() < finalStartTime.getTime()) {
+          [finalStartTime, finalEndTime] = [finalEndTime, finalStartTime];
+        }
+
+        // Ensure minimum duration if they are the same after potential swap
         if (finalEndTime.getTime() <= finalStartTime.getTime()) {
           finalEndTime = new Date(
             finalStartTime.getTime() + snapMinutes * 60 * 1000,
           );
         }
 
-        openForNewBlock(finalStartTime, finalEndTime);
+        if (button === 0) {
+          openForNewBlock(finalStartTime, finalEndTime);
+        }
         break;
       }
       case "drag_existing": {
@@ -121,14 +136,18 @@ export function useTimeBlockMouseEvents(
           initialMousePosition,
           totalMovement,
           shouldDuplicate,
-        } = dragState;
+        } = finalDragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           break;
         }
 
         const MOVEMENT_THRESHOLD = 5;
-        if (totalMovement < MOVEMENT_THRESHOLD && !shouldDuplicate) {
+        if (
+          totalMovement < MOVEMENT_THRESHOLD &&
+          !shouldDuplicate &&
+          button === 0
+        ) {
           openForTimeBlock(block);
           break;
         }
@@ -170,7 +189,7 @@ export function useTimeBlockMouseEvents(
           initialStartTime,
           initialEndTime,
           currentMousePosition,
-        } = dragState;
+        } = finalDragState;
         const block = timeBlocks?.find((b) => b.id === blockId);
         if (!block) {
           break;
@@ -199,12 +218,18 @@ export function useTimeBlockMouseEvents(
         let newStart = new Date(initialStartTime);
         let newEnd = new Date(initialEndTime);
 
-        if (dragState.type === "resize_block_top") {
+        if (finalDragState.type === "resize_block_top") {
           newStart = newTimeOnOriginalDay;
         } else {
           newEnd = newTimeOnOriginalDay;
         }
 
+        // Swap if end time is before start time
+        if (newEnd.getTime() < newStart.getTime()) {
+          [newStart, newEnd] = [newEnd, newStart];
+        }
+
+        // Prevent resize if duration becomes zero or negative after potential swap
         if (newEnd.getTime() <= newStart.getTime()) {
           break;
         }
@@ -213,8 +238,6 @@ export function useTimeBlockMouseEvents(
         break;
       }
     }
-
-    end();
   };
 
   const handleBlockDragStart = (
