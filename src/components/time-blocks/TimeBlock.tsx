@@ -2,7 +2,7 @@
 import { Link, Lock } from "lucide-react";
 import { useMemo, type MouseEvent, type RefObject } from "react";
 
-import { cn } from "~/lib/utils";
+import { cn, getContrastTextColor } from "~/lib/utils";
 import { useEditTaskStore } from "~/stores/useEditTaskStore";
 
 import { type TimeBlockWithPosition } from "./WeeklyCalendar";
@@ -98,7 +98,7 @@ export function TimeBlock({
       opacity: isPreview ? 0.4 : 0.8,
       borderRadius: isClipped ? "0" : "0.375rem",
       borderStyle: isClipped ? "dashed" : "solid",
-      color: "white",
+      color: getContrastTextColor(block.color || "#3b82f6"),
       overflow: "hidden",
       cursor: isPreview ? "default" : "grab",
       zIndex:
