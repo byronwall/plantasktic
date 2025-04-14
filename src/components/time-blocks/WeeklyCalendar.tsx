@@ -635,7 +635,7 @@ const CalendarContent = ({
                 {/* Sticky Day Header */}
                 <div
                   ref={dayOffset === 0 ? headerRef : undefined} // Attach ref to the first header
-                  className="sticky top-0 z-20 flex items-center justify-between border-b bg-background p-2"
+                  className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background p-2 align-bottom"
                 >
                   <span className="font-medium">
                     {format(date, "EEE MMM d")}
