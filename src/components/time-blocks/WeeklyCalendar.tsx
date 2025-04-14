@@ -581,22 +581,25 @@ const CalendarContent = ({
         <div className="relative w-16 select-none border-r">
           {categorizedBlocks.before.length > 0 && (
             <div
-              className="h-8 cursor-pointer border-b bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
+              className="absolute left-0 right-0 top-0 z-10 h-8 cursor-pointer border-b bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
               onClick={handleBeforeClick}
               title="Click to adjust view to show earlier blocks"
             >
               {categorizedBlocks.before.length} before
             </div>
           )}
-          {displayedHours.map((hour, index) => (
-            <div
-              key={hour}
-              className={`pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
-              style={{ height: `${blockHeight}px` }}
-            >
-              {format(new Date().setHours(hour, 0), "h a")}
-            </div>
-          ))}
+          {/* Wrap hour labels and apply padding here */}
+          <div style={{ paddingTop: `${topOffset}px` }}>
+            {displayedHours.map((hour, index) => (
+              <div
+                key={hour}
+                className={`pr-1 text-right text-sm ${index < displayedHours.length - 1 ? "border-b" : ""}`}
+                style={{ height: `${blockHeight}px` }}
+              >
+                {format(new Date().setHours(hour, 0), "h a")}
+              </div>
+            ))}
+          </div>
           {categorizedBlocks.after.length > 0 && (
             <div
               className="h-8 cursor-pointer border-t bg-muted/50 pr-1 text-right text-sm hover:bg-muted/80"
