@@ -1,0 +1,10 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Apply updates
+
+- Always use edit_file to apply updates to files
+- Always always always apply the updates to files with edit_file
