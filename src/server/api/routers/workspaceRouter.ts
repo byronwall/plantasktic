@@ -26,35 +26,42 @@ export const workspaceRouter = createTRPCRouter({
       });
     }),
 
-  rename: protectedProcedure
-    .input(z.object({ workspaceId: z.string(), name: z.string() }))
+  update: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional().nullable(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
+      const dataToUpdate: Partial<import("@prisma/client").Workspace> = {};
+      if (input.name) {
+        dataToUpdate.name = input.name;
+      }
+      if (input.description !== undefined) {
+        dataToUpdate.description = input.description;
+      }
+
+      if (Object.keys(dataToUpdate).length === 0) {
+        return await ctx.db.workspace.findUnique({
+          where: { id: input.workspaceId, userId: ctx.session.user.id },
+        });
+      }
+
       return await ctx.db.workspace.update({
         where: {
           id: input.workspaceId,
           userId: ctx.session.user.id,
         },
-        data: {
-          name: input.name,
-        },
+        data: dataToUpdate,
       });
     }),
 
   delete: protectedProcedure
     .input(z.object({ workspaceId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // First update all projects in the workspace to have no workspace
-      await ctx.db.project.updateMany({
-        where: {
-          workspaceId: input.workspaceId,
-          userId: ctx.session.user.id,
-        },
-        data: {
-          workspaceId: null,
-        },
-      });
-
-      // Then delete the workspace
+      // Database schema handles cascading deletes for related Projects, Goals, TimeBlocks, etc.
       return await ctx.db.workspace.delete({
         where: {
           id: input.workspaceId,
@@ -80,5 +87,54 @@ export const workspaceRouter = createTRPCRouter({
           workspaceId: input.workspaceId,
         },
       });
+    }),
+
+  stats: protectedProcedure
+    .input(z.object({ workspaceId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const projectCount = await ctx.db.project.count({
+        where: {
+          workspaceId: input.workspaceId,
+          userId: ctx.session.user.id,
+        },
+      });
+      return {
+        projectCount,
+      };
+    }),
+
+  batchAssignProjects: protectedProcedure
+    .input(
+      z.object({
+        projectIds: z.array(z.string()),
+        workspaceId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.workspaceId) {
+        const targetWorkspace = await ctx.db.workspace.findUnique({
+          where: {
+            id: input.workspaceId,
+            userId: ctx.session.user.id,
+          },
+        });
+        if (!targetWorkspace) {
+          throw new Error("Target workspace not found or access denied.");
+        }
+      }
+
+      const result = await ctx.db.project.updateMany({
+        where: {
+          id: {
+            in: input.projectIds,
+          },
+          userId: ctx.session.user.id,
+        },
+        data: {
+          workspaceId: input.workspaceId,
+        },
+      });
+
+      return { count: result.count };
     }),
 });

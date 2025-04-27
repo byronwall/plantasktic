@@ -117,6 +117,26 @@ export function AppSidebar() {
               <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      className={cn(
+                        "w-full transition-colors",
+                        typeof pathname === "string" &&
+                          pathname.startsWith("/workspaces/admin")
+                          ? activeItemClass
+                          : hoverItemClass,
+                      )}
+                    >
+                      <Link
+                        href={`/workspaces/admin`}
+                        className="flex items-center gap-2"
+                      >
+                        <Icons.settings className="h-4 w-4" />
+                        Manage All
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                   {sortedWorkspaces.map((workspace) => (
                     <Collapsible
                       key={workspace.id}
@@ -236,35 +256,40 @@ export function AppSidebar() {
                               </div>
                               {projects
                                 .filter((p) => p.workspaceId === workspace.id)
-                                .map((project) => (
-                                  <SidebarMenuItem key={project.id}>
-                                    <SidebarMenuButton
-                                      asChild
-                                      className={cn(
-                                        "w-full transition-colors",
-                                        project.id === currentProjectId
-                                          ? activeItemClass
-                                          : hoverItemClass,
-                                      )}
-                                    >
-                                      <Link
-                                        href={`/${workspace.name}/${project.name}`}
-                                        className="flex h-fit w-full items-center justify-between"
+                                .map((project) => {
+                                  const taskCount =
+                                    projectTaskCounts?.[project.id];
+                                  return (
+                                    <SidebarMenuItem key={project.id}>
+                                      <SidebarMenuButton
+                                        asChild
+                                        className={cn(
+                                          "w-full transition-colors",
+                                          project.id === currentProjectId
+                                            ? activeItemClass
+                                            : hoverItemClass,
+                                        )}
                                       >
-                                        <span className="flex items-center gap-2">
-                                          <Icons.todo className="h-4 w-4" />
-                                          {project.name}
-                                        </span>
-                                        {project.id != null &&
-                                          projectTaskCounts[project.id] > 0 && (
-                                            <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                              {projectTaskCounts[project.id]}
-                                            </span>
-                                          )}
-                                      </Link>
-                                    </SidebarMenuButton>
-                                  </SidebarMenuItem>
-                                ))}
+                                        <Link
+                                          href={`/${workspace.name}/${project.name}`}
+                                          className="flex h-fit w-full items-center justify-between"
+                                        >
+                                          <span className="flex items-center gap-2">
+                                            <Icons.todo className="h-4 w-4" />
+                                            {project.name}
+                                          </span>
+                                          {project?.id != undefined &&
+                                            taskCount !== undefined &&
+                                            taskCount > 0 && (
+                                              <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                                {taskCount}
+                                              </span>
+                                            )}
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                  );
+                                })}
                             </>
                           )}
                         </div>

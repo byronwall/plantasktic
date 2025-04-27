@@ -127,7 +127,7 @@ model Project {
     user        User       @relation(fields: [userId], references: [id])
     tasks       Task[]
     workspaceId String?
-    workspace   Workspace? @relation(fields: [workspaceId], references: [id])
+    workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     @@index([userId])
     @@index([workspaceId])
@@ -173,7 +173,7 @@ model Goal {
     user   User   @relation(fields: [userId], references: [id])
 
     workspaceId String
-    workspace   Workspace @relation(fields: [workspaceId], references: [id])
+    workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     // Child relations
     progress GoalProgress[]
@@ -230,7 +230,7 @@ model TimeBlock {
 
     // Relations
     workspaceId String
-    workspace   Workspace @relation(fields: [workspaceId], references: [id])
+    workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     // Task assignments
     taskAssignments TimeBlockTask[]
@@ -263,7 +263,7 @@ model TimeBlockDayMetadata {
     updated_at DateTime @updatedAt
 
     workspaceId String
-    workspace   Workspace @relation(fields: [workspaceId], references: [id])
+    workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
     @@unique([workspaceId, date, key])
     @@index([workspaceId])

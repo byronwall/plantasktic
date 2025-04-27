@@ -1,21 +1,30 @@
+import { type Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const projectRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.project.findMany({
-      where: {
+  getAll: protectedProcedure
+    .input(z.object({ workspaceId: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const whereClause: Prisma.ProjectWhereInput = {
         userId: ctx.session.user.id,
-      },
-      orderBy: {
-        name: "asc",
-      },
-      include: {
-        workspace: true,
-      },
-    });
-  }),
+      };
+
+      if (input?.workspaceId) {
+        whereClause.workspaceId = input.workspaceId;
+      }
+
+      return await ctx.db.project.findMany({
+        where: whereClause,
+        orderBy: {
+          name: "asc",
+        },
+        include: {
+          workspace: true,
+        },
+      });
+    }),
 
   delete: protectedProcedure
     .input(z.object({ projectId: z.string() }))
@@ -28,17 +37,35 @@ export const projectRouter = createTRPCRouter({
       });
     }),
 
-  rename: protectedProcedure
-    .input(z.object({ projectId: z.string(), name: z.string() }))
+  update: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional().nullable(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
+      const dataToUpdate: Partial<import("@prisma/client").Project> = {};
+      if (input.name) {
+        dataToUpdate.name = input.name;
+      }
+      if (input.description !== undefined) {
+        dataToUpdate.description = input.description;
+      }
+
+      if (Object.keys(dataToUpdate).length === 0) {
+        return await ctx.db.project.findUnique({
+          where: { id: input.projectId, userId: ctx.session.user.id },
+        });
+      }
+
       return await ctx.db.project.update({
         where: {
           id: input.projectId,
           userId: ctx.session.user.id,
         },
-        data: {
-          name: input.name,
-        },
+        data: dataToUpdate,
       });
     }),
 
@@ -70,5 +97,39 @@ export const projectRouter = createTRPCRouter({
           userId: ctx.session.user.id,
         },
       });
+    }),
+
+  batchUpdateWorkspace: protectedProcedure
+    .input(
+      z.object({
+        projectIds: z.array(z.string()),
+        workspaceId: z.string().nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.workspaceId) {
+        const workspaceExists = await ctx.db.workspace.findFirst({
+          where: {
+            id: input.workspaceId,
+            userId: ctx.session.user.id,
+          },
+        });
+        if (!workspaceExists) {
+          throw new Error("Target workspace not found or access denied.");
+        }
+      }
+
+      const result = await ctx.db.project.updateMany({
+        where: {
+          id: {
+            in: input.projectIds,
+          },
+          userId: ctx.session.user.id,
+        },
+        data: {
+          workspaceId: input.workspaceId,
+        },
+      });
+      return { count: result.count };
     }),
 });
